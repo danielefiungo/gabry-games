@@ -1,0 +1,110 @@
+/* ============================================================
+   SFIDE DEL GUARDIANO (boss di fine livello) e parole nuove
+   ============================================================ */
+/* ============================================================
+   SFIDE DEL GUARDIANO (boss di fine mondo) — allineate a THEMES
+   Ogni sfida: una FRASE VERA da leggere + domanda con risposte
+   "trabocchetto" (plausibili) + una PAROLA NUOVA da collezionare.
+   ============================================================ */
+const SFIDE = [
+ [ /* 0 Razzi Spaziali */
+  {text:["Sulla rampa di lancio il grande razzo aspetta immobile, mentre una voce conta alla rovescia: cinque, quattro, tre, due, uno!","On the launch pad the big rocket waits perfectly still, while a voice counts down: five, four, three, two, one!"],
+   q:["Dove aspetta il razzo prima di partire?","Where does the rocket wait before launch?"], ok:["Sulla rampa di lancio","On the launch pad"], no:[["In fondo al mare","At the bottom of the sea"],["Dentro un garage","Inside a garage"]],
+   word:["rampa","launch pad"], def:["La grande piattaforma da cui parte il razzo.","The big platform a rocket lifts off from."]},
+  {text:["Chiusi dentro la capsula in cima al razzo, gli astronauti sono legati stretti ai loro sedili per non farsi male durante la partenza.","Sealed inside the capsule at the top of the rocket, the astronauts are strapped tightly to their seats so they don't get hurt during launch."],
+   q:["Perché gli astronauti sono legati ai sedili?","Why are the astronauts strapped to their seats?"], ok:["Per non farsi male alla partenza","So they don't get hurt at launch"], no:[["Per fare un pisolino","To take a nap"],["Per guardare la TV","To watch TV"]],
+   word:["capsula","capsule"], def:["La cabina dove viaggiano gli astronauti.","The cabin where the astronauts travel."]},
+  {text:["Superate le nuvole, il razzo sale così in alto che il cielo azzurro diventa sempre più scuro, fino a diventare nero e pieno di stelle.","Past the clouds, the rocket climbs so high that the blue sky grows darker and darker, until it turns black and full of stars."],
+   q:["Come diventa il cielo mentre il razzo sale nello spazio?","What does the sky become as the rocket climbs into space?"], ok:["Nero e pieno di stelle","Black and full of stars"], no:[["Verde come l'erba","Green like the grass"],["Rosa con le caramelle","Pink with candy"]],
+   word:["stelle","stars"], def:["Enormi sfere di gas che brillano lontane nel cielo.","Huge balls of gas that shine far away in the sky."]} ],
+ [ /* 1 Fenomeni Naturali */
+  {text:["Prima che il vulcano erutti, la terra trema piano e una nuvola di cenere grigia comincia a salire dal cratere verso il cielo.","Before the volcano erupts, the ground trembles gently and a cloud of grey ash begins to rise from the crater into the sky."],
+   q:["Cosa sale dal cratere prima dell'eruzione?","What rises from the crater before the eruption?"], ok:["Una nuvola di cenere grigia","A cloud of grey ash"], no:[["Una pioggia di caramelle","A rain of candy"],["Un mare di gelato","A sea of ice cream"]],
+   word:["cratere","crater"], def:["La bocca aperta in cima al vulcano.","The open mouth at the top of a volcano."]},
+  {text:["Durante il temporale un lampo velocissimo illumina il cielo, e solo qualche secondo dopo arriva il rombo forte del tuono.","During the storm a super-fast flash of lightning lights up the sky, and only a few seconds later comes the loud rumble of thunder."],
+   q:["Cosa arriva qualche secondo dopo il lampo?","What comes a few seconds after the lightning?"], ok:["Il tuono","The thunder"], no:[["Il gelato","The ice cream"],["Il sole caldo","The warm sun"]],
+   word:["temporale","storm"], def:["Pioggia forte con lampi e tuoni.","Heavy rain with lightning and thunder."]},
+  {text:["Il tornado scende dalle nuvole come un lungo imbuto che gira, e col suo vento fortissimo può sollevare da terra foglie, rami e perfino i tetti.","The tornado comes down from the clouds like a long spinning funnel, and with its very strong wind it can lift leaves, branches and even roofs off the ground."],
+   q:["A cosa somiglia il tornado che scende dalle nuvole?","What does the tornado coming down from the clouds look like?"], ok:["A un lungo imbuto che gira","A long spinning funnel"], no:[["A un palloncino fermo","A still balloon"],["A un cuscino morbido","A soft pillow"]],
+   word:["imbuto","funnel"], def:["Un cono stretto in basso e largo in alto.","A cone narrow at the bottom and wide at the top."]} ],
+ [ /* 2 Disastri Navali */
+  {text:["Nel buio della notte, la vedetta del Titanic vide troppo tardi un'enorme montagna di ghiaccio che galleggiava proprio davanti alla nave.","In the dark of night, the Titanic's lookout saw far too late a huge mountain of ice floating right in front of the ship."],
+   q:["Cosa vide troppo tardi la vedetta?","What did the lookout see too late?"], ok:["Una montagna di ghiaccio","A mountain of ice"], no:[["Un pesce colorato","A colorful fish"],["Una barca a vela","A sailing boat"]],
+   word:["vedetta","lookout"], def:["Il marinaio che scruta il mare in cerca di pericoli.","The sailor who watches the sea for dangers."]},
+  {text:["Dopo l'urto, l'acqua gelida entrò piano nella nave e i passeggeri corsero sul ponte per salire sulle poche scialuppe di salvataggio.","After the crash, the icy water slowly filled the ship and the passengers rushed onto the deck to climb into the few lifeboats."],
+   q:["Perché i passeggeri corsero sul ponte?","Why did the passengers rush onto the deck?"], ok:["Per salire sulle scialuppe","To climb into the lifeboats"], no:[["Per fare il bagno","To go swimming"],["Per giocare a nascondino","To play hide and seek"]],
+   word:["scialuppe","lifeboats"], def:["Piccole barche per salvarsi se la nave affonda.","Small boats to escape if the ship sinks."]},
+  {text:["Il capitano della Carpathia sentì la richiesta di aiuto e guidò la sua nave a tutta velocità tra i ghiacci per soccorrere i naufraghi.","The captain of the Carpathia heard the call for help and drove his ship at full speed through the ice to rescue the survivors."],
+   q:["Perché la Carpathia corse tra i ghiacci?","Why did the Carpathia race through the ice?"], ok:["Per soccorrere i naufraghi","To rescue the survivors"], no:[["Per andare in vacanza","To go on holiday"],["Per pescare i pesci","To catch fish"]],
+   word:["naufraghi","survivors"], def:["Le persone salvate da una nave che affonda.","The people saved from a sinking ship."]} ],
+ [ /* 3 Chimica */
+  {text:["Nel laboratorio lo scienziato mescola con cura due liquidi dentro la provetta, e all'improvviso nascono tante piccole bollicine.","In the laboratory the scientist carefully mixes two liquids inside the test tube, and suddenly lots of tiny bubbles appear."],
+   q:["Cosa nasce quando i due liquidi si mescolano?","What appears when the two liquids mix?"], ok:["Tante bollicine","Lots of bubbles"], no:[["Un gattino","A little kitten"],["Una torta","A cake"]],
+   word:["provetta","test tube"], def:["Il tubicino di vetro usato negli esperimenti.","The little glass tube used in experiments."]},
+  {text:["Tutto ciò che ci circonda è fatto di minuscoli mattoncini invisibili chiamati atomi, troppo piccoli per essere visti a occhio nudo.","Everything around us is made of tiny invisible building blocks called atoms, far too small to be seen with the naked eye."],
+   q:["Come si chiamano i mattoncini invisibili di cui è fatto tutto?","What are the invisible building blocks that make up everything called?"], ok:["Atomi","Atoms"], no:[["Mattoni di casa","House bricks"],["Biscotti","Cookies"]],
+   word:["atomi","atoms"], def:["I pezzettini piccolissimi che compongono ogni cosa.","The tiniest pieces that make up everything."]},
+  {text:["Quando l'acqua diventa freddissima si trasforma in ghiaccio duro, ma se la scaldi tanto ritorna liquida e poi diventa vapore.","When water gets very cold it turns into hard ice, but if you heat it up a lot it becomes liquid again and then turns into steam."],
+   q:["In cosa si trasforma l'acqua quando diventa freddissima?","What does water turn into when it gets very cold?"], ok:["In ghiaccio duro","Into hard ice"], no:[["In sabbia","Into sand"],["In legno","Into wood"]],
+   word:["vapore","steam"], def:["L'acqua trasformata in gas quando bolle.","Water turned into gas when it boils."]} ],
+ [ /* 4 Elettronica */
+  {text:["Quando premi l'interruttore, la corrente elettrica corre lungo i fili e la lampadina si accende, illuminando tutta la stanza.","When you press the switch, the electric current runs along the wires and the light bulb turns on, lighting up the whole room."],
+   q:["Cosa succede alla lampadina quando premi l'interruttore?","What happens to the light bulb when you press the switch?"], ok:["Si accende","It turns on"], no:[["Si mangia","It gets eaten"],["Vola via","It flies away"]],
+   word:["interruttore","switch"], def:["Il pulsante che accende e spegne la corrente.","The button that turns the power on and off."]},
+  {text:["Dentro il telecomando c'è una piccola pila che conserva l'energia e la dà ai circuiti ogni volta che schiacci un tasto.","Inside the remote there is a small battery that stores energy and gives it to the circuits every time you press a button."],
+   q:["Cosa fa la pila dentro il telecomando?","What does the battery inside the remote do?"], ok:["Conserva e dà energia","It stores and gives energy"], no:[["Fa il solletico","It tickles you"],["Cucina la cena","It cooks dinner"]],
+   word:["pila","battery"], def:["L'oggetto che tiene dentro l'energia elettrica.","The object that holds electric energy inside."]},
+  {text:["Un robot ubbidisce solo agli ordini scritti dai programmatori: senza quelle istruzioni resterebbe fermo, senza sapere cosa fare.","A robot only obeys the orders written by programmers: without those instructions it would stay still, not knowing what to do."],
+   q:["A cosa ubbidisce un robot?","What does a robot obey?"], ok:["Agli ordini dei programmatori","The programmers' orders"], no:[["Alle nuvole","The clouds"],["Ai gatti","The cats"]],
+   word:["istruzioni","instructions"], def:["Gli ordini che dicono alla macchina cosa fare.","The orders that tell a machine what to do."]} ],
+ [ /* 5 Api e Apicoltura */
+  {text:["Ogni mattina l'ape esce dall'alveare, vola di fiore in fiore e raccoglie il dolce nettare con la sua lunga lingua sottile.","Every morning the bee leaves the hive, flies from flower to flower and collects the sweet nectar with its long thin tongue."],
+   q:["Cosa raccoglie l'ape sui fiori?","What does the bee collect on the flowers?"], ok:["Il dolce nettare","The sweet nectar"], no:[["I sassolini","Little stones"],["Le figurine","Stickers"]],
+   word:["nettare","nectar"], def:["Il succo dolce dei fiori che le api trasformano in miele.","The sweet juice of flowers that bees turn into honey."]},
+  {text:["Dentro l'alveare migliaia di api operaie costruiscono con la cera i favi, pieni di piccole celle a forma di esagono.","Inside the hive thousands of worker bees use wax to build honeycombs, full of little hexagon-shaped cells."],
+   q:["Che forma hanno le celle dei favi?","What shape are the honeycomb cells?"], ok:["A esagono","Hexagon-shaped"], no:[["A cuore","Heart-shaped"],["A palloncino","Balloon-shaped"]],
+   word:["favi","honeycombs"], def:["Le costruzioni di cera dove le api tengono miele e piccoli.","The wax structures where bees keep honey and their young."]},
+  {text:["L'apicoltore indossa la maschera, soffia un po' di fumo per calmare le api e sfila con cura i telaini pieni di miele dorato.","The beekeeper puts on the mask, puffs a little smoke to calm the bees and carefully slides out the frames full of golden honey."],
+   q:["Perché l'apicoltore soffia un po' di fumo?","Why does the beekeeper puff a little smoke?"], ok:["Per calmare le api","To calm the bees"], no:[["Per fare le nuvole","To make clouds"],["Per cuocere il pane","To bake bread"]],
+   word:["apicoltore","beekeeper"], def:["La persona che alleva le api e raccoglie il miele.","The person who keeps bees and collects the honey."]} ],
+ [ /* 6 Fisica */
+  {text:["Se lasci cadere una mela, questa non vola in alto ma cade sempre verso il basso, tirata dalla forza di gravità della Terra.","If you drop an apple, it doesn't fly up but always falls downward, pulled by the Earth's force of gravity."],
+   q:["Perché la mela cade verso il basso?","Why does the apple fall downward?"], ok:["Per la forza di gravità","Because of gravity"], no:[["Perché è stanca","Because it is tired"],["Perché ha paura","Because it is scared"]],
+   word:["gravità","gravity"], def:["La forza che tira tutto verso il basso.","The force that pulls everything downward."]},
+  {text:["Una calamita ha un potere speciale: attira a sé gli oggetti di ferro, ma non riesce a muovere il legno o la plastica.","A magnet has a special power: it attracts iron objects to itself, but it cannot move wood or plastic."],
+   q:["Quali oggetti attira la calamita?","Which objects does the magnet attract?"], ok:["Gli oggetti di ferro","Iron objects"], no:[["Gli oggetti di legno","Wooden objects"],["Gli oggetti di carta","Paper objects"]],
+   word:["calamita","magnet"], def:["L'oggetto che attira il ferro senza toccarlo.","The object that pulls iron without touching it."]},
+  {text:["Quando dai un forte calcio al pallone, gli dai energia e lui rotola veloce, ma piano piano rallenta finché si ferma.","When you kick the ball hard, you give it energy and it rolls fast, but little by little it slows down until it stops."],
+   q:["Cosa succede al pallone poco dopo il calcio?","What happens to the ball a little after the kick?"], ok:["Rallenta finché si ferma","It slows down until it stops"], no:[["Vola sulla Luna","It flies to the Moon"],["Diventa un uccello","It turns into a bird"]],
+   word:["energia","energy"], def:["La forza che fa muovere e funzionare le cose.","The power that makes things move and work."]} ],
+ [ /* 7 Missioni Spaziali */
+  {text:["Nel 1969 due astronauti scesero per la prima volta sulla Luna e lasciarono le loro impronte nella polvere grigia.","In 1969 two astronauts stepped onto the Moon for the first time and left their footprints in the grey dust."],
+   q:["Cosa lasciarono gli astronauti sulla Luna?","What did the astronauts leave on the Moon?"], ok:["Le loro impronte","Their footprints"], no:[["Una pizza","A pizza"],["Una bicicletta","A bicycle"]],
+   word:["impronte","footprints"], def:["I segni lasciati dai piedi sul terreno.","The marks left by feet on the ground."]},
+  {text:["Nello spazio non c'è peso, così dentro la navicella gli astronauti galleggiano nell'aria come se stessero nuotando.","In space there is no weight, so inside the spacecraft the astronauts float in the air as if they were swimming."],
+   q:["Cosa fanno gli astronauti dentro la navicella?","What do the astronauts do inside the spacecraft?"], ok:["Galleggiano nell'aria","They float in the air"], no:[["Corrono veloci","They run fast"],["Dormono per terra","They sleep on the floor"]],
+   word:["navicella","spacecraft"], def:["Il veicolo in cui viaggiano gli astronauti.","The vehicle the astronauts travel in."]},
+  {text:["Attorno alla Terra gira una grande casa volante chiamata Stazione Spaziale, dove gli astronauti vivono e studiano per mesi.","Around the Earth flies a big flying house called the Space Station, where the astronauts live and study for months."],
+   q:["Che cos'è la Stazione Spaziale?","What is the Space Station?"], ok:["Una casa che gira intorno alla Terra","A house that orbits the Earth"], no:[["Un supermercato","A supermarket"],["Una scuola in città","A school in town"]],
+   word:["stazione","station"], def:["Il laboratorio volante che orbita nello spazio.","The flying lab that orbits in space."]} ],
+ [ /* 8 Lingua Inglese */
+  {text:["In inglese l'animale cane si chiama dog e il gatto si chiama cat: due animali che vivono spesso nelle nostre case.","In English the animal cane is called dog and gatto is called cat: two animals that often live in our homes."],
+   q:["Come si dice cane in inglese?","How do you say cane in English?"], ok:["Dog","Dog"], no:[["Cat","Cat"],["Fish","Fish"]],
+   word:["dog","dog"], def:["La parola inglese per dire cane.","The English word for the Italian cane."]},
+  {text:["I colori in inglese sono divertenti: rosso si dice red, blu si dice blue e giallo si dice yellow.","Colors in English are fun: rosso is red, blu is blue and giallo is yellow."],
+   q:["Come si dice rosso in inglese?","How do you say rosso in English?"], ok:["Red","Red"], no:[["Blue","Blue"],["Green","Green"]],
+   word:["red","red"], def:["La parola inglese per dire rosso.","The English word for the Italian rosso."]},
+  {text:["Per salutare in inglese dici hello quando arrivi e bye quando te ne vai.","In English you say hello when you arrive and bye when you leave."],
+   q:["Cosa dici in inglese quando arrivi?","What do you say in English when you arrive?"], ok:["Hello","Hello"], no:[["Bye","Bye"],["Stop","Stop"]],
+   word:["hello","hello"], def:["Il saluto inglese per dire ciao quando arrivi.","The English greeting for hello when you arrive."]} ],
+ [ /* 9 Geronimo Stilton (extra) */
+  {text:["Geronimo Stilton è un topo pauroso che dirige il giornale più famoso dell'Isola dei Topi, l'Eco del Roditore.","Geronimo Stilton is a scaredy mouse who runs the most famous newspaper on Mouse Island, The Rodent's Gazette."],
+   q:["Che lavoro fa Geronimo Stilton?","What is Geronimo Stilton's job?"], ok:["Dirige un giornale","He runs a newspaper"], no:[["Guida un autobus","He drives a bus"],["Fa il cuoco","He is a cook"]],
+   word:["giornale","newspaper"], def:["I fogli di carta con le notizie di ogni giorno.","The paper sheets with the day's news."]},
+  {text:["Anche se ha una paura matta delle avventure, Geronimo parte lo stesso, perché la sua famiglia lo trascina in mille viaggi.","Even though he is terribly afraid of adventures, Geronimo sets off anyway, because his family drags him on a thousand trips."],
+   q:["Perché Geronimo parte, anche se ha paura?","Why does Geronimo leave, even though he is afraid?"], ok:["La famiglia lo trascina","His family drags him along"], no:[["Vuole dormire","He wants to sleep"],["Cerca il formaggio","He is looking for cheese"]],
+   word:["avventure","adventures"], def:["Viaggi pieni di sorprese e di pericoli.","Trips full of surprises and dangers."]},
+  {text:["Il cibo preferito di Geronimo è il formaggio: ne conosce mille tipi e il suo profumo lo rende subito allegro.","Geronimo's favorite food is cheese: he knows a thousand kinds and its smell makes him cheerful at once."],
+   q:["Qual è il cibo preferito di Geronimo?","What is Geronimo's favorite food?"], ok:["Il formaggio","Cheese"], no:[["Gli spaghetti","Spaghetti"],["Le patatine","Chips"]],
+   word:["formaggio","cheese"], def:["Il cibo giallo fatto col latte, amato dai topi.","The yellow food made from milk, loved by mice."]} ]
+];
