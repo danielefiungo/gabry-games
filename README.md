@@ -1,6 +1,6 @@
 # I Giochi delle Parole 🚀🐝
 
-Gioco per imparare a leggere, con due modalità: **Il Labirinto** (3D) e **Difendi l'Alveare**.
+Gioco per imparare a leggere, con due modalità: **Il Labirinto** (3D) e **La Palla di Api** (la vera difesa delle api contro i calabroni: la palla che scalda a 46°C).
 
 ## Struttura dei file
 
@@ -14,7 +14,8 @@ Gioco per imparare a leggere, con due modalità: **Il Labirinto** (3D) e **Difen
 | `js/audio-voce.js` | Suoni, musica, sintesi vocale e karaoke | Raramente |
 | `js/labirinto-3d.js` | Motore 3D: labirinto, grafica, controlli, salvataggi | Raramente |
 | `js/gioco-labirinto.js` | Logica del labirinto: domande, vite, boss, vittoria, menu | Per cambiare le regole del gioco |
-| `js/alveare.js` | Modalità "Difendi l'Alveare" + schermata di scelta del gioco | Per modificare la seconda modalità |
+| `js/scelta-gioco.js` | La schermata di scelta del gioco (registro delle modalità) | Per aggiungere nuove modalità |
+| `js/palla-api.js` | Modalità "La Palla di Api": esploratori, palla a 46°C, difese sbloccabili con le domande | Per modificare la seconda modalità |
 
 L'ordine dei tag `<script>` in `index.html` **non va cambiato**: i file si caricano in sequenza e dipendono l'uno dall'altro.
 
