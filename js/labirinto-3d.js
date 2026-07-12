@@ -54,13 +54,15 @@ function findPath(g,sx,sy,ex,ey){
 
 /* ================= STATO ================= */
 const CELL=2, MAXLIVES=3;
-const SIZES=[13,15,15,17,17,19,19,21,21,21];
+const SIZES=[13,15,15,17,17,19,19,21,21,21,21,21,21];
 let renderer, scene=null, camera, player, arrowGroup=null;
 let grid, W, H, doors=[], star=null, glow=null, decos=[], bursts=[];
 let themeParts=null, themeVel=1;
 let curLevel=0, keysGot=0, paused=true, currentDoor=null, walk=0;
 let lives=MAXLIVES, tokens=0, qpool=[];
-let LANG='it', DIFF='easy', unlocked=1, VOICEON=true, ARROWON=true, FPV=false;
+/* power-up raccoglibili nel labirinto */
+let powerups=[], hunt=null, freeJolly=0, shieldOn=false;
+let LANG='it', DIFF='easy', unlockedSet=new Set([0]), VOICEON=true, ARROWON=true, FPV=false;
 /* progressione / motivazione */
 let score=0, streak=0, bestStreak=0;
 let starsMap={}, words=[];
@@ -81,7 +83,14 @@ function applyName(){
 }
 try{
   PLAYER=(localStorage.getItem('gabri_name')||'').trim();
-  unlocked=Math.max(1, parseInt(localStorage.getItem('gabri_unlocked')||'1')||1);
+  /* mappa a rete: set dei livelli sbloccati (migra dal vecchio contatore lineare) */
+  const u2=localStorage.getItem('gabri_unlocked2');
+  if(u2){ unlockedSet=new Set(JSON.parse(u2)); }
+  else {
+    const old=Math.max(1, parseInt(localStorage.getItem('gabri_unlocked')||'1')||1);
+    unlockedSet=new Set(Array.from({length:old},(_,k)=>k));
+  }
+  unlockedSet.add(0);
   DIFF=localStorage.getItem('gabri_diff')||'easy';
   VOICEON=localStorage.getItem('gabri_voice')!=='0';
   MUSICON=localStorage.getItem('gabri_music')!=='0';
@@ -93,7 +102,7 @@ try{
   words=JSON.parse(localStorage.getItem('gabri_words')||'[]')||[];
 }catch(e){}
 function save(){ try{
-  localStorage.setItem('gabri_unlocked',String(unlocked));
+  localStorage.setItem('gabri_unlocked2',JSON.stringify([...unlockedSet]));
   localStorage.setItem('gabri_diff',DIFF);
   localStorage.setItem('gabri_voice',VOICEON?'1':'0');
   localStorage.setItem('gabri_music',MUSICON?'1':'0');
@@ -156,6 +165,18 @@ function emojiSprite(em,size){
   c.font='96px sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(em,64,72);
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
   s.scale.set(size,size,1); return s;
+}
+/* lettera raccoglibile per la caccia alla parola */
+function letterSprite(ch,accent){
+  const cv=document.createElement('canvas'); cv.width=cv.height=128;
+  const c=cv.getContext('2d');
+  c.beginPath(); c.arc(64,64,54,0,Math.PI*2);
+  c.fillStyle=accent; c.fill();
+  c.lineWidth=8; c.strokeStyle='#fff'; c.stroke();
+  c.font='bold 72px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  c.fillStyle='#fff'; c.fillText(ch,64,68);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
+  s.scale.set(1.0,1.0,1); return s;
 }
 
 /* ================= GRAFICA ================= */
@@ -267,6 +288,7 @@ function questionSet(){ return DIFF==='easy' ? THEMES[curLevel].easy : THEMES[cu
 function buildLevel(idx){
   curLevel=idx; keysGot=0; doors=[]; decos=[]; bursts=[]; currentDoor=null;
   lives=MAXLIVES; tokens=0; starCooldown=false;
+  powerups=[]; hunt=null; freeJolly=0; shieldOn=false;
   const t=THEMES[idx];
   scene=new THREE.Scene();
   scene.background=new THREE.Color(t.sky);
@@ -313,10 +335,36 @@ function buildLevel(idx){
   const openCells=[];
   for(let z=1;z<H-1;z++) for(let x=1;x<W-1;x++)
     if(grid[z][x]===0 && !used.has(x+','+z)) openCells.push([x,z]);
-  shuffle(openCells).slice(0,10).forEach((c,i)=>{
+  const cells=shuffle(openCells);
+  /* decorazioni (solo estetiche) */
+  cells.splice(0,8).forEach((c,i)=>{
     const s=emojiSprite(t.decos[i%t.decos.length],0.9);
     const p=g2w(c[0],c[1]); s.position.set(p.x,1.3,p.z); scene.add(s); decos.push(s);
   });
+  /* power-up raccoglibili: cuore, jolly gratis, scudo */
+  [['heart','❤️'],['jolly','🎟️'],['shield','🛡️']].forEach(pu=>{
+    if(!cells.length) return;
+    const c=cells.pop();
+    const s=emojiSprite(pu[1],1.0);
+    const p=g2w(c[0],c[1]); s.position.set(p.x,1.25,p.z); scene.add(s);
+    powerups.push({type:pu[0],sprite:s});
+  });
+  /* caccia alla parola: le lettere di una parola del Guardiano, sparse nel labirinto */
+  let hcand=SFIDE[idx].filter(s=>s.word[LI()].length<=8);
+  if(!hcand.length) hcand=SFIDE[idx].slice().sort((a,b)=>a.word[LI()].length-b.word[LI()].length).slice(0,1);
+  const hsf=hcand[Math.floor(Math.random()*hcand.length)];
+  const hword=hsf.word[LI()].toUpperCase();
+  if(cells.length>=hword.length){
+    hunt={s:hsf, word:hword, got:[], letters:[]};
+    hword.split('').forEach((ch,k)=>{
+      if(!/[A-ZÀ-Ü0-9]/.test(ch)){ hunt.got[k]=true; return; }
+      hunt.got[k]=false;
+      const c=cells.pop();
+      const s=letterSprite(ch,t.accent);
+      const p=g2w(c[0],c[1]); s.position.set(p.x,1.25,p.z); scene.add(s);
+      hunt.letters.push({sprite:s,idx:k,ch:ch,done:false});
+    });
+  }
 
   player=makePlayer();
   const pp=g2w(1,1); player.position.set(pp.x,0,pp.z); scene.add(player);

@@ -106,5 +106,35 @@ const SFIDE = [
    word:["avventure","adventures"], def:["Viaggi pieni di sorprese e di pericoli.","Trips full of surprises and dangers."]},
   {text:["Il cibo preferito di Geronimo è il formaggio: ne conosce mille tipi e il suo profumo lo rende subito allegro.","Geronimo's favorite food is cheese: he knows a thousand kinds and its smell makes him cheerful at once."],
    q:["Qual è il cibo preferito di Geronimo?","What is Geronimo's favorite food?"], ok:["Il formaggio","Cheese"], no:[["Gli spaghetti","Spaghetti"],["Le patatine","Chips"]],
-   word:["formaggio","cheese"], def:["Il cibo giallo fatto col latte, amato dai topi.","The yellow food made from milk, loved by mice."]} ]
+   word:["formaggio","cheese"], def:["Il cibo giallo fatto col latte, amato dai topi.","The yellow food made from milk, loved by mice."]} ],
+ [ /* 10 Computer e Componenti */
+  {text:["Dentro il computer un piccolo chip chiamato processore esegue miliardi di calcoli ogni secondo, senza stancarsi mai.","Inside the computer a little chip called the processor performs billions of calculations every second, without ever getting tired."],
+   q:["Cosa fa il processore ogni secondo?","What does the processor do every second?"], ok:["Miliardi di calcoli","Billions of calculations"], no:[["Miliardi di pisolini","Billions of naps"],["Tre disegni","Three drawings"]],
+   word:["processore","processor"], def:["Il chip che fa i calcoli, il cervello del computer.","The chip that does the math — the computer's brain."]},
+  {text:["Quando premi un tasto della tastiera, la lettera diventa un segnale elettrico che corre velocissimo fino allo schermo.","When you press a key on the keyboard, the letter becomes an electric signal that races at top speed to the screen."],
+   q:["Cosa diventa la lettera quando premi il tasto?","What does the letter become when you press the key?"], ok:["Un segnale elettrico","An electric signal"], no:[["Una farfalla","A butterfly"],["Una caramella","A candy"]],
+   word:["tastiera","keyboard"], def:["L'insieme di tasti con cui si scrive al computer.","The set of keys you use to write on a computer."]},
+  {text:["Le foto e i giochi vengono salvati nella memoria del computer, così non si perdono nemmeno quando lo spegni.","Photos and games are saved in the computer's memory, so they don't get lost even when you turn it off."],
+   q:["Dove vengono salvati le foto e i giochi?","Where are photos and games saved?"], ok:["Nella memoria","In the memory"], no:[["Nel frigorifero","In the fridge"],["Sotto il tappeto","Under the rug"]],
+   word:["memoria","memory"], def:["La parte del computer che conserva i file senza dimenticarli.","The part of the computer that keeps files without forgetting them."]} ],
+ [ /* 11 Programmazione */
+  {text:["Il programmatore scrive le istruzioni nel codice, e il computer le esegue una dopo l'altra, esattamente come sono scritte.","The programmer writes the instructions in the code, and the computer runs them one after another, exactly as they are written."],
+   q:["Come esegue le istruzioni il computer?","How does the computer run the instructions?"], ok:["Una dopo l'altra","One after another"], no:[["A caso","Randomly"],["Solo di notte","Only at night"]],
+   word:["codice","code"], def:["Le istruzioni scritte che dicono al computer cosa fare.","The written instructions that tell a computer what to do."]},
+  {text:["Quando il programma non funziona, il programmatore cerca con pazienza il bug, cioè l'errore nascosto tra le righe del codice.","When the program doesn't work, the programmer patiently hunts for the bug, the mistake hiding between the lines of code."],
+   q:["Che cos'è il bug del programma?","What is a program's bug?"], ok:["L'errore nascosto","The hidden mistake"], no:[["Un premio","A prize"],["Una formica vera","A real ant"]],
+   word:["bug","bug"], def:["L'errore che fa sbagliare un programma.","The mistake that makes a program go wrong."]},
+  {text:["Prima di programmare si prepara l'algoritmo: la lista ordinata dei passi da seguire, proprio come una ricetta di cucina.","Before coding you prepare the algorithm: the ordered list of steps to follow, just like a cooking recipe."],
+   q:["Che cos'è l'algoritmo?","What is the algorithm?"], ok:["La lista ordinata dei passi","The ordered list of steps"], no:[["Una torta al limone","A lemon cake"],["Un ballo veloce","A fast dance"]],
+   word:["algoritmo","algorithm"], def:["I passi in ordine per risolvere un problema.","The steps, in order, to solve a problem."]} ],
+ [ /* 12 Internet e Sicurezza */
+  {text:["Quando guardi un video, i dati arrivano a casa tua divisi in tanti pacchetti che viaggiano velocissimi lungo cavi e onde radio.","When you watch a video, the data reaches your home split into many packets that travel at top speed along cables and radio waves."],
+   q:["Come viaggiano i dati del video?","How does the video's data travel?"], ok:["Divisi in tanti pacchetti","Split into many packets"], no:[["Dentro una valigia","Inside a suitcase"],["In groppa a un pony","On a pony"]],
+   word:["pacchetti","packets"], def:["I pezzettini in cui vengono divisi i dati per viaggiare su internet.","The little pieces data is split into to travel on the internet."]},
+  {text:["In fondo agli oceani ci sono lunghissimi cavi che collegano i continenti e portano internet da una parte all'altra del mondo.","At the bottom of the oceans there are very long cables that connect the continents and carry the internet from one side of the world to the other."],
+   q:["Dove sono i cavi che collegano i continenti?","Where are the cables that connect the continents?"], ok:["In fondo agli oceani","At the bottom of the oceans"], no:[["Sopra le nuvole","Above the clouds"],["Dentro i vulcani","Inside volcanoes"]],
+   word:["cavi","cables"], def:["I lunghi fili speciali che trasportano i dati di internet.","The long special wires that carry the internet's data."]},
+  {text:["La password è la tua chiave segreta: sceglila lunga e difficile, e non dirla mai a nessuno tranne che a mamma e papà.","Your password is your secret key: choose it long and hard to guess, and never tell it to anyone except mom and dad."],
+   q:["A chi puoi dire la tua password?","Who can you tell your password to?"], ok:["Solo a mamma e papà","Only mom and dad"], no:[["A tutti gli amici","All your friends"],["Al pappagallo","The parrot"]],
+   word:["password","password"], def:["La parola segreta che protegge i tuoi account.","The secret word that protects your accounts."]} ]
 ];

@@ -34,6 +34,14 @@ const UI = {
   jollyRead:["🔊 Leggi per me −40 ⭐","🔊 Read to me −40 ⭐"],
   jolly5050:["🎯 Togli una risposta −20 ⭐","🎯 Remove one answer −20 ⭐"],
   jollyNoPts:["Ti servono più punti ⭐ per questo jolly!","You need more points ⭐ for this joker!"],
+  /* power-up del labirinto */
+  jollyFreeRead:["🔊 Leggi per me GRATIS 🎟️","🔊 Read to me FREE 🎟️"],
+  jollyFree5050:["🎯 Togli una risposta GRATIS 🎟️","🎯 Remove one answer FREE 🎟️"],
+  powerHeart:["❤️ Cuore recuperato!","❤️ Heart restored!"],
+  powerHeartFull:["❤️ Cuori già pieni! +10 ⭐","❤️ Hearts already full! +10 ⭐"],
+  powerJolly:["🎟️ Jolly gratis! Usalo quando vuoi","🎟️ Free joker! Use it any time"],
+  powerShield:["🛡️ Scudo! La tua combo è protetta","🛡️ Shield! Your streak is protected"],
+  shieldSaved:["🛡️ Lo scudo ha salvato la tua combo!","🛡️ The shield saved your streak!"],
   /* domanda extra */
   bonusTitle:["💎 DOMANDA EXTRA · +15 ⭐","💎 BONUS QUESTION · +15 ⭐"],
   bonusHint:["(la risposta è nascosta nel testo qui sopra!)","(the answer is hidden in the text above!)"],

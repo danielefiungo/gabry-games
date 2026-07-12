@@ -1,6 +1,6 @@
 # I Giochi delle Parole 🚀🐝
 
-Gioco per imparare a leggere, con due modalità: **Il Labirinto** (3D) e **La Palla di Api** (la vera difesa delle api contro i calabroni: la palla che scalda a 46°C).
+Gioco per imparare a leggere con più modalità, tra cui **Il Labirinto** con mappa-avventura FPV, **La Palla di Api**, **Missione Spaziale** e **Volo Planetario**, un avvicinamento e atterraggio in prima persona con dati e quiz sui mondi del Sistema solare.
 
 ## Struttura dei file
 
@@ -16,6 +16,9 @@ Gioco per imparare a leggere, con due modalità: **Il Labirinto** (3D) e **La Pa
 | `js/gioco-labirinto.js` | Logica del labirinto: domande, vite, boss, vittoria, menu | Per cambiare le regole del gioco |
 | `js/scelta-gioco.js` | La schermata di scelta del gioco (registro delle modalità) | Per aggiungere nuove modalità |
 | `js/palla-api.js` | Modalità "La Palla di Api": esploratori, palla a 46°C, difese sbloccabili con le domande | Per modificare la seconda modalità |
+| `js/missione-spaziale.js` | Modalità "Missione Spaziale": ordini scritti dalla base, plancia, carburante, imprevisti, quiz dell'astronauta | Per modificare la terza modalità |
+| `js/mappa-avventura-3d.js` | Mappa FPV del labirinto: strade, cartelli, incroci e portali dei livelli | Per cambiare il percorso tra i livelli |
+| `js/volo-planetario.js` | Mini-gioco FPV di avvicinamento e atterraggio planetario | Per cambiare destinazioni, fisica e curiosità |
 
 L'ordine dei tag `<script>` in `index.html` **non va cambiato**: i file si caricano in sequenza e dipendono l'uno dall'altro.
 

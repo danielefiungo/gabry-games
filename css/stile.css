@@ -95,9 +95,61 @@
   .confetti { position:absolute; font-size:34px; animation:fall 2.6s linear forwards; z-index:11; pointer-events:none; }
   @keyframes fall { from{transform:translateY(-60px) rotate(0)} to{transform:translateY(105vh) rotate(720deg)} }
 
-  /* ---------- Mappa isola ---------- */
-  .card.mapCard { max-width:860px; background:linear-gradient(180deg,#dff2ff,#c8e8ff); }
+  /* ---------- Mappa spaziale 3D (a tutto schermo) ---------- */
+  #menu.overlay { padding:0; }
+  .card.mapCard { max-width:none; width:100%; height:100%; max-height:100%; border-radius:0;
+                  padding:8px 14px 6px; display:flex; flex-direction:column; overflow:hidden;
+                  background:linear-gradient(180deg,#070b1c,#0d1734); }
+  .mapCard #menuTitle { color:#ffe14d; font-size:clamp(22px,4vw,34px); margin-bottom:2px; }
+  .mapCard #menuSub { color:#aebfe6; font-size:16px; margin-bottom:8px; }
+  .mapCard .togRow { margin-bottom:8px; }
+  .mapCard #statRow { margin:0 0 8px; }
+  .mapCard #howto { margin-top:6px; font-size:13px; color:#8fa4cc; }
+  .mapCard #ttsStatus { color:#d8c46a; }
+  #mapWrap { position:relative; flex:1; min-height:200px; }
   #mapWrap svg { width:100%; height:auto; display:block; border-radius:18px; }
+  #mapCanvas { position:absolute; inset:0; width:100%; height:100%; display:block; border-radius:14px; background:#05070f; touch-action:none; cursor:grab; }
+  #mapCanvas:active { cursor:grabbing; }
+  #menu.avMode .mapCard { padding:0; }
+  #menu.avMode .mapCard > :not(#mapWrap) { display:none !important; }
+  #menu.avMode #mapWrap { position:absolute; inset:0; width:100%; height:100%; min-height:100%; }
+  #menu.avMode #mapCanvas { border-radius:0; }
+  #avHud { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); z-index:4; color:#fff;
+    width:min(900px,calc(100% - 24px)); box-sizing:border-box; background:rgba(8,20,40,.88); border:2px solid #92c5ff; border-radius:19px; padding:8px 12px;
+    display:grid; grid-template-columns:1fr auto auto; gap:15px; align-items:center; white-space:nowrap; font-size:13px; box-shadow:0 8px 28px rgba(0,0,0,.45); }
+  .avHudInfo { display:flex; flex-direction:column; min-width:0; }
+  #avNear { color:#ffe67b; }
+  #avPad,.avHudActions { display:flex; gap:7px; }
+  #avPad button,.avHudActions button { width:53px; height:48px; border:2px solid #fff; border-radius:12px; background:rgba(25,52,88,.9);
+    color:#fff; font:bold 25px inherit; touch-action:none; box-shadow:0 4px 0 rgba(0,0,0,.4); }
+  .avHudActions button { width:45px;font-size:20px;cursor:pointer; }
+  #avConfirm { position:absolute;z-index:8;background:rgba(2,8,20,.72); }
+  .avConfirmCard { width:min(520px,90vw);background:#f7f9ff;border:4px solid #7653e8;border-radius:25px;padding:22px;text-align:center;box-shadow:0 14px 45px #0008; }
+  #avConfirmEm { font-size:64px } .avConfirmCard h2{color:#2b3a8f;font-size:clamp(25px,5vw,36px);margin:5px}.avConfirmCard p{font-size:20px;color:#45506a}
+  .avConfirmCard button{border:0;border-radius:15px;padding:13px 16px;margin:6px;font:bold 17px inherit;color:#fff;background:#3cba54;box-shadow:0 4px 0 #27803a}.avConfirmCard #avConfirmNo{background:#67748c;box-shadow:0 4px 0 #465063}
+  @media (max-width:700px){#avHud{grid-template-columns:1fr auto;padding:7px 8px;bottom:7px}.avHudInfo{grid-column:1/-1;text-align:center}.avHudActions{position:absolute;right:7px;top:-55px}#avPad button{width:50px;height:45px}}
+  #mapLabels { position:absolute; inset:0; overflow:hidden; pointer-events:none; border-radius:18px; }
+  .mapLbl { position:absolute; transform:translate(-50%,0); pointer-events:auto; cursor:pointer;
+            background:rgba(8,12,28,.72); border:1px solid rgba(160,190,255,.35); border-radius:10px;
+            padding:3px 8px; text-align:center; line-height:1.25; white-space:nowrap; user-select:none;
+            transform-origin:top center; }
+  .mapLbl .pn { font-size:11px; color:#9fc4ff; letter-spacing:.5px; }
+  .mapLbl .tn { font-size:13px; font-weight:bold; color:#fff; }
+  .mapLbl .st { font-size:12px; color:#ffe14d; }
+  .mapLbl.locked { opacity:.75; }
+  .mapLbl.locked .tn { color:#c3c8d6; }
+  .mapLbl:hover { background:rgba(20,30,60,.9); }
+  .mapLegend { position:absolute; top:8px; left:10px; font-size:12px; color:#cfe0ff; text-align:left;
+               background:rgba(8,12,28,.6); border-radius:10px; padding:5px 9px; pointer-events:none; line-height:1.45; }
+  .mapLegend span { color:#8fa4cc; font-size:11px; }
+  .mapHint { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); font-size:12px;
+             color:#aebfe6; background:rgba(8,12,28,.6); border-radius:10px; padding:4px 10px;
+             pointer-events:none; white-space:nowrap; }
+  .mapModeBtn { position:absolute; top:8px; right:10px; pointer-events:auto; cursor:pointer;
+                font-family:inherit; font-size:15px; font-weight:bold; color:#fff;
+                background:linear-gradient(180deg,#3d6ef7,#2b3a8f); border:2px solid #7f9dff;
+                border-radius:14px; padding:8px 14px; box-shadow:0 4px 0 rgba(0,0,0,.35); }
+  .mapModeBtn:active { transform:translateY(3px); box-shadow:none; }
   .node { cursor:pointer; }
   .node.locked { cursor:default; }
   .node .ring { transform-box:fill-box; transform-origin:center; }
