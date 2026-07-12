@@ -34,12 +34,16 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
 (function(){
   const css=document.createElement('style');
   css.textContent=[
-  '#oc { position:absolute; inset:0; display:none; z-index:8; background:linear-gradient(180deg,#4a3f66,#2e2a45 60%,#242038); }',
+  '#oc { position:absolute; inset:0; display:none; z-index:8; background:radial-gradient(circle at 50% 25%,#5b5075,#302a49 62%,#211d35); }',
+  '#oc:before { content:"";position:absolute;inset:0;opacity:.12;pointer-events:none;background-image:linear-gradient(90deg,transparent 49%,#ffd35c 50%,transparent 51%),linear-gradient(transparent 49%,#ffd35c 50%,transparent 51%);background-size:80px 80px; }',
   '#ocCv { position:absolute; inset:0; touch-action:none; }',
   '#ocHud { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start; padding:10px 12px; z-index:9; pointer-events:none; gap:6px; }',
   '#ocHud .hudBox { pointer-events:auto; }',
   '#ocBtns { pointer-events:auto; display:flex; gap:8px; }',
-  '#ocGoal { position:absolute; top:56px; left:50%; transform:translateX(-50%); z-index:9; background:rgba(255,248,225,.96); border:3px solid #f0c95c; border-radius:16px; padding:8px 14px; font-size:clamp(16px,3.4vw,21px); color:#5c4300; max-width:min(720px,92vw); text-align:center; display:none; line-height:1.4; }',
+  '#ocBtns .hudBtn { width:auto;min-width:48px;padding:5px 9px;display:flex;gap:5px;align-items:center;justify-content:center; }',
+  '#ocBtns .bl { font-size:10px;font-weight:700;letter-spacing:.03em;display:block; }',
+  '#ocGoal { position:absolute; top:62px; left:50%; transform:translateX(-50%); z-index:9; background:rgba(255,248,225,.96); border:3px solid #f0c95c; border-radius:16px; padding:8px 14px; font-size:clamp(16px,3.4vw,21px); color:#5c4300; width:min(680px,80vw); text-align:center; display:none; line-height:1.4;box-shadow:0 5px 18px rgba(0,0,0,.18); }',
+  '#ocGibiDesk { position:absolute;left:10px;bottom:86px;width:clamp(70px,11vw,135px);height:clamp(92px,16vw,180px);z-index:7;background:url("assets/characters/gibi.png") center/contain no-repeat;filter:drop-shadow(0 8px 8px rgba(0,0,0,.35));pointer-events:none;transition:transform .25s; }',
   '#ocGoal button { background:none; border:none; font-size:20px; cursor:pointer; padding:0 4px; font-family:inherit; }',
   '#ocPalBar { position:absolute; bottom:0; left:0; right:0; z-index:9; display:none; justify-content:center; gap:8px; padding:8px 10px calc(10px + env(safe-area-inset-bottom)); flex-wrap:wrap; background:rgba(20,16,34,.72); }',
   '.ocTool { border:none; border-radius:16px; padding:8px 10px; min-width:64px; cursor:pointer; font-family:inherit; background:#3a3357; color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.35); text-align:center; position:relative; }',
@@ -60,47 +64,61 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '#ocWinBarGo { border:none; border-radius:14px; background:linear-gradient(180deg,#3cba54,#27803a); color:#fff; font-family:inherit; font-size:clamp(16px,3.6vw,21px); font-weight:bold; padding:8px 18px; cursor:pointer; box-shadow:0 4px 0 #1d5f2b; }',
   '#ocWinBarGo:active { transform:translateY(2px); box-shadow:none; }',
   /* intro livello */
-  '#ocIntro .card, #ocWin .card { max-width:640px; }',
-  '#ocIntroEm { font-size:56px; }',
+  '#ocIntro .card, #ocWin .card { max-width:760px;position:relative;overflow:hidden; }',
+  '#ocIntro .card { padding-left:clamp(155px,24vw,230px);min-height:370px;display:flex;flex-direction:column;justify-content:center; }',
+  '#ocIntroGibi { position:absolute;left:10px;bottom:-18px;width:clamp(145px,23vw,220px);height:360px;background:url("assets/characters/gibi.png") center bottom/contain no-repeat;filter:drop-shadow(0 8px 10px rgba(43,30,88,.25)); }',
+  '#ocIntroEm { display:none; }',
   '#ocIntroTit { font-size:clamp(24px,5vw,34px); color:#5a34b0; margin:6px 0 10px; }',
   '#ocIntroTxt { font-size:clamp(20px,4vw,26px); color:#333; line-height:1.6; letter-spacing:.02em; word-spacing:.1em; margin-bottom:8px; }',
   '#ocIntroNew { display:none; background:#f3edff; border:2px solid #c9b8f2; border-radius:14px; padding:8px 12px; font-size:17px; color:#5a34b0; margin:0 auto 10px; max-width:90%; }',
-  '#ocIntroSpk { background:#eef2ff; border:2px solid #c5cffb; border-radius:12px; font-size:18px; padding:6px 16px; cursor:pointer; font-family:inherit; margin-bottom:10px; }',
+  '#ocIntroSpk { background:#eef2ff; border:2px solid #c5cffb; border-radius:12px; font-size:18px; padding:6px 22px; cursor:pointer; font-family:inherit; margin:0 auto 10px;align-self:center; }',
   /* vittoria + lo sapevi */
   '#ocWin .card { background:linear-gradient(180deg,#f4ffe8,#e2f6cd); border:4px solid #9fd47a; }',
   '#ocWinTit { font-size:clamp(24px,5vw,34px); color:#3f7a1e; margin:4px 0 6px; }',
-  '#ocKnow { background:#fff; border-radius:14px; padding:12px 14px; margin:10px 0; text-align:left; }',
+  '#ocWin .card { padding-left:clamp(135px,20vw,190px); }',
+  '#ocWinGibi { position:absolute;left:-12px;bottom:-25px;width:clamp(135px,21vw,190px);height:310px;background:url("assets/characters/gibi.png") center bottom/contain no-repeat;filter:drop-shadow(0 8px 9px rgba(0,0,0,.22)); }',
+  '#ocKnow { background:#fff; border-radius:18px; padding:12px; margin:10px 0; text-align:left;box-shadow:0 4px 14px rgba(51,80,25,.1); }',
   '#ocKnowTit { font-size:16px; font-weight:bold; color:#b06f00; margin-bottom:6px; }',
-  '#ocKnowTxt { font-size:clamp(18px,3.6vw,23px); line-height:1.6; letter-spacing:.02em; color:#3a4a2a; white-space:pre-line; }',
+  '#ocKnowTxt { font-size:clamp(17px,3vw,21px); line-height:1.5; letter-spacing:.01em; color:#32402b; }',
+  '.ocFact { border-radius:14px;padding:10px 12px;margin:7px 0; }',
+  '.ocFact.metaphor { background:#fff3c9;border-left:5px solid #f4b63d; }',
+  '.ocFact.real { background:#e8f5ff;border-left:5px solid #43a6df; }',
+  '.ocFact strong { display:block;font-size:13px;letter-spacing:.05em;margin-bottom:3px;color:#43366d; }',
   '#ocKnowSpk { background:#eef2ff; border:2px solid #c5cffb; border-radius:12px; font-size:17px; padding:5px 14px; cursor:pointer; font-family:inherit; margin-top:8px; }',
   /* scelta livello */
-  '#ocPick .card { max-width:720px; }',
+  '#ocPick .card { width:min(1050px,96vw);max-width:1050px;position:relative;overflow:hidden;padding-left:clamp(175px,22vw,245px);background:linear-gradient(145deg,#fff 0,#faf7ff 72%); }',
+  '#ocPickGibi { position:absolute;left:4px;bottom:-25px;width:clamp(165px,22vw,235px);height:440px;background:url("assets/characters/gibi.png") center bottom/contain no-repeat;filter:drop-shadow(0 10px 12px rgba(55,35,105,.22)); }',
   '#ocPickTit { font-size:clamp(24px,5vw,34px); color:#5a34b0; margin-bottom:2px; }',
   '#ocPickSub { font-size:16px; color:#777; margin-bottom:12px; line-height:1.4; }',
-  '#ocPickGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:10px; }',
-  '.ocLvBtn { border:none; border-radius:16px; padding:10px 6px; cursor:pointer; font-family:inherit; background:linear-gradient(180deg,#7f5cf0,#5a34b0); color:#fff; box-shadow:0 4px 0 #3d2378; }',
+  '#ocPickGrid { display:grid; grid-template-columns:repeat(5,minmax(112px,1fr)); gap:12px;position:relative; }',
+  '.ocLvBtn { border:3px solid rgba(255,255,255,.35); border-radius:18px; padding:9px 7px;min-height:112px; cursor:pointer; font-family:inherit; background:linear-gradient(180deg,#8b68ef,#5934ad); color:#fff; box-shadow:0 5px 0 #3d2378,0 8px 16px rgba(61,35,120,.16);position:relative;transition:transform .14s,filter .14s; }',
+  '.ocLvBtn:not(.lock):hover { transform:translateY(-3px);filter:brightness(1.08); }',
   '.ocLvBtn:active { transform:translateY(2px); box-shadow:none; }',
-  '.ocLvBtn.lock { background:#4a4462; opacity:.55; cursor:default; }',
+  '.ocLvBtn.lock { background:#dfdce8;color:#777187;border-color:#eeecf4;box-shadow:0 4px 0 #bbb6ca;cursor:default; }',
+  '.ocLvBtn.next { outline:4px solid #ffd35c;outline-offset:2px;animation:ocPulse 1.5s ease-in-out infinite; }',
+  '@keyframes ocPulse { 50%{filter:brightness(1.15);transform:translateY(-2px)} }',
   '.ocLvBtn.sand { background:linear-gradient(180deg,#3cba54,#27803a); box-shadow:0 4px 0 #1d5f2b; }',
-  '.ocLvBtn .ln { font-size:22px; font-weight:bold; display:block; }',
-  '.ocLvBtn .lt { font-size:11px; display:block; margin:3px 0; min-height:26px; line-height:1.2; }',
+  '.ocLvBtn .ln { font-size:27px; font-weight:bold; display:block; }',
+  '.ocLvBtn .lt { font-size:12px;font-weight:bold;display:block; margin:3px 0; min-height:30px; line-height:1.2; }',
   '.ocLvBtn .ls { font-size:13px; display:block; }',
-  '#ocPickBack { margin-top:14px; background:none; border:none; color:#aaa; font-size:15px; cursor:pointer; font-family:inherit; text-decoration:underline; }'
+  '#ocPickBack { margin-top:16px; background:#eeeaf8;border:2px solid #d0c6ea;border-radius:12px;color:#635487;font-size:15px;padding:7px 13px;cursor:pointer;font-family:inherit; }',
+  '@media(max-width:760px){#ocBtns .bl{display:none}#ocBtns .hudBtn{min-width:42px;padding:4px}#ocGoal{top:58px;width:84vw}#ocGibiDesk{opacity:.75;left:-8px}.ocTool{min-width:57px;padding:7px 6px}#ocPick .card{padding:16px 10px 18px}#ocPickGibi{position:relative;display:block;width:100%;height:110px;bottom:auto;left:auto;background-position:center 10%;background-size:145px auto}#ocPickGrid{grid-template-columns:repeat(2,minmax(120px,1fr))}.ocLvBtn{min-height:96px}#ocIntro .card{padding:18px 14px 20px;min-height:0}#ocIntroGibi{position:relative;left:auto;bottom:auto;width:100%;height:110px;background-position:center 7%;background-size:145px auto}#ocWin .card{padding:18px 12px}#ocWinGibi{display:none}}'
   ].join('\n');
   document.head.appendChild(css);
 
   document.body.insertAdjacentHTML('beforeend',
   '<div id="oc">'+
     '<canvas id="ocCv"></canvas>'+
+    '<div id="ocGibiDesk" aria-hidden="true"></div>'+
     '<div id="ocHud">'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
         '<div class="hudBox" id="ocLvl">⚡ 1/10</div>'+
         '<div class="hudBox" id="ocStar">⭐⭐⭐</div>'+
       '</div>'+
       '<div id="ocBtns">'+
-        '<button class="hudBtn" id="ocHintBtn" title="Aiutino">💡</button>'+
-        '<button class="hudBtn" id="ocResetBtn" title="Ricomincia">🔄</button>'+
-        '<button class="hudBtn" id="ocPickBtn" title="Livelli">📋</button>'+
+        '<button class="hudBtn" id="ocHintBtn" title="Aiutino">💡<span class="bl">AIUTO</span></button>'+
+        '<button class="hudBtn" id="ocResetBtn" title="Ricomincia">🔄<span class="bl">RIFAI</span></button>'+
+        '<button class="hudBtn" id="ocPickBtn" title="Livelli">📋<span class="bl">LIVELLI</span></button>'+
         '<button class="hudBtn" id="ocMusicBtn" title="Musica">🎵</button>'+
         '<button class="hudBtn" id="ocHomeBtn" title="Menu">🏠</button>'+
       '</div>'+
@@ -113,6 +131,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '</div>'+
   '<div class="overlay" id="ocIntro" style="z-index:16">'+
     '<div class="card">'+
+      '<div id="ocIntroGibi" aria-hidden="true"></div>'+
       '<div id="ocIntroEm">⚡</div>'+
       '<div id="ocIntroTit"></div>'+
       '<div id="ocIntroTxt"></div>'+
@@ -123,6 +142,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '</div>'+
   '<div class="overlay" id="ocWin" style="z-index:16">'+
     '<div class="card">'+
+      '<div id="ocWinGibi" aria-hidden="true"></div>'+
       '<div id="ocWinEm" style="font-size:56px">🏆</div>'+
       '<div id="ocWinTit"></div>'+
       '<div id="ocWinStars" class="starRow"></div>'+
@@ -136,6 +156,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '</div>'+
   '<div class="overlay" id="ocPick" style="z-index:16">'+
     '<div class="card">'+
+      '<div id="ocPickGibi" aria-hidden="true"></div>'+
       '<div id="ocPickTit"></div>'+
       '<div id="ocPickSub"></div>'+
       '<div id="ocPickGrid"></div>'+
@@ -165,6 +186,7 @@ const OC_T={
   names:{ batt:['PILA','BATTERY'], lamp:['LAMPADINA','BULB'], sw:['INTERRUTTORE','SWITCH'], led:['LED','LED'], res:['RESISTENZA','RESISTOR'], cap:['CONDENSATORE','CAPACITOR'], npn:['TRANSISTOR','TRANSISTOR'], mot:['MOTORE','MOTOR'], buz:['CICALINO','BUZZER'], ldr:['SENSORE LUCE','LIGHT SENSOR'], wire:['FILO','WIRE'], hand:['MANO','HAND'], erase:['GOMMA','ERASER'] },
   icons:{ batt:'🔋', lamp:'💡', sw:'🔘', led:'🚦', res:'🚧', cap:'🪣', npn:'🚰', mot:'🌀', buz:'🔔', ldr:'🌗', wire:'〰️', hand:'🖐️', erase:'🧽' }
 };
+const OC_LEVEL_ICONS=['🔌','🔘','🧰','🚦','🛡️','🚂','🛤️','⚡','🚰','🌙'];
 
 /* ---------- livelli ----------
    comps: {t,x,y,r,lock,id,closed} — wires: [x,y,'H'|'V',lock]
@@ -889,6 +911,7 @@ function ocGoto(n){
   ocResize(); ocPalDraw();
   $('ocWinBar').style.display='none';
   ['ocIntro','ocWin','ocPick'].forEach(id=>$(id).style.display='none');
+  $('ocGibiDesk').style.display='block';
   if(!oc.sandbox){
     $('ocIntroTit').textContent='⚡ '+(oc.lvl+1)+'. '+L.t[i];
     $('ocIntroTxt').textContent=L.g[i];
@@ -897,6 +920,7 @@ function ocGoto(n){
     if(newComp){ nv.style.display='block'; nv.textContent=OC_T.icons[newComp]+' '+((i===0)?'Nuovo pezzo: ':'New piece: ')+OC_T.names[newComp][i]; }
     else nv.style.display='none';
     $('ocIntro').style.display='flex';
+    $('ocGibiDesk').style.display='none';
   }
 }
 function ocStarHud(){
@@ -925,9 +949,26 @@ $('ocWinBarGo').onclick=()=>{
   $('ocWinTit').textContent=OC_T.win[i];
   $('ocWinStars').textContent='⭐'.repeat(st)+'☆'.repeat(3-st);
   $('ocKnowTit').textContent=OC_T.know[i];
-  $('ocKnowTxt').textContent=oc.L.know[i];
+  ocFactDraw(oc.L.know[i]);
+  $('ocGibiDesk').style.display='none';
   $('ocWin').style.display='flex';
 };
+function ocFactDraw(text){
+  const box=$('ocKnowTxt'); box.innerHTML='';
+  const parts=text.split(/\n\n/);
+  parts.forEach((part,n)=>{
+    const div=document.createElement('div');
+    div.className='ocFact '+(n===0?'metaphor':'real');
+    const cut=part.indexOf(':');
+    if(cut>0){
+      const strong=document.createElement('strong');
+      strong.textContent=part.slice(0,cut);
+      div.appendChild(strong);
+      div.appendChild(document.createTextNode(part.slice(cut+1).trim()));
+    }else div.textContent=part;
+    box.appendChild(div);
+  });
+}
 function ocPickShow(){
   const i=LI();
   $('ocPickTit').textContent='⚡ '+OC_T.bench[i];
@@ -936,9 +977,9 @@ function ocPickShow(){
   OC_LEVELS.forEach((L,n)=>{
     const btn=document.createElement('button');
     const locked=n>oc.prog.unl;
-    btn.className='ocLvBtn'+(locked?' lock':'');
+    btn.className='ocLvBtn'+(locked?' lock':'')+(!locked&&n===oc.prog.unl?' next':'');
     const st=oc.prog.stars[n]||0;
-    btn.innerHTML='<span class="ln">'+(locked?'🔒':(n+1))+'</span><span class="lt">'+L.t[i]+'</span><span class="ls">'+(st?'⭐'.repeat(st):'')+'</span>';
+    btn.innerHTML='<span class="ln">'+(locked?'🔒':OC_LEVEL_ICONS[n])+'</span><span class="lt">'+(n+1)+'. '+L.t[i]+'</span><span class="ls">'+(st?'⭐'.repeat(st):(locked?'':'NUOVO'))+'</span>';
     if(!locked) btn.onclick=()=>{ ocGoto(n); };
     grid.appendChild(btn);
   });
@@ -947,7 +988,17 @@ function ocPickShow(){
   sb.innerHTML='<span class="ln">🧪</span><span class="lt">'+OC_T.sandbox[i]+'</span><span class="ls">'+OC_T.sandboxSub[i]+'</span>';
   sb.onclick=()=>{ ocGoto(-1); };
   grid.appendChild(sb);
+  if(window.__OL){
+    const logic=document.createElement('button');
+    logic.className='ocLvBtn sand';
+    logic.innerHTML='<span class="ln">💡</span><span class="lt">'+(i===0?'Banco 2: Porte logiche':'Bench 2: Logic gates')+'</span><span class="ls">'+(i===0?'RIPARA GLI OCCHI DI GIBI':'REPAIR GIBI\'S EYES')+'</span>';
+    logic.onclick=()=>{ ocExit(); window.__OL.enter(); };
+    grid.appendChild(logic);
+  }
   $('ocPickBack').textContent=OC_T.back[i];
+  const repaired=oc.prog.stars.filter(Boolean).length;
+  $('ocPickGibi').style.filter='drop-shadow(0 10px 12px rgba(55,35,105,.22)) '+(repaired?'saturate(1)':'grayscale(.72) brightness(.72)');
+  $('ocGibiDesk').style.display='none';
   $('ocPick').style.display='flex';
 }
 function ocSunDraw(){
@@ -958,12 +1009,12 @@ function ocSunDraw(){
 
 /* ---------- pulsanti ---------- */
 $('ocSun').onclick=()=>{ oc.sun=!oc.sun; ocSunDraw(); };
-$('ocIntroGo').onclick=()=>{ $('ocIntro').style.display='none'; stopSpeak(); };
+$('ocIntroGo').onclick=()=>{ $('ocIntro').style.display='none'; $('ocGibiDesk').style.display='block'; stopSpeak(); };
 $('ocIntroSpk').onclick=()=>{ if(oc.L) speak(oc.L.g[LI()]); };
 $('ocGoalSpk').onclick=()=>{ if(oc.L) speak(oc.L.g[LI()]); };
 $('ocKnowSpk').onclick=()=>{ speak($('ocKnowTxt').textContent); };
 $('ocWinNext').onclick=()=>{
-  $('ocWin').style.display='none'; stopSpeak();
+  $('ocWin').style.display='none'; $('ocGibiDesk').style.display='block'; stopSpeak();
   if(oc.lvl+1<OC_LEVELS.length) ocGoto(oc.lvl+1); else ocPickShow();
 };
 $('ocResetBtn').onclick=()=>{ ocGoto(oc.sandbox?-1:oc.lvl); if(!oc.sandbox) $('ocIntro').style.display='none'; };
@@ -993,6 +1044,10 @@ function ocEnter(){
   ['modeSel','menu'].forEach(id=>{ const el=$(id); if(el) el.style.display='none'; });
   $('hud').style.display='none'; $('joy').style.display='none';
   $('oc').style.display='block';
+  const bi=LI();
+  $('ocHintBtn').innerHTML='💡<span class="bl">'+(bi===0?'AIUTO':'HELP')+'</span>';
+  $('ocResetBtn').innerHTML='🔄<span class="bl">'+(bi===0?'RIFAI':'RESET')+'</span>';
+  $('ocPickBtn').innerHTML='📋<span class="bl">'+(bi===0?'LIVELLI':'LEVELS')+'</span>';
   oc.on=true; oc.last=0;
   ocGoto(Math.min(oc.prog.unl,OC_LEVELS.length-1));
   ocPickShow();

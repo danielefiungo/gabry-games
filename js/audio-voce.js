@@ -184,8 +184,26 @@ function fanfare(){
    voce inglese "HFC female". Modelli scaricati da Hugging Face
    la prima volta e salvati nel browser (OPFS).
    Se qualcosa fallisce: voce di sistema (speechSynthesis). */
-let piper=null, piperReady={}, ttsLoadingLang=null, ttsAudio=null, speakBusy=false;
+let piper=null, piperReady={}, ttsLoadingLang=null, ttsAudio=null, speakBusy=false, voiceGenerating=false;
 const VOICE={ it:'it_IT-paola-medium', en:'en_US-hfc_female-medium' };
+
+/* Indicatore unico per tutti i giochi. La generazione Piper può richiedere
+   qualche secondo: copriamo la pagina e intercettiamo i tocchi, così un
+   bambino non avvia per errore più richieste mentre aspetta. */
+function setVoiceGenerating(on){
+  voiceGenerating=on;
+  let ov=$('voiceGenerating');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='voiceGenerating';
+    ov.setAttribute('role','status'); ov.setAttribute('aria-live','polite');
+    ov.innerHTML='<div class="voiceGeneratingCard"><div class="voiceWave"><i></i><i></i><i></i><i></i><i></i></div><strong class="voiceGeneratingText"></strong><span></span></div>';
+    document.body.appendChild(ov);
+  }
+  ov.querySelector('.voiceGeneratingText').textContent=(typeof LANG!=='undefined'&&LANG==='en')?'Preparing the voice…':'Sto preparando la voce…';
+  ov.querySelector('span').textContent=(typeof LANG!=='undefined'&&LANG==='en')?'Just a moment':'Un attimo di pazienza';
+  ov.classList.toggle('show',on);
+  document.body.classList.toggle('voice-is-generating',on);
+}
 
 /* ---------- Cache dei modelli TTS in IndexedDB ----------
    La cache interna di vits-web (OPFS) non funziona aprendo il file
@@ -262,6 +280,7 @@ function stopSpeak(){
   if(ttsAudio){ try{ ttsAudio.pause(); }catch(e){} ttsAudio=null; }
   try{ speechSynthesis.cancel(); }catch(e){}
   speakBusy=false;
+  setVoiceGenerating(false);
   duckMusic(false,'tts');
   karaClear();
 }
@@ -348,31 +367,33 @@ function karaTicker(audio,p,gen){
    Una nuova chiamata interrompe la lettura precedente. */
 async function speak(text){
   if(!VOICEON) return;
+  if(speakBusy || voiceGenerating) return;
   const parts=(Array.isArray(text)?text:[text])
     .map(p=> (p&&typeof p==='object') ? {...p, t:cleanTxt(p.t)} : {t:cleanTxt(p)})
     .filter(p=>p.t);
   if(!parts.length) return;
   stopSpeak();
+  speakBusy=true;
   const gen=speakGen;
   duckMusic(true,'tts');
   if(piper && piperReady[LANG]){
-    speakBusy=true;
     try{
       for(let k=0;k<parts.length;k++){
+        setVoiceGenerating(true);
         const wav=await piper.predict({ text:parts[k].t, voiceId:VOICE[LANG] });
-        if(gen!==speakGen) return;
+        if(gen!==speakGen){ setVoiceGenerating(false); return; }
         ttsAudio=new Audio(URL.createObjectURL(wav));
         ttsAudio.playbackRate=TTS_RATE;
         karaStart(parts[k]);
         const stopTick=karaTicker(ttsAudio,parts[k],gen);
-        await new Promise(res=>{ ttsAudio.onended=res; ttsAudio.onerror=res; ttsAudio.play().catch(res); });
+        await new Promise(res=>{ ttsAudio.onended=res; ttsAudio.onerror=res; ttsAudio.play().then(()=>setVoiceGenerating(false)).catch(()=>{setVoiceGenerating(false);res();}); });
         stopTick();
         if(gen!==speakGen) return;
         karaEnd();
         if(k<parts.length-1){ await wait(PAUSE_MS); if(gen!==speakGen) return; }
       }
-      speakBusy=false; duckMusic(false,'tts'); karaClear(); return;
-    }catch(e){ console.warn('TTS errore, fallback voce di sistema',e); speakBusy=false; if(gen!==speakGen) return; karaEnd(); }
+      speakBusy=false; setVoiceGenerating(false); duckMusic(false,'tts'); karaClear(); return;
+    }catch(e){ console.warn('TTS errore, fallback voce di sistema',e); setVoiceGenerating(false); if(gen!==speakGen){speakBusy=false;return;} karaEnd(); }
   }
   try{
     speechSynthesis.cancel();
@@ -394,5 +415,5 @@ async function speak(text){
       if(k<parts.length-1){ await wait(PAUSE_MS); if(gen!==speakGen) return; }
     }
   }catch(e){}
-  if(gen===speakGen){ duckMusic(false,'tts'); karaClear(); }
+  if(gen===speakGen){ speakBusy=false; setVoiceGenerating(false); duckMusic(false,'tts'); karaClear(); }
 }

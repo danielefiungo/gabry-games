@@ -196,29 +196,40 @@ function initGL(){
 /* Astronauta protagonista */
 function makePlayer(){
   const g=new THREE.Group();
-  const white=new THREE.MeshLambertMaterial({color:0xf2f2f8});
-  const grey =new THREE.MeshLambertMaterial({color:0xb9c2d0});
-  const legGeo=new THREE.CylinderGeometry(0.09,0.11,0.26,10);
+  const white=new THREE.MeshPhongMaterial({color:0xf7f8fb,shininess:55});
+  const grey =new THREE.MeshPhongMaterial({color:0x8793a5,shininess:38});
+  const joint=new THREE.MeshPhongMaterial({color:0x30394a,shininess:35});
+  const red=new THREE.MeshPhongMaterial({color:0xe54f48,shininess:45});
+  const legGeo=new THREE.CylinderGeometry(0.10,0.12,0.34,14);
   const legL=new THREE.Mesh(legGeo,white); legL.position.set(0.14,0.13,0);
   const legR=new THREE.Mesh(legGeo,white); legR.position.set(-0.14,0.13,0);
   g.add(legL); g.add(legR);
-  const body=new THREE.Mesh(new THREE.SphereGeometry(0.36,18,14),white);
+  const bootGeo=new THREE.BoxGeometry(.18,.12,.28);
+  [-1,1].forEach(s=>{ const boot=new THREE.Mesh(bootGeo,joint); boot.position.set(s*.14,.04,.055); g.add(boot); });
+  const body=new THREE.Mesh(new THREE.SphereGeometry(0.38,24,18),white);
   body.scale.y=1.15; body.position.y=0.6; g.add(body);
-  const chest=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.14,0.06),grey);
+  const belt=new THREE.Mesh(new THREE.TorusGeometry(.31,.035,8,24),red); belt.rotation.x=Math.PI/2; belt.position.y=.48; g.add(belt);
+  const chest=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.16,0.07),grey);
   chest.position.set(0,0.62,0.33); g.add(chest);
   const pack=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.42,0.18),grey);
   pack.position.set(0,0.66,-0.34); g.add(pack);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(0.26,18,14),white);
+  [-1,1].forEach(s=>{
+    const arm=new THREE.Mesh(new THREE.CylinderGeometry(.075,.09,.42,12),white); arm.position.set(s*.42,.65,0); arm.rotation.z=s*.22; g.add(arm);
+    const glove=new THREE.Mesh(new THREE.SphereGeometry(.105,12,9),white); glove.position.set(s*.465,.43,0); g.add(glove);
+    const shoulder=new THREE.Mesh(new THREE.SphereGeometry(.12,12,9),red); shoulder.position.set(s*.36,.79,0); g.add(shoulder);
+  });
+  const neckRing=new THREE.Mesh(new THREE.TorusGeometry(.27,.045,10,28),grey); neckRing.rotation.x=Math.PI/2; neckRing.position.y=.9; g.add(neckRing);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.27,24,18),white);
   head.position.y=1.08; g.add(head);
-  const visor=new THREE.Mesh(new THREE.SphereGeometry(0.20,16,12),new THREE.MeshLambertMaterial({color:0x18243f}));
+  const visor=new THREE.Mesh(new THREE.SphereGeometry(0.215,24,18),new THREE.MeshPhongMaterial({color:0x10203c,emissive:0x07152c,shininess:100}));
   visor.scale.z=0.75; visor.position.set(0,1.10,0.12); g.add(visor);
   const eyeM=new THREE.MeshBasicMaterial({color:0x9fd8ff});
   const e1=new THREE.Mesh(new THREE.SphereGeometry(0.045,8,8),eyeM); e1.position.set(0.07,1.13,0.29); g.add(e1);
   const e2=e1.clone(); e2.position.x=-0.07; g.add(e2);
   const smile=new THREE.Mesh(new THREE.TorusGeometry(0.06,0.018,6,10,Math.PI),eyeM);
   smile.position.set(0,1.06,0.29); smile.rotation.z=Math.PI; g.add(smile);
-  const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.31,18,14),
-    new THREE.MeshLambertMaterial({color:0xbfe4ff,transparent:true,opacity:0.25}));
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.32,24,18),
+    new THREE.MeshPhongMaterial({color:0xccecff,transparent:true,opacity:0.28,shininess:100}));
   helmet.position.y=1.08; g.add(helmet);
   const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.2,6),grey);
   ant.position.set(0.2,1.4,0); g.add(ant);
@@ -230,17 +241,30 @@ function makePlayer(){
   return g;
 }
 
-function makeDoor(gx,gz,q,theme){
+function makeDoor(gx,gz,q,theme,rotationY){
   const cv=document.createElement('canvas'); cv.width=cv.height=128;
   const c=cv.getContext('2d');
-  c.fillStyle=theme.accent; c.fillRect(0,0,128,128);
-  c.strokeStyle='rgba(0,0,0,.28)'; c.lineWidth=10; c.strokeRect(5,5,118,118);
+  const grad=c.createLinearGradient(0,0,128,128); grad.addColorStop(0,theme.accent); grad.addColorStop(1,'#27375f');
+  c.fillStyle=grad; c.fillRect(0,0,128,128);
+  c.strokeStyle='rgba(255,255,255,.38)'; c.lineWidth=5; c.strokeRect(8,8,112,112);
   c.fillStyle='#fff'; c.textAlign='center'; c.textBaseline='middle';
   c.font='bold 64px sans-serif'; c.fillText('?',64,44);
   c.font='44px sans-serif'; c.fillText(theme.emoji,64,98);
   const tex=new THREE.CanvasTexture(cv);
-  const mesh=new THREE.Mesh(new THREE.BoxGeometry(CELL*0.99,2.4,CELL*0.99), new THREE.MeshLambertMaterial({map:tex}));
-  const p=g2w(gx,gz); mesh.position.set(p.x,1.2,p.z); scene.add(mesh);
+  const mesh=new THREE.Group();
+  const metal=new THREE.MeshPhongMaterial({color:0x384761,shininess:75});
+  /* Il corridoio occupa una cella libera fra due celle-muro: la porta deve
+     quindi coprire quasi due CELL, fino al bordo interno delle pareti. */
+  const doorWidth=2*CELL-CELL*.28+.08;
+  const panel=new THREE.Mesh(new THREE.BoxGeometry(doorWidth-.48,1.92,.24),new THREE.MeshPhongMaterial({map:tex,shininess:55}));
+  panel.position.y=1.08; mesh.add(panel);
+  const sideGeo=new THREE.BoxGeometry(.22,2.35,.42);
+  [-1,1].forEach(s=>{const side=new THREE.Mesh(sideGeo,metal);side.position.set(s*(doorWidth/2-.11),1.18,0);mesh.add(side);});
+  const top=new THREE.Mesh(new THREE.BoxGeometry(doorWidth,.24,.42),metal); top.position.y=2.3; mesh.add(top);
+  const lampMat=new THREE.MeshPhongMaterial({color:theme.accent,emissive:theme.accent,shininess:90});
+  [-1,1].forEach(s=>{const lamp=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),lampMat);lamp.position.set(s*(doorWidth/2-.34),2.3,.24);mesh.add(lamp);});
+  const p=g2w(gx,gz); mesh.position.set(p.x,0,p.z); scene.add(mesh);
+  mesh.rotation.y=rotationY||0;
   return {gx:gx,gz:gz,mesh:mesh,q:q,open:false,cooldown:false};
 }
 
@@ -293,8 +317,8 @@ function buildLevel(idx){
   scene=new THREE.Scene();
   scene.background=new THREE.Color(t.sky);
   scene.fog=new THREE.Fog(t.sky,14,44);
-  scene.add(new THREE.AmbientLight(0xffffff,0.6));
-  const dl=new THREE.DirectionalLight(0xffffff,0.7); dl.position.set(5,12,4); scene.add(dl);
+  scene.add(new THREE.HemisphereLight(0xdbeeff,0x26331f,0.82));
+  const dl=new THREE.DirectionalLight(0xfff4dd,0.95); dl.position.set(5,12,4); scene.add(dl);
 
   W=H=SIZES[idx];
   grid=genMaze(W,H);
@@ -304,10 +328,25 @@ function buildLevel(idx){
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(planeSize,planeSize), new THREE.MeshLambertMaterial({map:gtex}));
   floor.rotation.x=-Math.PI/2; scene.add(floor);
 
-  const wallGeo=new THREE.BoxGeometry(CELL,2.4,CELL);
-  const wallMat=new THREE.MeshLambertMaterial({map:wallTexture(t)});
+  const wallHeight=1.72;
+  /* Pareti sottili ma continue: ogni cella di muro si collega al centro
+     delle celle vicine. I segmenti si sovrappongono agli incroci, quindi
+     non restano fessure visive né nelle curve né lungo il perimetro. */
+  const wallThickness=CELL*.28, wallLength=CELL*1.04;
+  const wallGeoH=new THREE.BoxGeometry(wallLength,wallHeight,wallThickness);
+  const wallGeoV=new THREE.BoxGeometry(wallThickness,wallHeight,wallLength);
+  const wallGeoPost=new THREE.BoxGeometry(wallThickness,wallHeight,wallThickness);
+  const capGeoH=new THREE.BoxGeometry(wallLength+.04,.13,wallThickness+.06);
+  const capGeoV=new THREE.BoxGeometry(wallThickness+.06,.13,wallLength+.04);
+  const capGeoPost=new THREE.BoxGeometry(wallThickness+.06,.13,wallThickness+.06);
+  const wallMat=new THREE.MeshPhongMaterial({map:wallTexture(t),shininess:18});
+  const capMat=new THREE.MeshPhongMaterial({color:t.accent,shininess:45});
   for(let z=0;z<H;z++) for(let x=0;x<W;x++) if(grid[z][x]===1){
-    const m=new THREE.Mesh(wallGeo,wallMat); const p=g2w(x,z); m.position.set(p.x,1.2,p.z); scene.add(m);
+    const p=g2w(x,z), horizontal=(x>0&&grid[z][x-1]===1)||(x<W-1&&grid[z][x+1]===1), vertical=(z>0&&grid[z-1][x]===1)||(z<H-1&&grid[z+1][x]===1);
+    const addWall=(geo,capGeo)=>{const m=new THREE.Mesh(geo,wallMat);m.position.set(p.x,wallHeight/2,p.z);scene.add(m);const cap=new THREE.Mesh(capGeo,capMat);cap.position.set(p.x,wallHeight+.065,p.z);scene.add(cap)};
+    if(horizontal)addWall(wallGeoH,capGeoH);
+    if(vertical)addWall(wallGeoV,capGeoV);
+    if(!horizontal&&!vertical)addWall(wallGeoPost,capGeoPost);
   }
 
   scene.add(makeStars());
@@ -318,12 +357,30 @@ function buildLevel(idx){
   qpool=shuffle(questionSet().slice());
   let qi=0;
   [0.15,0.32,0.5,0.68,0.85].forEach(f=>{
-    let k=Math.round(f*(path.length-1));
-    while(k>1 && used.has(path[k][0]+','+path[k][1])) k--;
+    const wanted=Math.round(f*(path.length-1));
+    let k=-1;
+    /* Una porta ha bisogno di due muri opposti ai lati. Cerchiamo la cella
+       rettilinea più vicina, evitando curve e incroci dove la cornice
+       finirebbe davanti o dentro a un blocco. */
+    for(let radius=0;radius<path.length && k<0;radius++){
+      const candidates=radius?[wanted-radius,wanted+radius]:[wanted];
+      for(const ck of candidates){
+        if(ck<=1||ck>=path.length-2) continue;
+        const cur=path[ck], prev=path[ck-1], next=path[ck+1];
+        const vertical=prev[0]===cur[0]&&next[0]===cur[0];
+        const horizontal=prev[1]===cur[1]&&next[1]===cur[1];
+        const anchored=(vertical&&grid[cur[1]][cur[0]-1]===1&&grid[cur[1]][cur[0]+1]===1) ||
+          (horizontal&&grid[cur[1]-1][cur[0]]===1&&grid[cur[1]+1][cur[0]]===1);
+        if((vertical||horizontal)&&anchored&&!used.has(cur[0]+','+cur[1])){ k=ck; break; }
+      }
+    }
+    if(k<0) return;
     const gx=path[k][0], gz=path[k][1];
-    if(used.has(gx+','+gz)) return;
     used.add(gx+','+gz);
-    doors.push(makeDoor(gx,gz,qpool[qi%qpool.length],t)); qi++;
+    /* La faccia della porta taglia il tratto rettilineo del corridoio. */
+    const prev=path[Math.max(0,k-1)];
+    const rotationY=(prev && prev[0]!==gx)?Math.PI/2:0;
+    doors.push(makeDoor(gx,gz,qpool[qi%qpool.length],t,rotationY)); qi++;
   });
 
   star=new THREE.Mesh(new THREE.OctahedronGeometry(0.55), new THREE.MeshLambertMaterial({color:0xffd11a,emissive:0x996d00}));

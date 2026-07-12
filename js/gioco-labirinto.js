@@ -639,13 +639,17 @@ $('btnArrow').onclick=()=>{ ARROWON=!ARROWON; save(); applyUI(); };
 function applyCamBtn(){ $('btnCam').textContent=FPV?'👁️':'🎥'; }
 $('btnCam').onclick=()=>{ FPV=!FPV; save(); applyCamBtn(); };
 applyCamBtn();
-$('btnReset').onclick=()=>{
+function resetProgress(){
   if(confirm(UI.resetAsk[LI()])){
     unlockedSet=new Set([0]); score=0; bestStreak=0; starsMap={}; words=[];
     try{ localStorage.removeItem('gabri_last'); localStorage.removeItem('gabri_unlocked'); }catch(e){}
-    save(); applyUI(); buildMap();
+    save(); applyUI();
+    if($('menu').style.display!=='none') buildMap();
+    return true;
   }
-};
+  return false;
+}
+$('btnReset').onclick=resetProgress;
 function showAlbum(){
   const i=LI();
   $('albumTitle').textContent=UI.albumTitle[i];

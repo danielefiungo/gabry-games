@@ -1,1161 +1,212 @@
 /* ============================================================
-   LA PALLA DI API 🐝🔥 — difesa dell'alveare come nella realtà
-   Il calabrone manda un ESPLORATORE. Se le api lo circondano
-   e vibrano, la palla arriva a 46°C e il calabrone è cotto
-   (le api resistono fino a 48°C!). Se l'esploratore scappa,
-   marca l'alveare con un feromone e arrivano i predoni.
-   Tra un attacco e l'altro, il Consiglio dell'Alveare:
-   rispondendo alle domande si sbloccano le difese VERE
-   (ingresso stretto, guardiane, propoli, onda delle api).
-   Premio: dipende dalla difficoltà, dimezzato con la
-   lettura automatica 🔊 o con gli errori.
+   L'ALVEARE DI GABRIELE — gestionale di lettura e difesa
+   Regina -> uova -> operaie -> fiori -> miele -> guerriere.
+   Un click su un calabrone assegna le guerriere disponibili.
+   Le domande corrette fanno nascere nuove guerriere.
    ============================================================ */
 
-/* ---------- stile ---------- */
 (function(){
   const css=document.createElement('style');
-  css.textContent=[
-  '#pa { position:absolute; inset:0; display:none; z-index:8; background:linear-gradient(180deg,#8fd3f4,#cdeefb 55%,#a8dc82 78%,#7cc061); }',
-  '#paCv { position:absolute; inset:0; touch-action:none; }',
-  '#paHud { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:10px 14px; z-index:9; pointer-events:none; flex-wrap:wrap; gap:6px; }',
-  '#paBtns { pointer-events:auto; display:flex; gap:8px; }',
-  '#paOnda { display:none; background:linear-gradient(180deg,#4fc3f7,#0288d1); color:#fff; }',
-  '#paMsg { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.62); color:#fff; padding:10px 22px; border-radius:20px; font-size:19px; z-index:9; display:none; pointer-events:none; max-width:94vw; text-align:center; }',
-  '#paBig { position:absolute; top:22%; left:50%; transform:translateX(-50%); z-index:9; pointer-events:none; font-size:clamp(30px,7vw,54px); font-weight:bold; color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.35); opacity:0; text-align:center; }',
-  '#paBig.pop { animation:comboBig 1.8s ease-out; }',
-  /* consiglio dell'alveare */
-  '#paShop .card { background:linear-gradient(180deg,#fff8e1,#ffefc2); max-width:780px; }',
-  '#paShopTitle { font-size:clamp(24px,5vw,34px); color:#b06f00; margin:4px 0 8px; }',
-  '#paShopSub { font-size:16px; color:#8a6d00; margin-bottom:12px; line-height:1.4; }',
-  '#paStats { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:12px; }',
-  '#paDef { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:8px; }',
-  '.defCard { border:none; border-radius:18px; padding:12px 8px; font-family:inherit; cursor:pointer; background:#fff; border:3px solid #f0c95c; box-shadow:0 4px 0 #dfb63e; text-align:center; }',
-  '.defCard:active { transform:translateY(2px); box-shadow:none; }',
-  '.defCard.max { cursor:default; background:#f4ffe8; border-color:#9fd47a; box-shadow:0 4px 0 #86b968; }',
-  '.defCard .di { font-size:34px; display:block; }',
-  '.defCard .dn { font-size:15px; font-weight:bold; color:#7a5200; display:block; margin:4px 0 2px; }',
-  '.defCard .dl { font-size:16px; letter-spacing:2px; display:block; }',
-  '.defCard .de { font-size:12px; color:#8a6d00; display:block; margin-top:3px; line-height:1.3; min-height:28px; }',
-  '#paDiffRow { display:none; gap:10px; justify-content:center; flex-wrap:wrap; margin:10px 0 4px; }',
-  '#paDiffRow .hsq { border:none; border-radius:16px; padding:12px 16px; font-size:18px; font-weight:bold; cursor:pointer; font-family:inherit; background:#8c5cf0; color:#fff; box-shadow:0 4px 0 #5f36b8; }',
-  '#paDiffRow .hsq:active { transform:translateY(2px); box-shadow:none; }',
-  '#paDiffTit { width:100%; font-size:16px; font-weight:bold; color:#5a34b0; }',
-  '#paShopMsg { min-height:24px; font-size:17px; font-weight:bold; margin-top:8px; color:#b06f00; }',
-  '#paGo { margin-top:10px; }',
-  /* domanda */
-  '#paQ .card { max-width:min(1100px,96vw); }',
-  '#paQReward { font-size:19px; font-weight:bold; color:#e8a013; margin-bottom:8px; }',
-  '#paQText { font-size:clamp(29px,5.2vw,40px); color:#222; line-height:1.55; letter-spacing:.02em; word-spacing:.12em; margin-bottom:10px; }',
-  '#paQAnswers { display:flex; flex-direction:column; gap:12px; }',
-  '@media (min-width:760px){ #paQAnswers { display:grid; grid-template-columns:repeat(3,1fr); align-items:stretch; } #paQAnswers .ansBtn { display:flex; align-items:center; justify-content:center; } }',
-  '#paQMsg { min-height:30px; font-size:22px; font-weight:bold; margin-top:12px; }',
-  '#paQBack, #paEndMenu { margin-top:10px; background:none; border:none; color:#aaa; font-size:15px; cursor:pointer; font-family:inherit; text-decoration:underline; }',
-  /* scheda curiosità */
-  '#paCard .card { background:linear-gradient(180deg,#f4ffe8,#e2f6cd); border:4px solid #9fd47a; max-width:700px; }',
-  '#paCardTit { font-size:clamp(22px,4.6vw,30px); color:#3f7a1e; margin:6px 0 10px; }',
-  '#paCardTxt { font-size:clamp(21px,3.8vw,26px); line-height:1.65; letter-spacing:.02em; word-spacing:.1em; color:#3a4a2a; text-align:left; }',
-  '#paCardEff { font-size:17px; font-weight:bold; color:#2e6b0e; background:#fff; border-radius:12px; padding:10px 12px; margin-top:12px; }',
-  '#paCardRead { background:#eef2ff; border:2px solid #c5cffb; border-radius:12px; font-size:16px; padding:8px 16px; cursor:pointer; margin-top:12px; font-family:inherit; color:#2b3a8f; }',
-  /* parole che scaldano */
-  '#paWords { position:absolute; top:74px; left:50%; transform:translateX(-50%); z-index:9; display:none; text-align:center; max-width:96vw; }',
-  '#paWordsTit { display:inline-flex; align-items:center; gap:8px; background:rgba(0,0,0,.6); color:#ffd23f; font-size:18px; font-weight:bold; padding:7px 16px; border-radius:16px; margin-bottom:8px; }',
-  '#paWordsHear { background:none; border:none; font-size:20px; cursor:pointer; padding:0; }',
-  '#paWordsRow { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }',
-  '.paWordBtn { border:none; border-radius:18px; padding:14px 20px; font-size:clamp(22px,4.5vw,32px); font-weight:bold; letter-spacing:.04em; cursor:pointer; font-family:inherit; background:linear-gradient(180deg,#ffd35c,#f0a818); color:#5c3808; box-shadow:0 5px 0 #b97e08; transition:transform .1s; }',
-  '.paWordBtn:active { transform:translateY(3px); box-shadow:none; }',
-  '.paWordBtn.no { background:#e05555; color:#fff; box-shadow:0 5px 0 #9c3030; animation:shake .4s; opacity:.5; pointer-events:none; }',
-  '.paWordBtn.si { background:#3cba54; color:#fff; box-shadow:0 5px 0 #27803a; animation:pop .4s; }'
-  ].join('\n');
+  css.textContent=`
+  #pa{position:absolute;inset:0;display:none;z-index:8;overflow:hidden;background:linear-gradient(#78cef1 0 55%,#a5df75 55% 100%)}
+  #paCv{position:absolute;inset:0;touch-action:manipulation;cursor:crosshair}
+  #paHud{position:absolute;inset:10px 12px auto;z-index:9;display:flex;align-items:center;gap:8px;flex-wrap:wrap;pointer-events:none}
+  #paHud .paMeter{background:rgba(255,255,255,.94);border:3px solid #fff;border-radius:16px;padding:7px 11px;box-shadow:0 4px 12px #315d7030;font-size:16px;font-weight:700;color:#4d3a18;white-space:nowrap}
+  #paHudBtns{margin-left:auto;display:flex;gap:7px;pointer-events:auto}
+  #paMsg{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:10;max-width:min(680px,92vw);padding:11px 18px;border-radius:18px;background:#3f2b20e8;color:#fff;font-size:18px;font-weight:700;text-align:center;box-shadow:0 5px 16px #0004;pointer-events:none}
+  #paTask{position:absolute;top:82px;left:12px;z-index:9;max-width:330px;background:#fff9dfef;border:3px solid #efb92f;border-radius:18px;padding:10px 14px;color:#674712;font-weight:700;line-height:1.35;pointer-events:none}
+  #paAsk{position:absolute;z-index:11;border:0;border-radius:50%;width:74px;height:74px;font:700 30px Andika,sans-serif;background:linear-gradient(#ffe76b,#f2a91b);box-shadow:0 7px 0 #b56b10,0 10px 20px #0003;cursor:pointer}
+  #paAsk:active{transform:translateY(4px);box-shadow:0 3px 0 #b56b10}
+  #paAsk small{display:block;font-size:10px;line-height:10px}
+  #paQ .card{max-width:min(900px,95vw);border:4px solid #f1b82f;background:linear-gradient(#fffdf2,#fff0b7)}
+  #paQTitle{font-size:24px;color:#9a6200;font-weight:700}
+  #paQText{font-size:clamp(27px,5vw,40px);line-height:1.45;margin:14px 0;color:#302314}
+  #paQAnswers{display:grid;gap:11px;grid-template-columns:repeat(3,1fr)}
+  #paQLevels{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0}
+  .paLevelBtn{border:0;border-radius:18px;padding:15px 10px;color:#fff;font:700 19px Andika,sans-serif;cursor:pointer;box-shadow:0 5px 0 #0003}
+  .paLevelBtn:nth-child(1){background:#38a6a0}.paLevelBtn:nth-child(2){background:#47ad5b}.paLevelBtn:nth-child(3){background:#ef9f25}.paLevelBtn:nth-child(4){background:#d94b4b}
+  .paLevelBtn small{display:block;font-size:14px;margin-top:4px}
+  #paQMsg{min-height:30px;font-size:20px;font-weight:700;margin-top:12px}
+  #paIntro .card{max-width:720px;border:4px solid #f1b82f;background:linear-gradient(#fffdf1,#ffefb5)}
+  #paIntro h2{font-size:clamp(27px,5vw,39px);color:#9a6200;margin:4px}
+  #paIntro p{font-size:18px;line-height:1.5;text-align:left}
+  .paLegend{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;text-align:left;margin:15px 0}
+  .paLegend span{background:#fff;border-radius:13px;padding:9px}
+  @media(max-width:650px){#paHud{gap:4px;inset:5px 5px auto}#paHud .paMeter{font-size:12px;padding:5px 7px;border-width:2px}#paTask{top:100px;font-size:13px;max-width:250px}.paLegend,#paQAnswers,#paQLevels{grid-template-columns:1fr}#paQAnswers .ansBtn{font-size:17px;padding:10px}#paAsk{width:64px;height:64px}}
+  `;
   document.head.appendChild(css);
-
-  /* ---------- HTML ---------- */
-  document.body.insertAdjacentHTML('beforeend',
-  '<div id="pa">'+
-    '<canvas id="paCv"></canvas>'+
-    '<div id="paHud">'+
-      '<div class="hudBox" id="paAtk">⚔️ 1/8</div>'+
-      '<div class="hudBox" id="paHoney">🍯🍯🍯🍯🍯🍯</div>'+
-      '<div class="hudBox" id="paDefIcons"></div>'+
-      '<div class="hudBox" id="paScore">⭐ 0</div>'+
-      '<div id="paBtns">'+
-        '<button class="hudBtn" id="paOnda" title="Onda delle api">🌊</button>'+
-        '<button class="hudBtn" id="paMusicBtn" title="Musica">🎵</button>'+
-        '<button class="hudBtn" id="paHomeBtn" title="Menu">🏠</button>'+
-      '</div>'+
-    '</div>'+
-    '<div id="paBig"></div>'+
-    '<div id="paMsg"></div>'+
-    '<div id="paWords">'+
-      '<div id="paWordsTit"><span id="paWordsLab"></span><button id="paWordsHear">🔊</button></div>'+
-      '<div id="paWordsRow"></div>'+
-    '</div>'+
-  '</div>'+
-  '<div class="overlay" id="paShop">'+
-    '<div class="card">'+
-      '<div style="font-size:44px">🐝🏛️</div>'+
-      '<div id="paShopTitle"></div>'+
-      '<div id="paShopSub"></div>'+
-      '<div id="paStats"></div>'+
-      '<div id="paDef"></div>'+
-      '<div id="paDiffRow"><div id="paDiffTit"></div>'+
-        '<button class="hsq" id="paQEasy"></button>'+
-        '<button class="hsq" id="paQHard"></button>'+
-        '<button class="hsq" id="paDiffNo" style="background:#bbb;box-shadow:0 4px 0 #999"></button>'+
-      '</div>'+
-      '<div id="paShopMsg"></div>'+
-      '<button class="bigBtn" id="paGo"></button>'+
-    '</div>'+
-  '</div>'+
-  '<div class="overlay" id="paQ">'+
-    '<div class="card">'+
-      '<div id="paQEmoji" style="font-size:44px">🐝</div>'+
-      '<div id="paQTheme" style="font-size:15px;color:#999;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px"></div>'+
-      '<div id="paQReward"></div>'+
-      '<div id="paQText"></div>'+
-      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">'+
-        '<button id="paQSpeak" class="jollyBtn"></button>'+
-      '</div>'+
-      '<div id="paQAnswers"></div>'+
-      '<div id="paQMsg"></div>'+
-      '<button id="paQBack"></button>'+
-    '</div>'+
-  '</div>'+
-  '<div class="overlay" id="paCard">'+
-    '<div class="card">'+
-      '<div id="paCardEm" style="font-size:54px">📖</div>'+
-      '<div id="paCardTit"></div>'+
-      '<div id="paCardTxt"></div>'+
-      '<div id="paCardEff"></div>'+
-      '<button id="paCardRead">🔊 Leggimela</button>'+
-      '<button class="bigBtn" id="paCardOk" style="display:block;margin:14px auto 0"></button>'+
-    '</div>'+
-  '</div>'+
-  '<div class="overlay" id="paEnd">'+
-    '<div class="card">'+
-      '<div id="paEndEm" style="font-size:78px">🏆</div>'+
-      '<div id="paEndTit" style="font-size:clamp(26px,6vw,40px);color:#e8a013;margin:10px 0"></div>'+
-      '<div id="paEndTxt" style="font-size:20px;color:#555;margin-bottom:18px;line-height:1.5"></div>'+
-      '<button class="bigBtn" id="paEndBtn"></button>'+
-      '<div><button id="paEndMenu"></button></div>'+
-    '</div>'+
-  '</div>');
+  document.body.insertAdjacentHTML('beforeend',`
+    <div id="pa"><canvas id="paCv"></canvas>
+      <div id="paHud">
+        <div class="paMeter" id="paEggs">🥚 0</div><div class="paMeter" id="paWorkers">🌼 0</div>
+        <div class="paMeter" id="paWarriors">🛡️ 0</div><div class="paMeter" id="paHoney">🍯 0</div>
+        <div class="paMeter" id="paWave">⚔️ 1</div><div id="paHudBtns"><button class="hudBtn" id="paMusicBtn">🎵</button><button class="hudBtn" id="paHomeBtn">🏠</button></div>
+      </div>
+      <div id="paTask"></div><div id="paMsg"></div><button id="paAsk">📖<small>NUOVA APE</small></button>
+    </div>
+    <div class="overlay" id="paIntro"><div class="card"><div style="font-size:58px">👑🐝</div><h2>L'alveare di Gabriele</h2>
+      <p>La Regina depone un uovo ogni pochi secondi. Scegli se trasformarlo in una bottinatrice oppure rispondi a una domanda per creare guerriere.</p>
+      <div class="paLegend"><span>👑 La <b>regina</b> produce le uova necessarie.</span><span>🌼 Le <b>bottinatrici</b> raccolgono nettare e producono miele.</span><span>🍯 Più <b>miele</b> significa guerriere più forti.</span><span>📖 Ogni nuova <b>guerriera</b> consuma un uovo.</span><span>👆 Tocca un <b>calabrone</b> per mandarla.</span><span>⚠️ Le ondate richiedono nuove guerriere per essere vinte.</span></div>
+      <button class="bigBtn" id="paIntroGo">Proteggi l'alveare! 🛡️</button></div></div>
+    <div class="overlay" id="paQ"><div class="card"><div style="font-size:46px">📖🐝</div><div id="paQTitle"></div><div id="paQLevels">
+      <button class="paLevelBtn" data-worker="1">🌼 BOTTINATRICE<small>1 uovo → raccoglie miele</small></button><button class="paLevelBtn" data-level="easy">🌱 FACILE<small>1 uovo → 1 guerriera</small></button><button class="paLevelBtn" data-level="medium">🌻 MEDIO<small>2 uova → 2 guerriere</small></button><button class="paLevelBtn" data-level="hard">🔥 DIFFICILE<small>3 uova → 3 guerriere</small></button></div>
+      <div id="paQText"></div><button id="paQSpeak" class="jollyBtn">🔊 Leggimela</button><div id="paQAnswers"></div><div id="paQMsg"></div><button id="paQBack" style="border:0;background:none;color:#777;text-decoration:underline;margin-top:8px">torna al gioco</button>
+    </div></div>
+    <div class="overlay" id="paEnd"><div class="card"><div id="paEndEm" style="font-size:74px"></div><div id="paEndTitle" style="font-size:34px;color:#b27300;font-weight:700"></div><div id="paEndTxt" style="font-size:20px;line-height:1.5;margin:12px"></div><button class="bigBtn" id="paAgain">Gioca ancora</button><br><button id="paEndHome" style="border:0;background:none;text-decoration:underline;margin-top:12px">Torna ai giochi</button></div></div>`);
 })();
 
-/* ---------- Le difese VERE dell'alveare ---------- */
-const PA_DIFESE=[
- {id:'ingresso', em:'🚪', nm:'Ingresso stretto',
-  eff:['','I predoni fanno molta più fatica a rubare il miele','Rubare il miele è quasi impossibile: che fatica!'],
-  card:"Le api scelgono case con l'ingresso piccolo. E quando c'è pericolo lo restringono ancora di più con la propoli, come un castello che alza il ponte levatoio! Il calabrone è troppo grosso per passare e deve restare fuori, dove le api possono difendersi meglio."},
- {id:'guardiane', em:'💂', nm:'Api guardiane',
-  eff:['','2 guardiane rallentano i predoni','4 guardiane rallentano tantissimo i predoni'],
-  card:"All'ingresso dell'alveare fanno la guardia delle api speciali: le GUARDIANE. Annusano chi arriva, perché ogni famiglia di api ha un odore tutto suo, come una parola d'ordine segreta. Chi non ha l'odore giusto viene affrontato e respinto!"},
- {id:'propoli', em:'🟤', nm:'Propoli',
-  eff:['','+1 vasetto di miele riparato dopo ogni attacco','+2 vasetti di miele riparati dopo ogni attacco'],
-  card:"Le api raccolgono la resina appiccicosa degli alberi e la trasformano in PROPOLI. La usano come cemento per riparare le crepe della casa e come disinfettante che ferma i germi. La conosciamo anche noi: le caramelle per la gola alla propoli vengono proprio dalle api!"},
- {id:'onda', em:'🌊', nm:"L'onda delle api",
-  eff:['','1 onda per attacco: spaventa tutti i calabroni','2 onde per attacco: spaventa tutti i calabroni'],
-  card:"Le api giganti dell'Asia fanno una mossa spettacolare: a migliaia sollevano la pancia una dopo l'altra, creando un'ONDA che corre su tutto il nido, come il pubblico allo stadio! I calabroni si confondono e non capiscono più dove attaccare."}
-];
-const PA_CARD_PALLA={em:'🔥', nm:'La palla di api',
-  card:"Hai visto? È tutto vero! Quando un calabrone attacca, decine di api lo circondano e formano una PALLA. Poi fanno vibrare i muscoli del volo, come quando noi tremiamo dal freddo, e la palla diventa caldissima: 46 gradi! Il calabrone non resiste a tanto caldo. Le api sì: sopportano fino a 48 gradi. Due gradi di differenza salvano l'alveare!"};
-const PA_FATTI=[
- "Un calabrone da solo può mangiare 30 api in un minuto: fermalo!",
- "Le api battono le ali 230 volte al secondo: per questo ronzano!",
- "L'esploratore lascia un odore (feromone) per chiamare gli altri: non farlo scappare!",
- "Le api della palla si danno il cambio: quelle stanche vanno a riposare.",
- "La regina non smette mai di deporre uova, anche durante un attacco."
-];
+const PA_TWO_PI=Math.PI*2;
+const PA_FLOWERS=[['#ef476f','#ffd166'],['#8b5cf6','#ffe66d'],['#ff8fab','#ffe66d'],['#f77f00','#fff3b0'],['#55a630','#fff']];
+/* Tema originale dell'alveare: circa 26 secondi prima di ripetersi.
+   Melodia solare, controcanto morbido, basso ronzante e batteria leggera. */
+const PA_HIVE_A=[76,0,79,0,81,0,79,0,76,0,74,0,[72,3],0,0,0, 74,0,76,0,79,0,81,0,[79,3],0,0,0,76,0,74,0];
+const PA_HIVE_B=[77,0,81,0,84,0,81,0,79,0,77,0,[76,3],0,0,0, 74,0,77,0,81,0,79,0,[76,3],0,0,0,74,0,72,0];
+const PA_HIVE_C=[79,0,83,0,86,0,83,0,81,0,79,0,[77,3],0,0,0, 79,0,81,0,83,0,86,0,[84,3],0,0,0,81,0,79,0];
+const PA_HIVE_D=[81,0,84,0,88,0,86,0,84,0,81,0,[79,3],0,0,0, 77,0,79,0,81,0,84,0,[83,3],0,0,0,79,0,76,0];
+const PA_HIVE_E=[84,0,83,0,81,0,79,0,81,0,84,0,[86,3],0,0,0, 84,0,81,0,79,0,76,0,[77,3],0,0,0,79,0,81,0];
+const PA_HIVE_F=[79,0,76,0,74,0,76,0,79,0,81,0,[84,3],0,0,0, 83,0,79,0,77,0,74,0,[72,6],0,0,0,0,0,0,0];
+const TRK_HIVE={bpm:112,ch:[
+  {w:'triangle',v:.055,n:[...PA_HIVE_A,...PA_HIVE_B,...PA_HIVE_C,...PA_HIVE_D,...PA_HIVE_E,...PA_HIVE_F]},
+  {w:'sine',v:.026,n:[
+    [67,8],0,0,0,0,0,0,0,[69,8],0,0,0,0,0,0,0,[67,8],0,0,0,0,0,0,0,[64,8],0,0,0,0,0,0,0,
+    [65,8],0,0,0,0,0,0,0,[69,8],0,0,0,0,0,0,0,[67,8],0,0,0,0,0,0,0,[64,8],0,0,0,0,0,0,0,
+    [67,8],0,0,0,0,0,0,0,[71,8],0,0,0,0,0,0,0,[69,8],0,0,0,0,0,0,0,[67,8],0,0,0,0,0,0,0,
+    [69,8],0,0,0,0,0,0,0,[72,8],0,0,0,0,0,0,0,[71,8],0,0,0,0,0,0,0,[67,8],0,0,0,0,0,0,0,
+    [72,8],0,0,0,0,0,0,0,[71,8],0,0,0,0,0,0,0,[69,8],0,0,0,0,0,0,0,[65,8],0,0,0,0,0,0,0,
+    [67,8],0,0,0,0,0,0,0,[64,8],0,0,0,0,0,0,0,[62,8],0,0,0,0,0,0,0,[60,8],0,0,0,0,0,0,0]},
+  {w:'triangle',v:.072,n:[48,0,55,0,48,0,55,0,45,0,52,0,45,0,52,0, 41,0,48,0,41,0,48,0,43,0,50,0,43,0,50,0,
+    48,0,55,0,48,0,55,0,45,0,52,0,45,0,52,0, 41,0,48,0,41,0,48,0,43,0,50,0,47,0,50,0]},
+  {d:1,n:['k',0,'h',0,0,0,'h',0,'s',0,'h',0,0,0,'h',0,'k',0,'h',0,'k',0,'h',0,'s',0,'h',0,0,'h','h',0]}
+]};
+const PA_HORNET_TYPES={
+  scout:{name:'ESPLORATORE',icon:'💨',hp:3.2,speed:1.55,damage:1,scale:.92,body:'#f5a623',head:'#cf6b16',reward:4},
+  raider:{name:'PREDONE',icon:'🍯',hp:6.4,speed:1,damage:2,scale:1.15,body:'#e57b18',head:'#a94716',reward:7},
+  tank:{name:'CORAZZATO',icon:'🪨',hp:11,speed:.68,damage:3,scale:1.42,body:'#9b5a2e',head:'#71391f',reward:11},
+  commander:{name:'COMANDANTE',icon:'⚡',hp:15,speed:1.18,damage:4,scale:1.58,body:'#d34b28',head:'#8e251b',reward:16},
+  king:{name:'RE DEI CALABRONI',icon:'👑',hp:25,speed:.86,damage:5,scale:1.85,body:'#7d3ac1',head:'#4d247b',reward:30}
+};
+const PA_QUESTIONS={
+  easy:[
+    ['Quale parola comincia con A?','APE','SOLE','LUNA'],['Completa: A _ E','P','M','T'],
+    ['Quale animale vola?','APE','GATTO','PESCE'],['Che cosa producono le api?','MIELE','LATTE','PANE'],
+    ['Quale parola comincia con F?','FIORE','NIDO','APE'],['Completa: MIE _ E','L','R','N']
+  ],
+  medium:[
+    ['Che cosa raccolgono le api sui fiori?','NETTARE','SABBIA','NEVE'],['Qual è il plurale di APE?','API','APO','APA'],
+    ['Quale parola è scritta bene?','CALABRONE','CALABRNOE','CALBORANE'],['La regina depone le…','UOVA','PIETRE','STELLE'],
+    ['Quale parola ha tre sillabe?','ALVEARE','APE','RE'],['Completa la frase: le api volano sui…','FIORI','MARI','TRENI']
+  ],
+  hard:[
+    ['Quale frase è scritta correttamente?','LE API RACCOLGONO IL NETTARE','LE API RACCOGLIE IL NETTARE','LE APE RACCOLGONO I NETTARE'],
+    ['Quale parola significa “proteggere da un pericolo”?','DIFENDERE','DORMIRE','COLORARE'],
+    ['Completa: Le guerriere sono tornate perché il calabrone è…','SCONFITTO','RACCOLTO','FIORITO'],
+    ['Quale frase racconta una causa e una conseguenza?','LE API RACCOLGONO NETTARE, QUINDI PRODUCONO MIELE','IL FIORE È GIALLO E ROSA','IL CALABRONE VOLA ALTO'],
+    ['Qual è il contrario di VELOCE?','LENTO','FORTE','GRANDE'],
+    ['Scegli la frase con il verbo al plurale.','LE OPERAIE VOLANO','LA REGINA VOLA','IL CALABRONE ATTACCA']
+  ]
+};
+const PA_Q_REWARD={easy:1,medium:2,hard:3};
 
-/* ---------- Costanti di gioco ---------- */
-const PA_HONEY=6, PA_ATTACKS=9, PA_NBEES=18;      /* il 9° attacco è la Vespa Regina */
-const PA_BALL_MIN=7, PA_BALL_NEAR=38, PA_PTR_NEAR=100;
-const PA_TSTART=30, PA_TCOOK=46;
-const PA_PLAN=[[1,0],[1,1],[2,1],[1,2],[2,2],[2,3],[3,3],[3,4]]; /* [esploratori,predoni] */
-const PA_REW_EASY=10, PA_REW_HARD=25;
-const PA_WORD_HEAT=6, PA_WORD_HEAT_BOSS=5;        /* gradi per parola letta giusta */
+let pa={on:false,paused:true,raf:0,last:0,w:0,h:0,time:0,eggs:1,eggClock:0,workerClock:0,workers:2,warriors:1,honey:1,honeyFrac:0,
+  bees:[],hornets:[],flowers:[],fx:[],wave:1,waveKills:0,killed:0,lost:0,spawnClock:3,nextId:1,msgTimer:0,qUsed:[],queen:null,hive:null};
+const paCv=$('paCv'),paC=paCv.getContext('2d');
 
-/* ---------- Le parole che scaldano ----------
-   La voce dice la parola: Gabriele deve LEGGERE le tre carte
-   e toccare quella giusta. Parola giusta = le api vibrano più
-   forte e la palla si scalda di colpo. La prima è sempre quella
-   giusta, poi vengono mescolate. */
-const PA_PAROLE=[
- /* livello 1: parole corte */
- [['VIBRA','VETRO','VOLPE'],['SCALDA','SCUOLA','SCATOLA'],['FORZA','FORMA','FORNO'],
-  ['CALDO','CALMO','COLLA'],['APE','ALI','APRE'],['PALLA','PILA','PORTA'],
-  ['MIELE','MELE','MOLE'],['FUOCO','FUMO','FIOCCO'],['DAI','DUE','DITO'],
-  ['CALORE','COLORE','CANTARE']],
- /* livello 2: parole più lunghe e simili */
- [['VIBRATE','VOLATE','VOTATE'],['SCALDATE','SALTATE','SCAVATE'],['STRINGETE','SPINGETE','STENDETE'],
-  ['CORAGGIO','CORALLO','CAVALLO'],['INSIEME','INVERNO','INSETTO'],['PIÙ FORTE','PIÙ PIANO','PIÙ LENTO'],
-  ['CALABRONE','CALZONE','CAMPIONE'],['GUARDIANE','GIARDINO','GRANDINE'],['ALVEARE','ALTALENA','ANIMALE'],
-  ['REGINA','ROVINA','RAPINA']],
- /* livello 3: frasi corte */
- [['SCALDATE LA PALLA','SALVATE LA PALLA','SCAVATE LA BUCA'],
-  ['VIBRATE LE ALI','VOLATE VIA API','VIETATO ENTRARE'],
-  ['TUTTE INTORNO','TUTTE IN CASA','TANTE INTERE'],
-  ['DIFENDIAMO IL MIELE','DIPINGIAMO IL MELO','DIFENDIAMO IL MOLO'],
-  ['IL CALABRONE SCOTTA','IL CALZONE SCOTTA','IL CALABRONE SALTA'],
-  ['FORZA PICCOLE API','FORZA PICCOLE ALI','FUORI PICCOLE API']]
-];
-
-/* ---------- Stato ---------- */
-let pa={on:false, raf:0, last:0, paused:true,
-  atk:1, honey:PA_HONEY, marked:false, extraRaiders:0,
-  bees:[], hornets:[], guards:[], fx:[], toSpawn:[], spawnT:0,
-  inAttack:false, ondaLeft:0, cooked:0, tutorialShown:false,
-  combo:0, shake:0, wordsRead:0, starsTot:0,
-  atkHoney:0, atkEscapes:0, atkWords:0,
-  ptr:{x:0,y:0,down:false}, lvl:{ingresso:0,guardiane:0,propoli:0,onda:0}};
-let paWord={active:false, group:null, target:'', cool:1.5, lastIdx:-1};
-let paQ={diff:'easy', q:null, theme:0, voiced:false, mult:1, done:false, defIdx:-1};
-const paUsedQ=new Set();
-let paDefSel=-1;
-const paCv=$('paCv'), paC=paCv.getContext('2d');
-let paW=0, paH=0, paMsgTid=0;
-
-/* roundRect per i browser che non lo hanno */
-if(typeof CanvasRenderingContext2D!=='undefined' && !CanvasRenderingContext2D.prototype.roundRect){
-  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
-    r=Math.min(r||0,Math.abs(w)/2,Math.abs(h)/2);
-    this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r);
-    this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this;
-  };
-}
-
-function paResize(){
-  const dpr=Math.min(window.devicePixelRatio||1,2);
-  paW=window.innerWidth; paH=window.innerHeight;
-  paCv.width=Math.round(paW*dpr); paCv.height=Math.round(paH*dpr);
-  paCv.style.width=paW+'px'; paCv.style.height=paH+'px';
-  paC.setTransform(dpr,0,0,dpr,0,0);
-}
-addEventListener('resize',()=>{ if($('pa').style.display!=='none') paResize(); });
-const paHX=()=>paW/2, paHY=()=>paH-105;
-
-function paMsgShow(t,ms){
-  const el=$('paMsg'); el.textContent=t; el.style.display='block';
-  clearTimeout(paMsgTid); paMsgTid=setTimeout(()=>{ el.style.display='none'; },ms||2600);
-}
-function paBig(t){
-  const el=$('paBig'); el.textContent=t;
-  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-}
+function paResize(){const d=Math.min(devicePixelRatio||1,2);pa.w=innerWidth;pa.h=innerHeight;paCv.width=pa.w*d;paCv.height=pa.h*d;paCv.style.width=pa.w+'px';paCv.style.height=pa.h+'px';paC.setTransform(d,0,0,d,0,0);paLayout();}
+function paLayout(){pa.hive={x:pa.w*.22,y:pa.h*.72};pa.queen={x:pa.hive.x,y:pa.hive.y-15};pa.flowers=[];for(let i=0;i<7;i++)pa.flowers.push({x:pa.w*(.48+(i%4)*.14),y:pa.h*(.68+Math.floor(i/4)*.18),c:i%PA_FLOWERS.length});const ask=$('paAsk');if(ask){const size=pa.w<650?64:74;ask.style.left=Math.min(pa.w-size-8,pa.hive.x+72)+'px';ask.style.top=Math.min(pa.h-size-8,pa.hive.y-35)+'px';}}
+function paSay(t,ms=2600){$('paMsg').textContent=t;$('paMsg').style.display='block';pa.msgTimer=ms/1000;}
 function paHud(){
-  $('paAtk').textContent=(pa.atk>=PA_ATTACKS)?'👑 REGINA':('⚔️ '+pa.atk+'/'+PA_ATTACKS);
-  $('paHoney').textContent='🍯'.repeat(pa.honey)+'▫️'.repeat(Math.max(0,PA_HONEY-pa.honey));
-  $('paScore').textContent='⭐ '+score;
-  $('paDefIcons').textContent=PA_DIFESE.map(d=>pa.lvl[d.id]?d.em+('•'.repeat(pa.lvl[d.id])):'').join(' ')||'🛡️ —';
-  $('paMusicBtn').textContent=MUSICON?'🎵':'🔇';
-  const o=$('paOnda');
-  o.style.display=(pa.lvl.onda>0&&pa.inAttack)?'':'none';
-  o.textContent='🌊'+(pa.ondaLeft>0?('x'+pa.ondaLeft):'');
-  o.disabled=pa.ondaLeft<=0;
+  const avail=pa.bees.filter(b=>b.role==='warrior'&&b.state==='idle').length;
+  $('paEggs').textContent='🥚 '+pa.eggs+' disponibili';$('paWorkers').textContent='🌼 '+pa.workers+' bottinatrici · '+Math.round(pa.honeyFrac*100)+'%';
+  $('paWarriors').textContent='🛡️ '+avail+'/'+pa.warriors+' pronte';$('paHoney').textContent='🍯 '+pa.honey+'  Forza '+paPower();
+  $('paWave').textContent='⚔️ '+pa.wave+'/8 · '+pa.waveKills+'/'+paWaveGoal();$('paMusicBtn').textContent=MUSICON?'🎵':'🔇';
+  $('paTask').innerHTML='<b>ORGANIZZA L’ALVEARE</b><br>👑 La regina depone le uova.<br>📖 Spendi uova per creare guerriere.<br>🌼 Le bottinatrici producono miele.<br>🍯 Il miele moltiplica la forza: x'+paPower()+'.';
 }
-
-/* ---------- Api ---------- */
-function paMakeBees(){
-  pa.bees=[];
-  for(let i=0;i<PA_NBEES;i++){
-    pa.bees.push({x:paHX()+(Math.random()-0.5)*160, y:paHY()-60+(Math.random()-0.5)*80,
-      vx:0, vy:0, en:75+Math.random()*25, st:'idle', ph:Math.random()*6.28, off:(Math.random()-0.5)});
-  }
-}
-function paSteer(b,tx,ty,sp,dt){
-  const dx=tx-b.x, dy=ty-b.y, d=Math.hypot(dx,dy)||1;
-  b.vx+=(dx/d*sp-b.vx)*Math.min(1,dt*4);
-  b.vy+=(dy/d*sp-b.vy)*Math.min(1,dt*4);
-  b.x+=b.vx*dt; b.y+=b.vy*dt;
-  return d;
-}
-/* il calabrone bersaglio della palla: il più vicino al dito */
-function paBallTarget(){
-  if(!pa.ptr.down) return null;
-  let best=null, bd=PA_PTR_NEAR*PA_PTR_NEAR;
-  for(const h of pa.hornets){
-    if(h.st!=='fly'&&h.st!=='balled'&&h.st!=='steal'&&h.st!=='stun'&&h.st!=='home') continue;
-    const d=(h.x-pa.ptr.x)**2+(h.y-pa.ptr.y)**2;
-    if(d<bd){ bd=d; best=h; }
-  }
-  return best;
-}
-function paCountBall(h){ let n=0; for(const b of pa.bees) if(b.st==='ball'&&b.tg===h) n++; return n; }
-
-/* ---------- Parole che scaldano ---------- */
-function paWordTier(){ return pa.atk<=2?0:(pa.atk<=5?1:2); }
-function paBalledHornet(){ for(const h of pa.hornets) if(h.st==='balled') return h; return null; }
-function paWordNew(){
-  const tier=PA_PAROLE[paWordTier()];
-  let gi; do{ gi=Math.floor(Math.random()*tier.length); }while(gi===paWord.lastIdx&&tier.length>1);
-  paWord.lastIdx=gi;
-  const g=tier[gi];
-  paWord.group=g; paWord.target=g[0]; paWord.active=true;
-  $('paWordsLab').textContent=VOICEON?'Tocca la parola che senti!':'Tocca: '+g[0];
-  $('paWordsHear').style.display=VOICEON?'':'none';
-  const R=$('paWordsRow'); R.innerHTML='';
-  shuffle(g.slice()).forEach(wd=>{
-    const b=document.createElement('button');
-    b.className='paWordBtn'; b.textContent=wd;
-    b.onclick=()=>paWordPick(b,wd);
-    R.appendChild(b);
-  });
-  $('paWords').style.display='block';
-  if(VOICEON) speak(paWord.target);
-  else setTimeout(()=>{ if(paWord.active) $('paWordsLab').textContent='Tocca la parola giusta!'; },1600);
-}
-function paWordHide(){ paWord.active=false; $('paWords').style.display='none'; }
-function paWordPick(btn,wd){
-  if(!paWord.active) return;
-  const h=paBalledHornet();
-  if(wd===paWord.target){
-    btn.classList.add('si');
-    const heat=(h&&h.kind==='boss')?PA_WORD_HEAT_BOSS:PA_WORD_HEAT;
-    if(h){ h.temp+=heat; pa.fx.push({x:h.x,y:h.y-20,t:0,em:'🔥+'+heat+'°'}); }
-    pa.wordsRead++; pa.atkWords++;
-    sCorrect();
-    paWord.active=false;
-    paWord.cool=(h&&h.kind==='boss')?1.6:2.2;
-    setTimeout(()=>{ if(!paWord.active) $('paWords').style.display='none'; },450);
-  } else {
-    btn.classList.add('no'); sWrong();
-  }
-}
-$('paWordsHear').onclick=()=>{ if(paWord.target&&VOICEON) speak(paWord.target); };
-
-/* ---------- Calabroni ---------- */
-function paSpawnHornet(kind){
-  const fromLeft=Math.random()<0.5;
-  pa.hornets.push({kind, x:fromLeft?-50:paW+50, y:60+Math.random()*paH*0.3,
-    vx:0, vy:0, st:'fly', t:0, ph:Math.random()*6.28, temp:PA_TSTART,
-    grace:0, breaks:0, patrol:0, steal:0, stun:0, rot:0, honeyStolen:false});
-}
-function paAttackStart(){
-  pa.atkHoney=0; pa.atkEscapes=0; pa.atkWords=0; pa.combo=0;
-  paWordHide(); paWord.cool=1.5;
-  pa.toSpawn=[];
-  if(pa.atk>=PA_ATTACKS){
-    /* l'ultimo attacco: la Vespa Regina con la sua scorta */
-    pa.toSpawn=['boss','raider','raider'];
-    for(let i=0;i<pa.extraRaiders;i++) pa.toSpawn.push('raider');
-    pa.extraRaiders=0;
-    paBig('👑 LA VESPA REGINA!');
-    paMsgShow('👑 La Regina è enorme: servono TANTE parole per cuocerla… due volte!',5500);
-  } else {
-    const plan=PA_PLAN[Math.min(pa.atk-1,PA_PLAN.length-1)];
-    let raiders=plan[1]+pa.extraRaiders;
-    pa.extraRaiders=0;
-    for(let i=0;i<plan[0];i++) pa.toSpawn.push('scout');
-    for(let i=0;i<raiders;i++) pa.toSpawn.push('raider');
-    shuffle(pa.toSpawn);
-    paBig('⚔️ Attacco '+pa.atk+'!');
-    if(pa.atk===1) paMsgShow('👀 Un calabrone ESPLORATORE! Tieni il dito su di lui e leggi le parole: la palla si scalda!',6000);
-    else paMsgShow('💡 '+PA_FATTI[(pa.atk-1)%PA_FATTI.length],4000);
-  }
-  pa.spawnT=1.2;
-  pa.inAttack=true; pa.paused=false; pa.last=0;
-  pa.ondaLeft=pa.lvl.onda;
-  paHud();
-}
-function paEscape(h,why){
-  h.st='gone';
-  pa.combo=0;
-  if(h.kind==='scout'){
-    pa.marked=true; pa.extraRaiders+=2; pa.atkEscapes++;
-    sWrong();
-    paMsgShow("😱 L'esploratore è scappato! Ha lasciato l'odore: arriveranno in tanti!",3500);
-  } else if(why==='honey'){
-    sLose();
-    paMsgShow('Il predone è fuggito con un vasetto di miele! 🍯',2500);
-  }
-}
-function paCook(h){
-  h.st='cooked'; h.vy=-40; pa.cooked++;
-  pa.combo++;
-  const gain=(h.kind==='boss'?10:3)*Math.min(3,pa.combo);
-  score+=gain; save();
-  pa.shake=0.8;
-  pa.fx.push({x:h.x,y:h.y,t:0,em:'🔥'});
-  pa.fx.push({x:h.x,y:h.y-30,t:0,em:'46°!'});
-  for(let k=0;k<5;k++) pa.fx.push({x:h.x+(Math.random()-0.5)*80,y:h.y+(Math.random()-0.5)*50,t:Math.random()*0.3,em:['🎉','⭐','✨'][k%3]});
-  sCorrect();
-  if(pa.combo>=2){ paBig('🔥 COMBO x'+Math.min(3,pa.combo)+'  +'+gain+'⭐'); beep(880,.1); beep(1175,.1,.1); beep(1568,.15,.2); }
-  paMsgShow(h.kind==='boss'
-    ?'👑 LA VESPA REGINA È COTTA! +'+gain+'⭐'
-    :'🔥 46 gradi: calabrone cotto! +'+gain+'⭐  Le api resistono fino a 48! 💪',3000);
-  paWordHide(); paWord.cool=1.5;
-  paHud();
-}
-
-/* ---------- Aggiornamento ---------- */
-function paUpdate(dt){
-  const t=performance.now()/1000;
-  /* arrivi scaglionati */
-  if(pa.inAttack&&pa.toSpawn.length){
-    pa.spawnT-=dt;
-    if(pa.spawnT<=0){
-      paSpawnHornet(pa.toSpawn.shift());
-      pa.spawnT=Math.max(1.6,3.2-pa.atk*0.2);
-    }
-  }
-  const BH=paBallTarget();
-  const hx=paHX(), hy=paHY()-30;
-
-  /* guardiane: rallentano il predone più vicino all'alveare */
-  pa.guards.length=pa.lvl.guardiane*2;
-  for(let g=0;g<pa.guards.length;g++){
-    if(!pa.guards[g]) pa.guards[g]={x:hx+(g-1)*30,y:hy-20,ph:Math.random()*6.28};
-  }
-
-  for(let i=pa.hornets.length-1;i>=0;i--){
-    const h=pa.hornets[i]; h.t+=dt;
-    if(h.stun>0){ h.stun-=dt; h.x+=Math.sin(h.t*30)*1.5; if(h.stun<=0&&h.st==='stun') h.st='fly'; }
-    const inBall=(h===BH)?paCountBall(h):0;
-
-    if(h.st==='fly'||h.st==='steal'||h.st==='stun'){
-      /* diventa "impallato"? */
-      if(h===BH && inBall>=PA_BALL_MIN){ h.st='balled'; h.grace=0; }
-    }
-
-    if(h.st==='balled'){
-      const ok=(h===BH)&&(inBall>=PA_BALL_MIN-2);
-      if(ok){
-        h.grace=0;
-        /* da sola la palla scalda piano: sono le PAROLE lette a farla scottare! */
-        const rate=Math.min(1.0, 0.35+0.06*Math.max(0,inBall-PA_BALL_MIN));
-        h.temp+=rate*dt;
-        /* si dibatte e trascina la palla */
-        if(Math.random()<dt*0.55){ h.vx=(Math.random()-0.5)*260; h.vy=(Math.random()-0.5)*200; }
-        h.vx*=(1-dt*2); h.vy*=(1-dt*2);
-        h.x+=h.vx*dt; h.y+=h.vy*dt;
-        h.x=Math.max(40,Math.min(paW-40,h.x)); h.y=Math.max(60,Math.min(paH-160,h.y));
-        if(h.temp>=PA_TCOOK){
-          if(h.kind==='boss'&&!h.phase2){
-            /* prima cottura: la Regina si scrolla le api di dosso */
-            h.phase2=true; h.temp=PA_TSTART; h.st='fly'; h.stun=0; h.breaks=0;
-            h.vx=(Math.random()<0.5?-1:1)*400; h.vy=-200;
-            pa.fx.push({x:h.x,y:h.y,t:0,em:'💢'});
-            paMsgShow('👑 La Regina si è scrollata di dosso le api! Ancora una volta!',3200);
-            paWordHide(); paWord.cool=1.2;
-            sWrong();
-          } else paCook(h);
-          continue;
-        }
-      } else {
-        h.grace+=dt; h.temp=Math.max(PA_TSTART,h.temp-5*dt);
-        if(h.grace>1.3){
-          h.st='fly'; h.breaks++; h.temp=PA_TSTART;
-          h.vx=(Math.random()-0.5)*500; h.vy=-(150+Math.random()*150);
-          pa.fx.push({x:h.x,y:h.y,t:0,em:'💨'});
-          if(h.breaks>=3){
-            if(h.kind==='boss'){ h.breaks=0; paMsgShow('👑 La Regina è furiosa!',1800); }
-            else paEscape(h,'breaks');
-          }
-          else paMsgShow('Si è liberato! Riprova con più api! 🐝',1800);
-        }
-      }
-    }
-    else if(h.st==='fly'&&h.stun<=0){
-      let sp=(h.kind==='scout')?62:(h.kind==='boss'?52:80);
-      /* le guardiane rallentano i predoni (la Regina no: è troppo forte) */
-      if(h.kind==='raider'&&pa.lvl.guardiane) sp*=(pa.lvl.guardiane>=2?0.4:0.6);
-      if(h.kind==='scout'){
-        /* l'esploratore gira intorno all'alveare e osserva */
-        h.patrol+=dt;
-        const a=h.ph+h.t*0.55;
-        const tx=hx+Math.cos(a)*(190+40*Math.sin(h.t)), ty=hy-90+Math.sin(a*1.3)*70;
-        const dx=tx-h.x, dy=ty-h.y, d=Math.hypot(dx,dy)||1;
-        h.x+=dx/d*sp*dt; h.y+=dy/d*sp*dt; h.rot=Math.atan2(dy,dx);
-        const limit=8+pa.atk*0.5;
-        if(h.patrol>limit){ h.st='home'; paMsgShow('👀 Sta tornando a chiamare gli altri! Fermalo!',2000); }
-      } else {
-        /* il predone punta al miele */
-        const dx=hx-h.x, dy=hy-h.y, d=Math.hypot(dx,dy)||1;
-        h.x+=dx/d*sp*dt+Math.sin(h.t*5+h.ph)*30*dt;
-        h.y+=dy/d*sp*dt;
-        h.rot=Math.atan2(dy,dx);
-        if(d<62){ h.st='steal'; h.steal=0; }
-      }
-    }
-    else if(h.st==='steal'&&h.stun<=0){
-      let need=[1.4,2.8,4.2][pa.lvl.ingresso];
-      if(h.kind==='boss') need*=1.5;
-      h.steal+=dt;
-      h.x+=Math.sin(h.t*22)*0.8;
-      if(h.steal>=need){
-        h.honeyStolen=true;
-        const stole=(h.kind==='boss')?2:1;
-        pa.honey-=stole; pa.atkHoney+=stole; pa.combo=0; pa.shake=0.6;
-        paHud(); sLose();
-        pa.fx.push({x:h.x,y:h.y,t:0,em:'🍯'});
-        if(pa.honey<=0){ paDefeat(); return; }
-        if(h.kind==='boss'){ h.st='fly'; h.steal=0; h.y-=80; paMsgShow('👑 La Regina torna per altro miele!',2200); }
-        else h.st='flee';
-      }
-    }
-    else if(h.st==='home'){
-      /* l'esploratore fugge verso l'alto: ultima occasione di prenderlo */
-      h.y-=170*dt; h.x+=Math.sin(h.t*4)*70*dt; h.rot=-Math.PI/2;
-      if(h===BH&&paCountBall(h)>=PA_BALL_MIN){ h.st='balled'; h.grace=0; }
-      if(h.y<-60){ paEscape(h,'home'); }
-    }
-    else if(h.st==='flee'){
-      h.y-=200*dt; h.x+=Math.sin(h.t*6)*60*dt;
-      if(h.y<-60){ paEscape(h,h.honeyStolen?'honey':'flee'); }
-    }
-    else if(h.st==='cooked'){
-      h.vy+=600*dt; h.y+=h.vy*dt; h.rot+=6*dt;
-      if(h.y>paH+60) h.st='gone';
-    }
-    if(h.st==='gone') pa.hornets.splice(i,1);
-  }
-
-  /* api */
-  for(const b of pa.bees){
-    b.ph+=dt*6;
-    if(b.st==='ball'){ b.en-=9*dt; if(b.en<12||!BH||b.tg!==BH||(BH.st!=='balled'&&BH.st!=='fly'&&BH.st!=='steal'&&BH.st!=='home')){ b.st=b.en<12?'rest':'go'; b.tg=null; } }
-    if(b.en<12&&b.st!=='rest') b.st='rest';
-    if(b.st==='rest'){
-      const d=paSteer(b,paHX()+b.off*70,paHY()-20,180,dt);
-      if(d<46){ b.en+=25*dt; if(b.en>=95){ b.en=100; b.st='idle'; } }
-    }
-    else if(pa.ptr.down&&BH){
-      if(b.st!=='ball'){
-        b.st='go';
-        const d=paSteer(b,BH.x+b.off*30,BH.y+Math.sin(b.ph)*20,270,dt);
-        if(d<PA_BALL_NEAR*(BH.kind==='boss'?1.8:1)){ b.st='ball'; b.tg=BH; }
-      } else {
-        /* orbita stretta intorno al calabrone: la palla! */
-        const R=(BH.kind==='boss')?2:1;
-        const idx=b.off*6.28+b.ph*0.7;
-        b.x=BH.x+Math.cos(idx)*(16+8*Math.abs(b.off))*R;
-        b.y=BH.y+Math.sin(idx)*(14+7*Math.abs(b.off))*R;
-      }
-    }
-    else if(pa.ptr.down){
-      b.st='go'; paSteer(b,pa.ptr.x+b.off*40,pa.ptr.y+Math.sin(b.ph)*24,250,dt);
-    }
-    else {
-      b.st='idle';
-      paSteer(b,paHX()+Math.cos(b.ph*0.5+b.off*6)*110,paHY()-70+Math.sin(b.ph*0.4+b.off*4)*55,70,dt);
-    }
-  }
-
-  /* comandi di lettura mentre la palla è attiva */
-  const bh=paBalledHornet();
-  if(bh){
-    if(!paWord.active){ paWord.cool-=dt; if(paWord.cool<=0) paWordNew(); }
-  } else if(paWord.active){ paWordHide(); paWord.cool=1.2; }
-
-  /* effetti */
-  for(let i=pa.fx.length-1;i>=0;i--){ pa.fx[i].t+=dt; if(pa.fx[i].t>1) pa.fx.splice(i,1); }
-
-  /* fine attacco */
-  if(pa.inAttack&&!pa.toSpawn.length&&!pa.hornets.length){
-    pa.inAttack=false; pa.paused=true;
-    paWordHide();
-    const rig=Math.min(PA_HONEY-pa.honey,pa.lvl.propoli);
-    if(rig>0){ pa.honey+=rig; paMsgShow('🟤 La propoli ripara '+rig+' vasetto'+(rig>1?'i':'')+' di miele!',2500); }
-    /* stelle dell'attacco: miele salvo / nessuna fuga / almeno 2 parole lette */
-    let st=1;
-    if(pa.atkHoney===0) st=2;
-    if(st===2&&pa.atkEscapes===0&&pa.atkWords>=2) st=3;
-    pa.starsTot+=st;
-    sStar(); paHud();
-    if(pa.atk>=PA_ATTACKS){ paVictory(); }
-    else {
-      pa.atk++;
-      const stars='⭐'.repeat(st)+'☆'.repeat(3-st);
-      if(!pa.tutorialShown){ pa.tutorialShown=true; paShowCard(PA_CARD_PALLA,-1,'shop'); }
-      else paShop('⚔️ Attacco respinto! '+stars);
-    }
-  }
-}
-
-/* ---------- Disegno ---------- */
-function paDrawHive(t){
-  const c=paC, x=paHX(), y=paHY();
-  const br=1+Math.sin(t*1.8)*0.012;            /* respiro pupazzoso */
-  c.save(); c.translate(x,y);
-  /* ombra */
-  c.fillStyle='rgba(0,0,0,.15)';
-  c.beginPath(); c.ellipse(0,58,95,15,0,0,6.29); c.fill();
-  /* basamento di legno con zampette */
-  c.fillStyle='#a8743c'; c.strokeStyle='#7a4a1c'; c.lineWidth=3;
-  c.beginPath(); c.roundRect(-58,46,116,12,6); c.fill(); c.stroke();
-  c.beginPath(); c.roundRect(-46,56,10,14,3); c.fill(); c.stroke();
-  c.beginPath(); c.roundRect(36,56,10,14,3); c.fill(); c.stroke();
-  c.save(); c.scale(1,br);
-  /* cupola dorata a ciambelle, con bordo e riflesso */
-  for(let i=0;i<6;i++){
-    const w=70-i*9, yy=38-i*14;
-    const g=c.createLinearGradient(0,yy-16,0,yy+16);
-    g.addColorStop(0,(i%2)?'#ffd35c':'#f6bd3a');
-    g.addColorStop(1,(i%2)?'#eda92a':'#d98f12');
-    c.fillStyle=g; c.strokeStyle='#a86f10'; c.lineWidth=3;
-    c.beginPath(); c.ellipse(0,yy,w,16,0,0,6.29); c.fill(); c.stroke();
-    c.fillStyle='rgba(255,255,255,.35)';
-    c.beginPath(); c.ellipse(-w*0.4,yy-6,w*0.28,4.5,-0.25,0,6.29); c.fill();
-  }
-  /* cupoletta in cima con pomello */
-  c.fillStyle='#f6bd3a'; c.strokeStyle='#a86f10'; c.lineWidth=3;
-  c.beginPath(); c.arc(0,-38,12,Math.PI,0); c.closePath(); c.fill(); c.stroke();
-  c.fillStyle='#ffe28a'; c.beginPath(); c.arc(0,-44,4,0,6.29); c.fill();
-  c.restore();
-  /* ingresso: si restringe con la difesa */
-  const r=[14,10,7][pa.lvl.ingresso];
-  c.fillStyle='#5c3808';
-  c.beginPath(); c.arc(0,48,r,Math.PI,0,false); c.fill();
-  c.strokeStyle='#a86f10'; c.lineWidth=3;
-  c.beginPath(); c.arc(0,48,r,Math.PI,0,false); c.stroke();
-  if(pa.lvl.ingresso){ /* mattoncini di propoli ai lati */
-    c.fillStyle='#8a5a2a'; c.strokeStyle='#6b4520'; c.lineWidth=2;
-    c.beginPath(); c.roundRect(-r-11,40,9,8,2); c.fill(); c.stroke();
-    c.beginPath(); c.roundRect(r+2,40,9,8,2); c.fill(); c.stroke();
-  }
-  /* goccia di miele che cola */
-  c.fillStyle='#f6a71b';
-  c.beginPath(); c.ellipse(r+5,50+Math.sin(t*2)*1.5,3,4.5,0,0,6.29); c.fill();
-  /* cartello del miele */
-  c.fillStyle='#a8743c'; c.strokeStyle='#7a4a1c'; c.lineWidth=2.5;
-  c.beginPath(); c.roundRect(74,26,5,32,2); c.fill(); c.stroke();
-  c.beginPath(); c.roundRect(57,8,42,24,7); c.fill(); c.stroke();
-  c.font='16px serif'; c.textAlign='center'; c.textBaseline='middle';
-  c.fillText('🍯',78,20);
-  c.restore();
-}
-function paDrawBee(b,t,guard){
-  const c=paC;
-  /* verso di volo: il musetto guarda dove va */
-  const mx=b.x-(b._lx===undefined?b.x:b._lx), my=b.y-(b._ly===undefined?b.y:b._ly);
-  if(Math.abs(mx)+Math.abs(my)>0.6) b._rot=Math.atan2(my,mx);
-  b._lx=b.x; b._ly=b.y;
-  const dir=(Math.cos(b._rot||0)<0)?-1:1;
-  const s=guard?1.35:1.12, tired=(b.en!==undefined&&b.en<35)&&!guard;
-  c.save(); c.translate(b.x,b.y); c.scale(dir*s,s);
-  /* ali che sbattono */
-  const wa=Math.sin((b.ph||t*40))*(tired?0.35:0.7);
-  c.fillStyle='rgba(220,238,255,.8)'; c.strokeStyle='rgba(120,170,220,.8)'; c.lineWidth=1.2;
-  c.save(); c.translate(-2,-6); c.rotate(-0.5+wa*0.5);
-  c.beginPath(); c.ellipse(0,-4,3.6,7,0,0,6.29); c.fill(); c.stroke(); c.restore();
-  c.save(); c.translate(2,-6); c.rotate(0.2+wa*0.5);
-  c.beginPath(); c.ellipse(0,-4,3.2,6,0,0,6.29); c.fill(); c.stroke(); c.restore();
-  /* pancino a strisce */
-  c.save();
-  c.beginPath(); c.ellipse(-2,0,8.5,6,0,0,6.29); c.clip();
-  c.fillStyle=tired?'#d9b64a':'#ffd23f'; c.fillRect(-11,-7,22,14);
-  c.fillStyle='#4a3208';
-  c.fillRect(-6,-7,3.4,14); c.fillRect(-0.5,-7,3.4,14);
-  c.restore();
-  c.strokeStyle='#4a3208'; c.lineWidth=1.6;
-  c.beginPath(); c.ellipse(-2,0,8.5,6,0,0,6.29); c.stroke();
-  /* pungiglioncino */
-  c.fillStyle='#4a3208';
-  c.beginPath(); c.moveTo(-10,-1.5); c.lineTo(-13.5,0); c.lineTo(-10,1.5); c.closePath(); c.fill();
-  /* testolina */
-  c.fillStyle=tired?'#d9b64a':'#ffd23f';
-  c.beginPath(); c.arc(7,-1,5,0,6.29); c.fill();
-  c.strokeStyle='#4a3208'; c.beginPath(); c.arc(7,-1,5,0,6.29); c.stroke();
-  /* antenne con pallina */
-  c.lineWidth=1.3;
-  c.beginPath(); c.moveTo(5.5,-5.5); c.quadraticCurveTo(5,-9,3,-10); c.stroke();
-  c.beginPath(); c.moveTo(8.5,-5.5); c.quadraticCurveTo(9,-9,11,-10); c.stroke();
-  c.fillStyle='#4a3208';
-  c.beginPath(); c.arc(3,-10,1.1,0,6.29); c.fill();
-  c.beginPath(); c.arc(11,-10,1.1,0,6.29); c.fill();
-  /* occhioni (o palpebre stanche) e sorriso */
-  c.fillStyle='#222';
-  if(tired){ c.fillRect(4.8,-2.6,2.8,1.3); c.fillRect(8.4,-2.6,2.8,1.3); }
-  else {
-    c.beginPath(); c.arc(6.2,-2,1.5,0,6.29); c.fill();
-    c.beginPath(); c.arc(9.4,-2,1.5,0,6.29); c.fill();
-    c.fillStyle='#fff';
-    c.beginPath(); c.arc(6.7,-2.5,0.55,0,6.29); c.fill();
-    c.beginPath(); c.arc(9.9,-2.5,0.55,0,6.29); c.fill();
-  }
-  c.strokeStyle='#222'; c.lineWidth=1;
-  c.beginPath(); c.arc(7.8,0.6,1.8,0.15,Math.PI-0.4); c.stroke();
-  /* guanciotte rosa */
-  c.fillStyle='rgba(255,120,120,.5)';
-  c.beginPath(); c.arc(4.4,0.6,1.1,0,6.29); c.fill();
-  c.beginPath(); c.arc(11,0.6,1.1,0,6.29); c.fill();
-  /* berretto rosso della guardiana */
-  if(guard){
-    c.fillStyle='#e05555'; c.strokeStyle='#a33333'; c.lineWidth=1.4;
-    c.beginPath(); c.arc(7,-4.6,4.4,Math.PI,0); c.closePath(); c.fill(); c.stroke();
-    c.fillRect(2.2,-5.6,9.6,1.8);
-  }
-  c.restore();
-}
-function paDrawHornet(h,t){
-  const c=paC;
-  const cooked=h.st==='cooked', balled=h.st==='balled';
-  c.save(); c.translate(h.x,h.y); c.rotate(cooked?h.rot:(h.rot||0));
-  if(h.kind==='boss') c.scale(1.9,1.9);
-  /* zampette penzoloni */
-  c.strokeStyle='#3a2405'; c.lineWidth=2; c.lineCap='round';
-  for(const lx of [-8,0,8]){
-    c.beginPath(); c.moveTo(lx,8);
-    c.quadraticCurveTo(lx-2,13,lx-5,15+Math.sin(t*20+lx)*1.5); c.stroke();
-  }
-  /* ali */
-  const fl=Math.sin(t*42+h.ph)*(cooked?0.1:0.5);
-  c.fillStyle='rgba(205,228,255,.75)'; c.strokeStyle='rgba(120,160,210,.7)'; c.lineWidth=1.4;
-  c.beginPath(); c.ellipse(-2,-14,7,13+fl*4,-0.4,0,6.29); c.fill(); c.stroke();
-  c.beginPath(); c.ellipse(6,-14,7,13-fl*4,0.4,0,6.29); c.fill(); c.stroke();
-  /* addome a strisce, con bordo */
-  c.save();
-  c.beginPath(); c.ellipse(-4,0,19,11.5,0,0,6.29); c.clip();
-  c.fillStyle=cooked?'#8a5a2a':'#e88b1a'; c.fillRect(-23,-12,46,24);
-  c.fillStyle='#3a2405';
-  for(const sx of [-14,-5,4]) c.fillRect(sx,-12,5.5,24);
-  c.restore();
-  c.strokeStyle='#3a2405'; c.lineWidth=2.2;
-  c.beginPath(); c.ellipse(-4,0,19,11.5,0,0,6.29); c.stroke();
-  /* pungiglione */
-  c.fillStyle='#3a2405';
-  c.beginPath(); c.moveTo(-22,-3); c.lineTo(-33,0); c.lineTo(-22,3); c.closePath(); c.fill();
-  /* testona */
-  c.fillStyle=cooked?'#9c7a4a':'#c96a10';
-  c.beginPath(); c.arc(20,0,10.5,0,6.29); c.fill();
-  c.strokeStyle='#3a2405'; c.beginPath(); c.arc(20,0,10.5,0,6.29); c.stroke();
-  /* antenne */
-  c.lineWidth=2;
-  c.beginPath(); c.moveTo(24,-9); c.quadraticCurveTo(28,-15,32,-16); c.stroke();
-  c.beginPath(); c.moveTo(19,-10); c.quadraticCurveTo(20,-17,24,-19); c.stroke();
-  if(cooked){
-    /* occhi a X e linguetta di fuori */
-    c.strokeStyle='#222'; c.lineWidth=1.8;
-    for(const ex of [16.5,24]){
-      c.beginPath(); c.moveTo(ex-2,-4.5); c.lineTo(ex+2,-0.5);
-      c.moveTo(ex+2,-4.5); c.lineTo(ex-2,-0.5); c.stroke();
-    }
-    c.fillStyle='#ff8a9a'; c.beginPath(); c.ellipse(21,5.5,2.5,3.5,0,0,6.29); c.fill();
-  } else {
-    /* occhioni bianchi con pupilla rossa */
-    c.fillStyle='#fff';
-    c.beginPath(); c.ellipse(16.5,-2.5,3.4,4,0,0,6.29); c.fill();
-    c.beginPath(); c.ellipse(24,-2.5,3.4,4,0,0,6.29); c.fill();
-    c.fillStyle='#e33333';
-    c.beginPath(); c.arc(17,-2,1.7,0,6.29); c.fill();
-    c.beginPath(); c.arc(24.5,-2,1.7,0,6.29); c.fill();
-    c.strokeStyle='#3a2405'; c.lineWidth=2.4;
-    if(balled){
-      /* nella palla: preoccupato, bocca a "o" e sudore */
-      c.beginPath(); c.moveTo(13,-9); c.lineTo(19,-7); c.stroke();
-      c.beginPath(); c.moveTo(28,-9); c.lineTo(22,-7); c.stroke();
-      c.fillStyle='#3a2405'; c.beginPath(); c.arc(20.5,4.5,2,0,6.29); c.fill();
-      c.fillStyle='#7ec8f0';
-      c.beginPath(); c.ellipse(29+Math.sin(t*10)*2,-11,2,3,0,0,6.29); c.fill();
-    } else {
-      /* cattivello: sopracciglia in giù e sorrisetto con dentini */
-      c.beginPath(); c.moveTo(13,-8); c.lineTo(19.5,-5.2); c.stroke();
-      c.beginPath(); c.moveTo(28,-8); c.lineTo(21.5,-5.2); c.stroke();
-      c.strokeStyle='#222'; c.lineWidth=1.6;
-      c.beginPath(); c.arc(20.5,3,3.6,0.3,Math.PI-0.3); c.stroke();
-      c.fillStyle='#fff';
-      c.beginPath(); c.moveTo(17.6,4.8); c.lineTo(18.8,7.2); c.lineTo(20,4.9); c.closePath(); c.fill();
-      c.beginPath(); c.moveTo(21,4.9); c.lineTo(22.2,7.2); c.lineTo(23.4,4.8); c.closePath(); c.fill();
-    }
-  }
-  c.restore();
-  /* etichette sopra */
-  c.textAlign='center'; c.textBaseline='middle';
-  if(h.kind==='boss'&&!cooked){ c.font='28px serif'; c.fillText('👑',h.x,h.y-(balled?92:60)); }
-  if(h.kind==='scout'&&(h.st==='fly'||h.st==='home')){ c.font='20px serif'; c.fillText('👀',h.x,h.y-34); }
-  if(h.st==='steal'){ c.font='20px serif'; c.fillText('🍯❗',h.x,h.y-34); }
-  if(h.honeyStolen&&h.st==='flee'){ c.font='20px serif'; c.fillText('🍯',h.x,h.y-30); }
-  if(h.stun>0){ c.font='18px serif'; c.fillText('✨💫',h.x,h.y-34); }
-  /* termometro della palla */
-  if(h.st==='balled'){
-    const fr=(h.temp-PA_TSTART)/(PA_TCOOK-PA_TSTART);
-    const gr=(h.kind==='boss')?80:44;
-    /* alone di calore */
-    const g=paC.createRadialGradient(h.x,h.y,4,h.x,h.y,gr);
-    g.addColorStop(0,'rgba(255,'+Math.round(160-fr*120)+',30,'+(0.15+fr*0.4)+')');
-    g.addColorStop(1,'rgba(255,120,0,0)');
-    c.fillStyle=g; c.beginPath(); c.arc(h.x,h.y,gr,0,6.29); c.fill();
-    const bw=(h.kind==='boss')?90:64, bx=h.x-bw/2, by=h.y-((h.kind==='boss')?96:52);
-    c.fillStyle='rgba(255,255,255,.85)'; c.fillRect(bx-2,by-2,bw+4,12);
-    c.fillStyle=fr<0.6?'#ffb300':'#ff5722';
-    c.fillRect(bx,by,bw*Math.min(1,fr),8);
-    c.fillStyle='#333'; c.font='bold 13px sans-serif';
-    c.fillText(Math.round(h.temp)+'°',h.x,by-10);
-  }
-}
-function paDraw(t){
-  const c=paC; c.clearRect(0,0,paW,paH);
-  c.save();
-  if(pa.shake>0){
-    c.translate((Math.random()-0.5)*10*pa.shake,(Math.random()-0.5)*8*pa.shake);
-    pa.shake=Math.max(0,pa.shake-0.03);
-  }
-  c.textAlign='center'; c.textBaseline='middle';
-  /* sole con raggi che girano piano */
-  const sx=paW-70, sy=64;
-  c.save(); c.translate(sx,sy); c.rotate(t*0.15);
-  c.strokeStyle='rgba(255,214,64,.85)'; c.lineWidth=4; c.lineCap='round';
-  for(let r=0;r<10;r++){
-    const a=r*Math.PI/5;
-    c.beginPath(); c.moveTo(Math.cos(a)*34,Math.sin(a)*34); c.lineTo(Math.cos(a)*46,Math.sin(a)*46); c.stroke();
-  }
-  c.restore();
-  c.fillStyle='#ffd93d'; c.beginPath(); c.arc(sx,sy,27,0,6.29); c.fill();
-  c.fillStyle='rgba(255,255,255,.5)'; c.beginPath(); c.arc(sx-9,sy-9,7,0,6.29); c.fill();
-  /* nuvole che passano */
-  for(let k=0;k<3;k++){
-    const cx=((t*(8+k*4)+k*300)%(paW+260))-130, cy=48+k*50;
-    c.fillStyle='rgba(255,255,255,'+(0.9-k*0.18)+')';
-    c.beginPath(); c.ellipse(cx,cy,44,16,0,0,6.29); c.fill();
-    c.beginPath(); c.ellipse(cx+30,cy-9,28,13,0,0,6.29); c.fill();
-    c.beginPath(); c.ellipse(cx-28,cy-7,24,11,0,0,6.29); c.fill();
-  }
-  /* colline morbide */
-  c.fillStyle='#9ad46e';
-  c.beginPath(); c.ellipse(paW*0.18,paH*0.86,paW*0.38,paH*0.15,0,Math.PI,6.29); c.fill();
-  c.fillStyle='#8cc95f';
-  c.beginPath(); c.ellipse(paW*0.84,paH*0.88,paW*0.4,paH*0.17,0,Math.PI,6.29); c.fill();
-  /* albero con le mele (ondeggia col vento) */
-  const tx=Math.max(70,paW*0.1), ty=paH-58, sway=Math.sin(t*0.8)*3;
-  c.fillStyle='#8a5a2a'; c.strokeStyle='#6b4520'; c.lineWidth=3;
-  c.beginPath(); c.roundRect(tx-8,ty-95,16,95,6); c.fill(); c.stroke();
-  c.fillStyle='#5da13f';
-  c.beginPath(); c.arc(tx-26+sway,ty-106,26,0,6.29); c.fill();
-  c.beginPath(); c.arc(tx+26+sway,ty-106,26,0,6.29); c.fill();
-  c.beginPath(); c.arc(tx+sway,ty-130,30,0,6.29); c.fill();
-  c.fillStyle='#7cc061';
-  c.beginPath(); c.arc(tx-12+sway,ty-118,18,0,6.29); c.fill();
-  c.beginPath(); c.arc(tx+18+sway,ty-112,16,0,6.29); c.fill();
-  c.fillStyle='#e05555';
-  for(const [ax,ay] of [[-22,-102],[6,-124],[24,-98],[-4,-96]]){
-    c.beginPath(); c.arc(tx+ax+sway,ty+ay,3.5,0,6.29); c.fill();
-  }
-  /* staccionata */
-  c.fillStyle='#c98d4e'; c.strokeStyle='#9c6b35'; c.lineWidth=2;
-  for(let k=0;k<4;k++){
-    c.beginPath(); c.roundRect(paW-150+k*34,paH-92,10,52,4); c.fill(); c.stroke();
-  }
-  c.beginPath(); c.roundRect(paW-158,paH-82,130,8,4); c.fill(); c.stroke();
-  c.beginPath(); c.roundRect(paW-158,paH-60,130,8,4); c.fill(); c.stroke();
-  /* fiori con gambo che ondeggiano */
-  for(let k=0;k<9;k++){
-    const fx=(((k*137+40)%100)/100)*paW, fy=paH-14-((k*61)%38);
-    const sw=Math.sin(t*1.5+k)*3;
-    c.strokeStyle='#3f7a1e'; c.lineWidth=2.5;
-    c.beginPath(); c.moveTo(fx,fy+8); c.quadraticCurveTo(fx+sw*0.5,fy-6,fx+sw,fy-16); c.stroke();
-    c.fillStyle='#5da13f';
-    c.beginPath(); c.ellipse(fx+3,fy-2,4,2,0.6,0,6.29); c.fill();
-    c.font='22px serif';
-    c.fillText(['🌼','🌷','🌻','🌸','🌺'][k%5],fx+sw,fy-24);
-  }
-  /* ciuffi d'erba */
-  c.strokeStyle='#4f9032'; c.lineWidth=2;
-  for(let k=0;k<12;k++){
-    const gx=(((k*89+15)%100)/100)*paW, gy=paH-6;
-    for(const dg of [-4,0,4]){
-      c.beginPath(); c.moveTo(gx,gy); c.quadraticCurveTo(gx+dg,gy-8,gx+dg*1.8,gy-14); c.stroke();
-    }
-  }
-  /* farfalle e coccinella */
-  c.font='20px serif';
-  for(let k=0;k<2;k++){
-    const bx=paW*(0.3+k*0.4)+Math.sin(t*0.7+k*3)*90, by=paH*0.35+Math.cos(t*0.9+k)*50;
-    c.fillText('🦋',bx,by);
-  }
-  const lbx=((t*14)%(paW+60))-30;
-  c.font='16px serif'; c.fillText('🐞',lbx,paH-8);
-  paDrawHive(t);
-  /* guardiane di pattuglia */
-  for(let g=0;g<pa.guards.length;g++){
-    const gd=pa.guards[g];
-    /* la guardiana insegue il predone più vicino */
-    let tgt=null,bd=1e9;
-    for(const h of pa.hornets){ if(h.kind==='raider'&&(h.st==='fly'||h.st==='steal')){ const d=(h.x-gd.x)**2+(h.y-gd.y)**2; if(d<bd){bd=d;tgt=h;} } }
-    const tx=tgt?tgt.x+Math.cos(t*3+g)*26:paHX()+(g-pa.guards.length/2)*34;
-    const ty=tgt?tgt.y+Math.sin(t*3+g)*22:paHY()-70;
-    gd.x+=(tx-gd.x)*0.05; gd.y+=(ty-gd.y)*0.05;
-    paDrawBee(gd,t,true);
-  }
-  for(const b of pa.bees) paDrawBee(b,t,false);
-  for(const h of pa.hornets) paDrawHornet(h,t);
-  /* cerchio del dito */
-  if(pa.ptr.down){
-    c.strokeStyle='rgba(255,255,255,.7)'; c.lineWidth=3;
-    c.beginPath(); c.arc(pa.ptr.x,pa.ptr.y,26+Math.sin(t*8)*4,0,6.29); c.stroke();
-  }
-  c.font='30px serif';
-  for(const f of pa.fx){
-    c.globalAlpha=Math.max(0,1-f.t);
-    c.fillText(f.em,f.x,f.y-f.t*55);
-    c.globalAlpha=1;
-  }
-  c.restore();
-}
-function paFrame(ts){
-  pa.raf=requestAnimationFrame(paFrame);
-  if(!pa.last) pa.last=ts;
-  const dt=Math.min((ts-pa.last)/1000,0.05); pa.last=ts;
-  if(!pa.paused) paUpdate(dt);
-  paDraw(performance.now()/1000);
-}
-
-/* ---------- Controlli ---------- */
-paCv.addEventListener('pointerdown',e=>{
-  const r=paCv.getBoundingClientRect();
-  pa.ptr.x=e.clientX-r.left; pa.ptr.y=e.clientY-r.top; pa.ptr.down=true;
-});
-paCv.addEventListener('pointermove',e=>{
-  if(!pa.ptr.down) return;
-  const r=paCv.getBoundingClientRect();
-  pa.ptr.x=e.clientX-r.left; pa.ptr.y=e.clientY-r.top;
-});
-addEventListener('pointerup',()=>{ pa.ptr.down=false; });
-addEventListener('pointercancel',()=>{ pa.ptr.down=false; });
-
-$('paOnda').onclick=()=>{
-  if(pa.ondaLeft<=0||!pa.inAttack) return;
-  pa.ondaLeft--;
-  for(const h of pa.hornets){
-    if(h.st==='fly'||h.st==='steal'||h.st==='balled'){ h.stun=3; if(h.st==='steal') h.st='fly'; h.y-=40; }
-  }
-  for(let k=0;k<10;k++) pa.fx.push({x:paHX()+(Math.random()-0.5)*300,y:paHY()-80-Math.random()*120,t:Math.random()*0.3,em:'🌊'});
-  beep(300,.3,0,'sine',.2); beep(400,.3,.15,'sine',.2); beep(500,.3,.3,'sine',.2);
-  paMsgShow("🌊 L'onda delle api! I calabroni sono confusi!",2200);
-  paHud();
-};
-
-/* ---------- Consiglio dell'Alveare ---------- */
-function paShop(msg){
-  pa.paused=true; paDefSel=-1;
-  $('paShopTitle').textContent="Il Consiglio dell'Alveare";
-  $('paShopSub').textContent='Rispondi alle domande per imparare le difese vere delle api. Ogni difesa ti aiuta nel prossimo attacco!';
-  $('paStats').innerHTML=
-    '<span class="statChip">⭐ '+score+'</span>'+
-    '<span class="statChip">🍯 '+pa.honey+'/'+PA_HONEY+'</span>'+
-    '<span class="statChip">⚔️ prossimo: attacco '+pa.atk+'/'+PA_ATTACKS+'</span>'+
-    (pa.marked?'<span class="statChip" style="background:#ffe0e0;border-color:#ffb3b3;color:#a33">⚠️ alveare marcato!</span>':'');
-  const D=$('paDef'); D.innerHTML='';
-  PA_DIFESE.forEach((d,k)=>{
-    const lv=pa.lvl[d.id];
-    const b=document.createElement('button');
-    b.className='defCard'+(lv>=2?' max':'');
-    b.innerHTML='<span class="di">'+d.em+'</span><span class="dn">'+d.nm+'</span>'+
-      '<span class="dl">'+(lv>=1?'⭐':'☆')+(lv>=2?'⭐':'☆')+'</span>'+
-      '<span class="de">'+(lv?d.eff[lv]:'❓ Rispondi per sbloccarla')+'</span>';
-    if(lv<2) b.onclick=()=>paChooseDef(k);
-    D.appendChild(b);
-  });
-  $('paDiffRow').style.display='none';
-  $('paShopMsg').textContent=msg||'';
-  $('paGo').textContent=pa.inAttack?'▶️ Torna a difendere!'
-    :(pa.atk>=PA_ATTACKS?'👑 Sfida la Vespa Regina!':('▶️ Via all\'attacco '+pa.atk+'!'));
-  paWordHide();
-  $('paShop').style.display='flex';
-}
-function paChooseDef(k){
-  paDefSel=k;
-  const d=PA_DIFESE[k], lv=pa.lvl[d.id];
-  $('paDiffTit').textContent=d.em+' '+d.nm+(lv?' (potenziamento)':'')+' — scegli la domanda:';
-  $('paQEasy').textContent='❓ Facile +'+PA_REW_EASY+' ⭐';
-  $('paQHard').textContent='❓❓ Difficile +'+PA_REW_HARD+' ⭐';
-  $('paDiffNo').textContent='annulla';
-  $('paDiffRow').style.display='flex';
-}
-$('paDiffNo').onclick=()=>{ paDefSel=-1; $('paDiffRow').style.display='none'; };
-$('paQEasy').onclick=()=>{ if(paDefSel>=0) paQShow('easy',paDefSel); };
-$('paQHard').onclick=()=>{ if(paDefSel>=0) paQShow('hard',paDefSel); };
-$('paGo').onclick=()=>{
-  stopSpeak();
-  $('paShop').style.display='none';
-  if(pa.inAttack){ pa.paused=false; pa.last=0; }
-  else paAttackStart();
-};
-
-/* ---------- Domanda ---------- */
-function paQPick(diff){
-  /* prima le domande del tema Api, poi tutte le altre */
-  const pools=[];
-  THEMES.forEach((t,k)=>{
-    const bee=/api/i.test(t.name[0])?0:1;
-    (t[diff]||[]).forEach(q=>pools.push({q,theme:k,bee}));
-  });
-  pools.sort((a,b)=>a.bee-b.bee);
-  let cand=pools.filter(p=>!paUsedQ.has(p.q));
-  if(!cand.length){ paUsedQ.clear(); cand=pools; }
-  const beeCand=cand.filter(p=>p.bee===0);
-  const pick=(beeCand.length?beeCand:cand);
-  return pick[Math.floor(Math.random()*Math.min(pick.length,6))];
-}
-function paQReward(){
-  const base=(paQ.diff==='easy')?PA_REW_EASY:PA_REW_HARD;
-  return Math.max(2,Math.round(base*paQ.mult*(paQ.voiced?0.5:1)));
-}
-function paQRewardTxt(){
-  const half=paQ.voiced||paQ.mult<1;
-  $('paQReward').textContent='Premio: +'+paQReward()+' ⭐'+(half?' (dimezzato: lettura 🔊 o errore)':'');
-}
-function paQShow(diff,defIdx){
-  const pick=paQPick(diff); if(!pick) return;
-  paQ={diff, q:pick.q, theme:pick.theme, voiced:false, mult:1, done:false, defIdx};
-  paUsedQ.add(pick.q);
-  const i=LI(), t=THEMES[pick.theme];
-  $('paShop').style.display='none';
-  $('paQEmoji').textContent=t.emoji;
-  $('paQTheme').textContent=t.name[i];
-  paQRewardTxt();
-  $('paQText').textContent=pick.q.q[i];
-  $('paQSpeak').textContent='🔊 Leggimela (premio dimezzato)';
-  $('paQSpeak').style.display=VOICEON?'':'none';
-  $('paQMsg').textContent='';
-  $('paQBack').textContent='torna al consiglio';
-  const A=$('paQAnswers'); A.innerHTML='';
-  shuffle([[pick.q.ok[i],true],[pick.q.no[0][i],false],[pick.q.no[1][i],false]]).forEach(o=>{
-    const b=document.createElement('button');
-    b.className='ansBtn'; b.textContent=o[0]; b.dataset.right=o[1]?'1':'0';
-    b.onclick=()=>paQAnswer(b,o[1]);
-    A.appendChild(b);
-  });
-  $('paQ').style.display='flex';
-}
-function paQAnswer(btn,right){
-  if(paQ.done) return;
-  stopSpeak();
-  const i=LI();
-  if(right){
-    paQ.done=true;
-    document.querySelectorAll('#paQAnswers .ansBtn').forEach(b=>{ b.disabled=true; b.style.pointerEvents='none'; });
-    btn.classList.add('right'); sCorrect();
-    const g=paQReward(); score+=g; save();
-    const praise=NM(UI.praise[i][Math.floor(Math.random()*UI.praise[i].length)]);
-    $('paQMsg').textContent=praise+'  +'+g+' ⭐'; $('paQMsg').style.color='#3cba54';
-    speak(praise);
-    const d=PA_DIFESE[paQ.defIdx];
-    pa.lvl[d.id]=Math.min(2,pa.lvl[d.id]+1);
-    paHud();
-    setTimeout(()=>{
-      $('paQ').style.display='none';
-      paShowCard(d,pa.lvl[d.id],'shop');
-    },1400);
-  } else {
-    btn.classList.add('wrong'); btn.disabled=true; sWrong();
-    paQ.mult*=0.5; paQRewardTxt();
-    $('paQMsg').textContent=UI.wrong[i]; $('paQMsg').style.color='#e05555';
-  }
-}
-$('paQSpeak').onclick=async()=>{
-  if(!paQ.q||paQ.done) return;
-  if(!paQ.voiced){ paQ.voiced=true; paQRewardTxt(); }
-  $('paQSpeak').textContent='🔊 sto leggendo…';
-  const i=LI();
-  const btns=[...document.querySelectorAll('#paQAnswers .ansBtn:not(:disabled)')];
-  await speak([
-    {t:paQ.q.q[i], el:$('paQText')},
-    'Le risposte sono:',
-    ...btns.map(b=>({t:b.textContent, el:b, block:true}))
-  ]);
-  $('paQSpeak').textContent='🔊 Leggimela (premio dimezzato)';
-};
-$('paQBack').onclick=()=>{ stopSpeak(); $('paQ').style.display='none'; paShop(); };
-
-/* ---------- Scheda curiosità ---------- */
-let paCardNext='shop';
-function paShowCard(d,lv,next){
-  paCardNext=next;
-  $('paCardEm').textContent=d.em;
-  $('paCardTit').textContent=(lv===2?'⭐⭐ ':'')+ (d.nm||'')  ;
-  $('paCardTxt').textContent=d.card;
-  $('paCardEff').textContent=(lv>0&&d.eff)?('Nel gioco: '+d.eff[lv]):'';
-  $('paCardEff').style.display=(lv>0&&d.eff)?'':'none';
-  $('paCardRead').style.display=VOICEON?'':'none';
-  $('paCardOk').textContent='➡️ Avanti';
-  $('paCard').style.display='flex';
-  /* lettura automatica gratuita della prima frase */
-  if(VOICEON){
-    const first=String(d.card).split(/(?<=[.!?])\s/)[0];
-    speak([{t:first, el:$('paCardTxt')}]);
-  }
-}
-$('paCardRead').onclick=()=>{ speak([{t:$('paCardTxt').textContent, el:$('paCardTxt')}]); };
-$('paCardOk').onclick=()=>{
-  stopSpeak();
-  $('paCard').style.display='none';
-  if(paCardNext==='shop') paShop();
-};
-
-/* ---------- Vittoria / sconfitta ---------- */
-function paVictory(){
-  pa.paused=true; stopMusic(); fanfare(); confetti(); paWordHide();
-  const i=LI();
-  const defs=PA_DIFESE.filter(d=>pa.lvl[d.id]>0).map(d=>d.em+' '+d.nm).join(' · ');
-  $('paEndEm').textContent='🏆';
-  $('paEndTit').textContent='ALVEARE SALVO! 👑'; $('paEndTit').style.color='#e8a013';
-  $('paEndTxt').innerHTML='Hai sconfitto la Vespa Regina, proprio come fanno le api vere! 🐝❤️<br>'+
-    '🔥 Calabroni cotti: '+pa.cooked+' · 📖 Parole lette: '+pa.wordsRead+' · ⭐ Stelle: '+pa.starsTot+'/'+(PA_ATTACKS*3)+
-    (defs?('<br>Difese imparate: '+defs):'')+'<br>⭐ Punti: '+score;
-  $('paEndBtn').textContent='🔁 Gioca ancora';
-  $('paEndMenu').textContent='Torna alla scelta del gioco';
-  $('paEnd').style.display='flex';
-  speak(NM(UI.speakBravo[i]));
-}
-function paDefeat(){
-  pa.paused=true; pa.inAttack=false; stopMusic(); sLose();
-  pa.hornets=[]; pa.toSpawn=[]; paWordHide();
-  $('paEndEm').textContent='😢';
-  $('paEndTit').textContent='I calabroni hanno preso tutto il miele!'; $('paEndTit').style.color='#c0392b';
-  $('paEndTxt').textContent='Non mollare: le api contano su di te! Riprova questo attacco. 💪';
-  $('paEndBtn').textContent='🔁 Riprova l\'attacco '+pa.atk;
-  $('paEndMenu').textContent='Torna alla scelta del gioco';
-  $('paEnd').style.display='flex';
-}
-$('paEndBtn').onclick=()=>{
-  $('paEnd').style.display='none';
-  if(pa.honey<=0){ pa.honey=PA_HONEY; paHud(); if(MUSICON){ mCtx(); playMusic(TRK_LEVEL); } paAttackStart(); }
-  else { paReset(); if(MUSICON){ mCtx(); playMusic(TRK_LEVEL); } paShop('Nuova partita! Sblocca le difese e difendi il miele.'); }
-};
-$('paEndMenu').onclick=()=>{ $('paEnd').style.display='none'; paExit(); };
-
-/* ---------- Entra / esci ---------- */
+function paPower(){return 1+Math.min(5,Math.floor(pa.honey/2));}
+function paWaveGoal(){return 2+Math.ceil(pa.wave/2);}
+function paBee(role){const a=Math.random()*PA_TWO_PI,r=35+Math.random()*45;return{id:pa.nextId++,role,state:'idle',x:pa.hive.x+Math.cos(a)*r,y:pa.hive.y-45+Math.sin(a)*r*.5,vx:0,vy:0,phase:Math.random()*PA_TWO_PI,energy:100,target:null,flower:null,carry:false,rest:0};}
 function paReset(){
-  pa.atk=1; pa.honey=PA_HONEY; pa.marked=false; pa.extraRaiders=0;
-  pa.hornets=[]; pa.fx=[]; pa.guards=[]; pa.toSpawn=[];
-  pa.inAttack=false; pa.paused=true; pa.last=0; pa.cooked=0; pa.ondaLeft=0;
-  pa.tutorialShown=false;
-  pa.combo=0; pa.shake=0; pa.wordsRead=0; pa.starsTot=0;
-  pa.atkHoney=0; pa.atkEscapes=0; pa.atkWords=0;
-  paWord={active:false, group:null, target:'', cool:1.5, lastIdx:-1};
-  paWordHide();
-  pa.lvl={ingresso:0,guardiane:0,propoli:0,onda:0};
-  paMakeBees();
+  Object.assign(pa,{paused:true,last:0,time:0,eggs:1,eggClock:0,workerClock:0,workers:2,warriors:1,honey:1,honeyFrac:0,bees:[],hornets:[],fx:[],wave:1,waveKills:0,killed:0,lost:0,spawnClock:3,nextId:1,msgTimer:0,qUsed:[]});
+  paLayout();for(let i=0;i<2;i++)pa.bees.push(paBee('worker'));pa.bees.push(paBee('warrior'));paHud();
 }
-function paEnter(){
-  if(VOICEON) initTTS();
-  paused=true; stopSpeak();
-  ['modeSel','menu'].forEach(id=>$(id).style.display='none');
-  $('hud').style.display='none'; $('joy').style.display='none';
-  paReset(); paResize(); paHud();
-  $('pa').style.display='block';
-  if(MUSICON){ mCtx(); playMusic(TRK_LEVEL); }
-  if(!pa.raf) pa.raf=requestAnimationFrame(paFrame);
-  /* si parte subito con l'attacco 1 (tutorial), il consiglio arriva dopo */
-  paAttackStart();
+function paSpawnHornet(){
+  let type='scout';
+  if(pa.wave===8&&pa.hornets.length===0)type='king';
+  else{const r=Math.random();if(pa.wave>=6&&r<.2)type='commander';else if(pa.wave>=4&&r<.48)type='tank';else if(pa.wave>=2&&r<.78)type='raider';}
+  const cfg=PA_HORNET_TYPES[type],boss=type==='king',side=Math.random()<.5?-1:1;
+  const hp=cfg.hp*1.28*(1+(pa.wave-1)*.12);
+  pa.hornets.push({id:pa.nextId++,type,cfg,x:side<0?-65:pa.w+65,y:100+Math.random()*Math.max(100,pa.h*.36),hp,maxHp:hp,speed:(36+pa.wave*3.1)*cfg.speed,phase:Math.random()*6,targetX:pa.hive.x,targetY:pa.hive.y-45,assigned:[],dead:false,boss,hit:0});
+  paSay(cfg.icon+' '+cfg.name+'! '+(type==='scout'?'È velocissimo!':type==='tank'?'È lento ma molto resistente!':boss?'Servono tante guerriere!':'Toccalo per mandare le guerriere!'));
 }
-function paExit(){
-  cancelAnimationFrame(pa.raf); pa.raf=0; pa.paused=true; paWordHide();
-  ['pa','paShop','paQ','paCard','paEnd'].forEach(id=>$(id).style.display='none');
-  stopSpeak();
-  showModeSel();
+function paAssign(h){
+  const b=pa.bees.find(x=>x.role==='warrior'&&x.state==='idle'&&x.energy>20);
+  if(!b){paSay('Nessuna guerriera pronta. Aspetta il riposo o rispondi a una domanda!');return;}
+  b.state='fight';b.target=h;b.energy=Math.max(0,b.energy-4);h.assigned.push(b);pa.fx.push({x:h.x,y:h.y,t:0,text:'🛡️ +1'});paSay('Guerriera assegnata! Tocca ancora per mandarne un’altra.');paHud();
 }
-$('paHomeBtn').onclick=paExit;
-$('paMusicBtn').onclick=()=>{
-  MUSICON=!MUSICON; save();
-  if(!MUSICON) stopMusic(); else { mCtx(); playMusic(TRK_LEVEL); }
-  paHud();
-};
+function paMove(b,tx,ty,s,dt){const dx=tx-b.x,dy=ty-b.y,d=Math.hypot(dx,dy)||1;b.vx+=(dx/d*s-b.vx)*Math.min(1,dt*3);b.vy+=(dy/d*s-b.vy)*Math.min(1,dt*3);b.x+=b.vx*dt;b.y+=b.vy*dt;return d;}
+function paUpdate(dt){
+  pa.time+=dt;if(pa.msgTimer>0){pa.msgTimer-=dt;if(pa.msgTimer<=0)$('paMsg').style.display='none';}
+  pa.eggClock+=dt;if(pa.eggClock>6){pa.eggClock=0;pa.eggs++;pa.fx.push({x:pa.queen.x,y:pa.queen.y,t:0,text:'🥚 +1'});paSay('👑 La regina ha deposto un uovo!');paHud();}
+  pa.spawnClock-=dt;if(pa.spawnClock<=0&&pa.hornets.length<Math.min(5,2+Math.floor(pa.wave/2))){paSpawnHornet();pa.spawnClock=Math.max(3.4,6.2-pa.wave*.32);}
+  for(const b of pa.bees){b.phase+=dt*12;
+    if(b.role==='worker'){
+      if(!b.flower)b.flower=pa.flowers[Math.floor(Math.random()*pa.flowers.length)];
+      if(b.state==='idle'||b.state==='gather'){
+        b.state='gather';const d=paMove(b,b.flower.x,b.flower.y-24,108,dt);
+        if(d<14){b.carry=true;b.state='return';}
+      }else if(b.state==='return'){
+        const d=paMove(b,pa.hive.x+20,pa.hive.y-40,126,dt);
+        if(d<18){pa.honeyFrac+=.3;if(pa.honeyFrac>=1){pa.honey++;pa.honeyFrac-=1;pa.fx.push({x:pa.hive.x,y:pa.hive.y-85,t:0,text:'🍯 +1 · FORZA x'+paPower()});paSay('🍯 Le bottinatrici hanno prodotto miele: guerriere più forti!');}paHud();b.carry=false;b.flower=pa.flowers[Math.floor(Math.random()*pa.flowers.length)];b.state='gather';}
+      }
+    }else if(b.state==='fight'){
+      const h=b.target;if(!h||h.dead){b.state='return';b.target=null;}else{const n=h.assigned.indexOf(b),a=pa.time*2.8+n*PA_TWO_PI/Math.max(1,h.assigned.length);const d=paMove(b,h.x+Math.cos(a)*30,h.y+Math.sin(a)*22,168,dt);if(d<40){b.energy-=dt*.65;h.hp-=dt*.62*paPower();h.hit=.1;}}
+    }else if(b.state==='return'){
+      if(paMove(b,pa.hive.x+(b.id%5-2)*13,pa.hive.y-50,122,dt)<18){b.state='rest';b.rest=0;}
+    }else if(b.state==='rest'){
+      b.rest+=dt;b.energy=Math.min(100,b.energy+dt*5);if(b.rest>5&&b.energy>55)b.state='idle';
+    }else{paMove(b,pa.hive.x+Math.cos(b.phase*.15+b.id)*75,pa.hive.y-55+Math.sin(b.phase*.13+b.id)*35,48,dt);}
+  }
+  for(const h of pa.hornets){if(h.dead)continue;h.phase+=dt*7;h.hit=Math.max(0,h.hit-dt);
+    const dx=h.targetX-h.x,dy=h.targetY-h.y,d=Math.hypot(dx,dy)||1;
+    /* Anche sotto attacco il calabrone avanza. Ogni guerriera lo rallenta,
+       ma non può mai immobilizzarlo completamente. */
+    const slow=h.assigned.length?Math.max(.2,.58-h.assigned.length*.07):1;
+    h.x+=dx/d*h.speed*slow*dt+Math.sin(h.phase)*7*dt;
+    h.y+=dy/d*h.speed*slow*dt+Math.cos(h.phase*.8)*4*dt;
+    if(d<38){
+      h.dead=true;pa.lost++;pa.honey=Math.max(0,pa.honey-h.cfg.damage);
+      for(const b of h.assigned){b.state='return';b.target=null;}
+      paSay('💥 '+h.cfg.name+' ha raggiunto l’alveare e rubato '+h.cfg.damage+' miele!');paHud();
+    }
+    if(!h.dead&&h.hp<=0){h.dead=true;pa.killed++;pa.waveKills++;score+=h.cfg.reward;save();for(const b of h.assigned){b.state='return';b.target=null;}pa.fx.push({x:h.x,y:h.y,t:0,text:'✨ +'+h.cfg.reward});sCorrect();paSay(h.cfg.name+' sconfitto! Le guerriere tornano a riposare.');paHud();}
+  }
+  pa.hornets=pa.hornets.filter(h=>!h.dead);
+  for(const f of pa.fx)f.t+=dt;pa.fx=pa.fx.filter(f=>f.t<1.4);
+  if(pa.waveKills>=paWaveGoal()){if(pa.wave>=8)paFinish(true);else{pa.wave++;pa.waveKills=0;pa.spawnClock=2.2;paSay('🌟 Ondata superata! Prepara nuove guerriere: ora saranno di più.');paHud();}}
+  if(pa.honey<=0&&pa.lost>=3)paFinish(false);
+}
 
-/* ---------- Registrazione nel menu dei giochi ---------- */
-registerGame({
-  id:'pallaapi', emoji:'🐝',
-  nm:['La Palla di Api','The Bee Ball'],
-  sub:['La vera difesa delle api: la palla che scotta a 46°!','The real bee defense: the 46° hot ball!'],
-  colore:'linear-gradient(180deg,#ffb300,#e8890b)',
-  enter:paEnter
-});
+function paRound(x,y,w,h,r=12){paC.beginPath();paC.roundRect(x,y,w,h,r);}
+function paDrawFlower(f,t){const c=PA_FLOWERS[f.c],s=1+Math.sin(t*1.5+f.x)*.04;paC.strokeStyle='#39843e';paC.lineWidth=5;paC.beginPath();paC.moveTo(f.x,f.y+35);paC.quadraticCurveTo(f.x-10,f.y+10,f.x,f.y);paC.stroke();paC.save();paC.translate(f.x,f.y);paC.scale(s,s);for(let i=0;i<7;i++){const a=i*PA_TWO_PI/7;paC.fillStyle=c[0];paC.beginPath();paC.ellipse(Math.cos(a)*13,Math.sin(a)*13,9,14,a,0,PA_TWO_PI);paC.fill();}paC.fillStyle=c[1];paC.beginPath();paC.arc(0,0,9,0,PA_TWO_PI);paC.fill();paC.restore();}
+function paDrawHive(){const {x,y}=pa.hive;paC.fillStyle='#0002';paC.beginPath();paC.ellipse(x,y+47,85,14,0,0,PA_TWO_PI);paC.fill();for(let i=0;i<6;i++){const w=70-i*8,yy=y+30-i*15,g=paC.createLinearGradient(x,yy-12,x,yy+12);g.addColorStop(0,'#ffd866');g.addColorStop(1,'#d99315');paC.fillStyle=g;paC.strokeStyle='#925b0b';paC.lineWidth=3;paC.beginPath();paC.ellipse(x,yy,w,17,0,0,PA_TWO_PI);paC.fill();paC.stroke();}paC.fillStyle='#4a2709';paC.beginPath();paC.arc(x,y+37,15,Math.PI,0);paC.fill();paC.fillStyle='#9b622c';paRound(x-72,y+46,144,12,5);paC.fill();}
+function paDrawBee(b,queen=false){const c=paC,s=queen?1.75:(b.role==='warrior'?1.2:1),ang=Math.atan2(b.vy,b.vx),dir=Math.cos(ang)>=0?1:-1,tilt=dir>0?ang:Math.PI-ang;c.save();c.translate(b.x,b.y);c.rotate(tilt);c.scale(dir*s,s);c.fillStyle='#dff6ffcc';c.strokeStyle='#7bb5cf';c.lineWidth=1;c.beginPath();c.ellipse(-4,-9,6,10,-.5,0,PA_TWO_PI);c.ellipse(5,-9,6,10,.5,0,PA_TWO_PI);c.fill();c.stroke();c.save();c.beginPath();c.ellipse(0,0,14,9,0,0,PA_TWO_PI);c.clip();c.fillStyle=queen?'#ffc83d':'#ffd43b';c.fillRect(-15,-10,30,20);c.fillStyle='#3a2a10';c.fillRect(-7,-10,4,20);c.fillRect(3,-10,4,20);c.restore();c.strokeStyle='#3a2a10';c.lineWidth=2;c.beginPath();c.ellipse(0,0,14,9,0,0,PA_TWO_PI);c.stroke();c.fillStyle='#efaa28';c.beginPath();c.arc(13,0,7,0,PA_TWO_PI);c.fill();c.stroke();c.fillStyle='#241a10';c.beginPath();c.arc(15,-2,1.5,0,PA_TWO_PI);c.fill();c.beginPath();c.moveTo(-14,-2);c.lineTo(-21,0);c.lineTo(-14,2);c.fill();if(b.role==='warrior'){c.fillStyle='#c84b31';paRound(7,-10,13,5,2);c.fill();c.fillStyle='#fff';c.font='9px sans-serif';c.fillText('✦',12,-6);}if(queen){c.font='15px serif';c.fillText('👑',5,-14);}if(b.carry){c.font='12px serif';c.fillText('🍯',-8,13);}c.restore();}
+function paDrawHornet(h){const c=paC,s=h.cfg.scale,a=Math.atan2(h.targetY-h.y,h.targetX-h.x),dir=Math.cos(a)>=0?1:-1,tilt=dir>0?a:Math.PI-a;c.save();c.translate(h.x,h.y);c.rotate(tilt);c.scale(dir*s,s);if(h.hit)c.translate((Math.random()-.5)*4,0);c.fillStyle='#d7efffcc';c.strokeStyle='#678ca3';c.lineWidth=1.5;c.beginPath();c.ellipse(-5,-14,8,14,-.4,0,PA_TWO_PI);c.ellipse(6,-14,8,14,.4,0,PA_TWO_PI);c.fill();c.stroke();c.save();c.beginPath();c.ellipse(0,0,23,13,0,0,PA_TWO_PI);c.clip();c.fillStyle=h.cfg.body;c.fillRect(-25,-14,50,28);c.fillStyle='#35230d';for(let x=-15;x<15;x+=10)c.fillRect(x,-14,5,28);c.restore();c.strokeStyle='#35230d';c.lineWidth=h.type==='tank'?4:3;c.beginPath();c.ellipse(0,0,23,13,0,0,PA_TWO_PI);c.stroke();c.fillStyle=h.cfg.head;c.beginPath();c.arc(22,0,12,0,PA_TWO_PI);c.fill();c.stroke();c.fillStyle='#fff';c.beginPath();c.arc(25,-3,4,0,PA_TWO_PI);c.fill();c.fillStyle='#c1121f';c.beginPath();c.arc(26,-3,2,0,PA_TWO_PI);c.fill();c.strokeStyle='#35230d';c.beginPath();c.moveTo(18,-10);c.lineTo(29,-7);c.stroke();c.beginPath();c.moveTo(-23,-3);c.lineTo(-35,0);c.lineTo(-23,3);c.fill();c.restore();const w=h.boss?112:76,top=h.boss?66:50,fr=Math.max(0,h.hp/h.maxHp);c.fillStyle='#fff';paRound(h.x-w/2,h.y-top,w,10,5);c.fill();c.fillStyle=fr>.45?'#50b85a':'#e24b3b';paRound(h.x-w/2+2,h.y-top+2,(w-4)*fr,6,3);c.fill();c.fillStyle='#3b2915';c.font='bold 12px Andika';c.textAlign='center';c.fillText(h.cfg.icon+' '+h.cfg.name+' · '+h.assigned.length+' 🐝',h.x,h.y-top-9);}
+function paDraw(){const t=pa.time,c=paC;c.clearRect(0,0,pa.w,pa.h);const sky=c.createLinearGradient(0,0,0,pa.h);sky.addColorStop(0,'#70c9ef');sky.addColorStop(.58,'#d8f5ff');sky.addColorStop(.59,'#87cb62');sky.addColorStop(1,'#4d9b45');c.fillStyle=sky;c.fillRect(0,0,pa.w,pa.h);c.fillStyle='#ffe45e';c.beginPath();c.arc(pa.w-70,80,35,0,PA_TWO_PI);c.fill();c.fillStyle='#fff9';for(let i=0;i<4;i++){const x=(i*300+t*8)%(pa.w+180)-90,y=75+i*45;c.beginPath();c.ellipse(x,y,55,18,0,0,PA_TWO_PI);c.ellipse(x+35,y-10,35,16,0,0,PA_TWO_PI);c.fill();}c.fillStyle='#7cbc58';c.beginPath();c.ellipse(pa.w*.3,pa.h*.65,pa.w*.48,pa.h*.18,0,Math.PI,PA_TWO_PI);c.fill();c.fillStyle='#67ae4d';c.beginPath();c.ellipse(pa.w*.8,pa.h*.68,pa.w*.45,pa.h*.2,0,Math.PI,PA_TWO_PI);c.fill();for(const f of pa.flowers)paDrawFlower(f,t);paDrawHive();paDrawBee({x:pa.queen.x,y:pa.queen.y,vx:1,vy:0,role:'queen'},true);for(const b of pa.bees)paDrawBee(b);for(const h of pa.hornets)paDrawHornet(h);c.textAlign='center';c.font='bold 25px Andika';for(const f of pa.fx){c.globalAlpha=1-f.t/1.4;c.fillStyle='#fff';c.strokeStyle='#4b3216';c.lineWidth=4;c.strokeText(f.text,f.x,f.y-f.t*35);c.fillText(f.text,f.x,f.y-f.t*35);}c.globalAlpha=1;}
+function paFrame(ts){pa.raf=requestAnimationFrame(paFrame);if(!pa.last)pa.last=ts;const dt=Math.min(.05,(ts-pa.last)/1000);pa.last=ts;if(!pa.paused)paUpdate(dt);paDraw();}
+
+paCv.addEventListener('pointerdown',e=>{if(pa.paused)return;const r=paCv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;let hit=null,bd=80*80;for(const h of pa.hornets){const d=(h.x-x)**2+(h.y-y)**2;if(d<bd){bd=d;hit=h;}}if(hit)paAssign(hit);else paSay('Tocca direttamente un calabrone per assegnare una guerriera.');});
+
+function paPickQ(level){const questions=PA_QUESTIONS[level],prefix=level+':';let pool=questions.map((q,i)=>({q,i})).filter(x=>!pa.qUsed.includes(prefix+x.i));if(!pool.length){pa.qUsed=pa.qUsed.filter(x=>!x.startsWith(prefix));pool=questions.map((q,i)=>({q,i}));}const p=pool[Math.floor(Math.random()*pool.length)];pa.qUsed.push(prefix+p.i);return p.q;}
+let paCurrentQ=null,paQDone=false,paQLevel='easy';
+function paShowQ(){pa.paused=true;paCurrentQ=null;paQDone=false;$('paQTitle').textContent='Scegli come usare le uova';$('paQLevels').style.display='grid';$('paQText').textContent='La regina ha deposto '+pa.eggs+(pa.eggs===1?' uovo disponibile.':' uova disponibili.');$('paQSpeak').style.display='none';$('paQAnswers').innerHTML='';$('paQMsg').textContent=pa.eggs?'Crea una bottinatrice oppure affronta una domanda per le guerriere.':'Aspetta che la regina deponga un uovo!';$('paQLevels').querySelectorAll('button').forEach(b=>{const need=b.dataset.worker?1:PA_Q_REWARD[b.dataset.level];b.disabled=pa.eggs<need;b.style.opacity=b.disabled?'.35':'1';});$('paQ').style.display='flex';}
+function paMakeWorker(){if(pa.eggs<1)return;pa.eggs--;pa.workers++;pa.bees.push(paBee('worker'));sCorrect();paHud();$('paQ').style.display='none';pa.paused=false;pa.last=0;paSay('🌼 È nata una bottinatrice! Raccoglierà nettare per produrre miele.');}
+function paStartQ(level){const reward=PA_Q_REWARD[level];if(pa.eggs<reward){$('paQMsg').textContent='Non ci sono abbastanza uova!';return;}paQLevel=level;paCurrentQ=paPickQ(level);paQDone=false;const names={easy:'FACILE',medium:'MEDIO',hard:'DIFFICILE'};$('paQTitle').textContent=names[level]+' — userai '+reward+(reward===1?' uovo':' uova');$('paQLevels').style.display='none';$('paQText').textContent=paCurrentQ[0];$('paQSpeak').style.display='inline-block';$('paQMsg').textContent='';const a=$('paQAnswers');a.innerHTML='';shuffle([[paCurrentQ[1],1],[paCurrentQ[2],0],[paCurrentQ[3],0]]).forEach(([txt,ok])=>{const b=document.createElement('button');b.className='ansBtn';b.textContent=txt;b.onclick=()=>paAnswer(b,ok);a.appendChild(b);});}
+function paAnswer(b,ok){if(paQDone)return;if(ok){paQDone=true;b.classList.add('right');document.querySelectorAll('#paQAnswers button').forEach(x=>x.disabled=true);const reward=PA_Q_REWARD[paQLevel];pa.eggs-=reward;for(let i=0;i<reward;i++)pa.bees.push(paBee('warrior'));pa.warriors+=reward;score+=reward*5;save();sCorrect();$('paQMsg').style.color='#299447';$('paQMsg').textContent=reward===1?'Bravissimo! L’uovo è diventato una guerriera! 🐝🛡️':'Bravissimo! '+reward+' uova sono diventate guerriere! 🐝🛡️';paHud();setTimeout(()=>{$('paQ').style.display='none';pa.paused=false;pa.last=0;paSay('Le nuove guerriere sono pronte. Tocca un calabrone!');},1400);}else{b.disabled=true;b.classList.add('wrong');sWrong();$('paQMsg').style.color='#d53e3e';$('paQMsg').textContent='Quasi! Prova un’altra risposta.';}}
+$('paQLevels').querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>paStartQ(b.dataset.level));
+$('paQLevels').querySelector('[data-worker]').onclick=paMakeWorker;
+$('paAsk').onclick=paShowQ;$('paQBack').onclick=()=>{stopSpeak();$('paQ').style.display='none';pa.paused=false;pa.last=0;};$('paQSpeak').onclick=()=>speak([{t:paCurrentQ?paCurrentQ[0]:'',el:$('paQText')}]);
+function paFinish(win){if(pa.paused)return;pa.paused=true;stopMusic();$('paEndEm').textContent=win?'🏆🐝':'🌧️🐝';$('paEndTitle').textContent=win?'ALVEARE SALVO!':'RIPROVIAMO!';$('paEndTxt').innerHTML=win?'Hai guidato operaie e guerriere fino alla vittoria!<br>Calabroni sconfitti: '+pa.killed+' · Punti: '+score:'I calabroni hanno preso il miele, ma ora sai come organizzare l’alveare.';$('paEnd').style.display='flex';if(win){fanfare();confetti();}}
+$('paAgain').onclick=()=>{$('paEnd').style.display='none';paReset();pa.paused=false;paSay('La Regina ha iniziato a deporre le uova!');if(MUSICON){mCtx();playMusic(TRK_HIVE);}};$('paEndHome').onclick=paExit;
+function paEnter(){if(VOICEON)initTTS();paused=true;stopSpeak();['modeSel','menu'].forEach(id=>$(id).style.display='none');$('hud').style.display='none';$('joy').style.display='none';$('pa').style.display='block';pa.on=true;paResize();paReset();if(!pa.raf)pa.raf=requestAnimationFrame(paFrame);$('paIntro').style.display='flex';}
+function paExit(){cancelAnimationFrame(pa.raf);pa.raf=0;pa.on=false;pa.paused=true;['pa','paIntro','paQ','paEnd'].forEach(id=>$(id).style.display='none');stopSpeak();showModeSel();}
+$('paIntroGo').onclick=()=>{$('paIntro').style.display='none';pa.paused=false;pa.last=0;paSay('La Regina depone le uova. Le operaie stanno andando ai fiori!');if(MUSICON){mCtx();playMusic(TRK_HIVE);}};$('paHomeBtn').onclick=paExit;$('paMusicBtn').onclick=()=>{MUSICON=!MUSICON;save();if(MUSICON){mCtx();playMusic(TRK_HIVE);}else stopMusic();paHud();};addEventListener('resize',()=>{if(pa.on)paResize();});
+registerGame({id:'pallaapi',emoji:'🐝',nm:['L’Alveare di Gabriele','Gabriele’s Hive'],sub:['Fai nascere api, raccogli miele e difendi l’alveare!','Raise bees, collect honey and defend the hive!'],colore:'linear-gradient(180deg,#ffd23f,#e8890b)',enter:paEnter});
