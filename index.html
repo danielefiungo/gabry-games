@@ -16,6 +16,24 @@
 <body>
 <div id="game"></div>
 
+<!-- TIMER GLOBALE DELLA SESSIONE -->
+<div id="playTimer" hidden role="timer" aria-live="off">
+  <button id="playTimerDrag" type="button" aria-label="Sposta il timer" title="Trascina per spostare">
+    <span class="playTimerProgress" aria-hidden="true"><span>⏱</span></span>
+    <span id="playTimerValue">20:00</span>
+  </button>
+  <button id="playTimerHide" type="button" aria-label="Nascondi il timer" title="Nascondi il timer">×</button>
+</div>
+<button id="playTimerRestore" type="button" hidden aria-label="Mostra il timer" title="Mostra il timer">⏱</button>
+<div id="playTimerNotice" hidden role="alert" aria-live="assertive">
+  <div class="playTimerNoticeIcon" aria-hidden="true">🌟</div>
+  <div class="playTimerNoticeText">
+    <strong id="playTimerNoticeTitle">Hai giocato abbastanza!</strong>
+    <span id="playTimerNoticeBody">Hai fatto un ottimo lavoro. Ora è il momento di una pausa.</span>
+  </div>
+  <button id="playTimerDismiss" type="button">Va bene 😊</button>
+</div>
+
 <div id="hud">
   <div class="hudBox" id="hudLevel">🚀</div>
   <div class="hudBox" id="hudLives">❤️❤️❤️</div>
@@ -154,7 +172,7 @@
 <script src="js/missione-spaziale.js"></script>
 <script src="js/volo-planetario.js"></script>
 <script src="js/officina-circuiti.js?v=visual-2"></script>
-<script src="js/officina-logica.js?v=3"></script>
+<script src="js/officina-logica.js?v=4"></script>
 <script src="js/gibi-rescue-data.js?v=1"></script>
 <script src="js/gibi-rescue-sim.js?v=1"></script>
 <script src="js/gibi-rescue-code.js?v=1"></script>
@@ -162,5 +180,6 @@
 <script src="js/macchina-parole-data.js?v=1"></script>
 <script src="js/macchina-parole-model.js?v=1"></script>
 <script src="js/macchina-parole.js?v=1"></script>
+<script src="js/timer-globale.js?v=1"></script>
 </body>
 </html>

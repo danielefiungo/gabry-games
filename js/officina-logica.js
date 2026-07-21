@@ -126,7 +126,7 @@ const OL_LEVELS=[
 .olOverlay{position:absolute;z-index:6;inset:0;background:#090e27cc;display:none;align-items:center;justify-content:center;padding:12px}.olCard{width:min(820px,94vw);max-height:90vh;overflow:auto;box-sizing:border-box;background:#fff;color:#303765;border:4px solid #aebaff;border-radius:26px;padding:22px;text-align:center;box-shadow:0 14px 50px #0009}.olCard h2{font-size:clamp(24px,5vw,36px);margin:3px 0 10px;color:#563eb1}.olCard p{font-size:clamp(17px,3.2vw,22px);line-height:1.5}.olBig{border:0;border-radius:16px;background:linear-gradient(#8d65ef,#5936bd);color:#fff;font:bold 19px inherit;padding:12px 24px;box-shadow:0 5px 0 #38207e;cursor:pointer}
 #olPickGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0}.olLevel{border:3px solid #c8cff0;border-radius:17px;background:#f5f3ff;color:#403375;padding:10px 6px;min-height:105px;font:bold 14px inherit;cursor:pointer}.olLevel .ico{display:block;font-size:31px}.olLevel .stars{display:block;min-height:20px;margin-top:4px}.olLevel.lock{filter:grayscale(1);opacity:.55;cursor:default}.olLevel.next{border-color:#ffc928;background:#fff8d6}
 #olFact{background:#edf8ff;border-left:6px solid #4eafe3;border-radius:14px;padding:13px;text-align:left;font-size:18px;line-height:1.5;margin:13px 0}
-@media(max-width:650px){#olCircuit{grid-template-columns:80px minmax(190px,1fr) 70px;height:400px}#olInputs,#olLogic,#olOutputs{height:min(390px,calc((96vw - 150px)*.75));align-self:center}.olSwitch{padding:4px 2px;font-size:9px}.olSwitch:after{right:-8px;width:10px;height:10px}.olLever{font-size:18px}.olBit{font-size:20px}#olGuardian{width:100px;height:110px;border-radius:32px}.olGateName{font-size:20px}.olFace{font-size:27px}.olLamp{width:62px;height:62px}.olLamp:before{left:-9px;width:10px;height:10px}.olLamp .bulb{font-size:23px}.olLamp small{font-size:8px}#olPickGrid{grid-template-columns:repeat(2,1fr)}#olStage{inset:145px 0 78px}#olGibi{display:none}.olBtn{padding:7px;font-size:10px}.olNet .gateText{font-size:34px}.olNet .gateBit{display:none}.olNet .edge{stroke-width:9}.olNet .gateShape,.olNet .gateBubble,.olNet .xorCurve{stroke-width:7}}
+@media(max-width:650px){#olCircuit{grid-template-columns:80px minmax(190px,1fr) 70px;height:400px}#olInputs,#olLogic,#olOutputs{height:min(390px,calc((96vw - 150px)*.75));align-self:center}.olSwitch{padding:4px 2px;font-size:9px}.olSwitch:after{right:-8px;width:10px;height:10px}.olLever{font-size:18px}.olBit{font-size:20px}#olGuardian{width:100px;height:110px;border-radius:32px}.olGateName{font-size:20px}.olFace{font-size:27px}.olLamp{width:62px;height:62px}.olLamp:before{left:-9px;width:10px;height:10px}.olLamp .bulb{font-size:23px}.olLamp small{font-size:8px}#olPickGrid{grid-template-columns:repeat(2,1fr)}#olStage{inset:145px 0 78px}#olGibi{display:none}.olBtn{padding:7px;font-size:10px}.olNet .gateText{font-size:28px}.olNet .gateBit{display:none}.olNet .edge{stroke-width:9}.olNet .gateShape,.olNet .gateBubble,.olNet .xorCurve{stroke-width:7}}
 `;
  document.head.appendChild(css);
  document.body.insertAdjacentHTML('beforeend',`<div id="ol">
@@ -157,29 +157,31 @@ function olOutputs(L,b){
  if(L.gate==='COMBO') return [olGate('AND',b[0],olGate('NOT',b[1]))];
  return [olGate(L.gate,b[0],b[1])];
 }
-function olGateSymbol(n,p,on){
+function olGateSymbol(n,p,on,scale){
  const x=p.x,y=p.y,cl='gateShape'+(on?' on':''),bc='gateBubble'+(on?' on':''),xc='xorCurve'+(on?' on':'');
+ const s=scale||1;
  let shape='';
- if(n.gate==='AND')shape=`<path class="${cl}" d="M${x-50} ${y-34} H${x} A50 34 0 0 1 ${x} ${y+34} H${x-50} Z"/>`;
+ if(n.gate==='AND')shape=`<path class="${cl}" d="M${x-50*s} ${y-34*s} H${x} A${50*s} ${34*s} 0 0 1 ${x} ${y+34*s} H${x-50*s} Z"/>`;
  else if(n.gate==='OR'||n.gate==='XOR'){
-  shape=`<path class="${cl}" d="M${x-50} ${y-34} Q${x-18} ${y} ${x-50} ${y+34} Q${x+5} ${y+32} ${x+50} ${y} Q${x+5} ${y-32} ${x-50} ${y-34} Z"/>`;
-  if(n.gate==='XOR')shape+=`<path class="${xc}" d="M${x-61} ${y-34} Q${x-29} ${y} ${x-61} ${y+34}"/>`;
- }else if(n.gate==='NOT')shape=`<path class="${cl}" d="M${x-48} ${y-34} L${x+37} ${y} L${x-48} ${y+34} Z"/><circle class="${bc}" cx="${x+45}" cy="${y}" r="8"/>`;
+  shape=`<path class="${cl}" d="M${x-50*s} ${y-34*s} Q${x-18*s} ${y} ${x-50*s} ${y+34*s} Q${x+5*s} ${y+32*s} ${x+50*s} ${y} Q${x+5*s} ${y-32*s} ${x-50*s} ${y-34*s} Z"/>`;
+  if(n.gate==='XOR')shape+=`<path class="${xc}" d="M${x-61*s} ${y-34*s} Q${x-29*s} ${y} ${x-61*s} ${y+34*s}"/>`;
+ }else if(n.gate==='NOT')shape=`<path class="${cl}" d="M${x-48*s} ${y-34*s} L${x+37*s} ${y} L${x-48*s} ${y+34*s} Z"/><circle class="${bc}" cx="${x+45*s}" cy="${y}" r="${8*s}"/>`;
  const tx=n.gate==='NOT'?x-10:x-5;
  return `<g><title>Porta ${n.gate}, uscita ${on?1:0}</title>${shape}<text class="gateText" x="${tx}" y="${y-6}">${n.gate}</text><text class="gateBit" x="${tx}" y="${y+18}">= ${on?1:0}</text></g>`;
 }
 function olNetworkSVG(L,b){
  const W=520,H=390,values=olCircuitValues(L,b),depth={},byDepth={};
+ const gateScale=L.largeGate?1.65:1;
  function dep(id){if(depth[id])return depth[id];const n=L.circuit.find(x=>x.id===id);return depth[id]=1+Math.max(0,...n.ins.filter(x=>typeof x==='string').map(dep));}
  L.circuit.forEach(n=>{const d=dep(n.id);(byDepth[d]||(byDepth[d]=[])).push(n);});
  const maxD=Math.max(...Object.keys(byDepth).map(Number)),pos={};
  Object.keys(byDepth).forEach(k=>{const a=byDepth[k],d=+k;a.forEach((n,j)=>{pos[n.id]={x:d*W/(maxD+1),y:(j+1)*H/(a.length+1)};});});
  const inY=b.map((_,i)=>(i+.5)*H/b.length),outY=L.outputRefs.map((_,i)=>(i+.5)*H/L.outputRefs.length);
  let edges='',gates='';
- function source(ref){if(typeof ref==='number')return {x:0,y:inY[ref],on:!!b[ref]};const n=L.circuit.find(x=>x.id===ref);return {x:pos[ref].x+(n.gate==='NOT'?53:50),y:pos[ref].y,on:!!values[ref]};}
- L.circuit.forEach(n=>{const p=pos[n.id],targetX=p.x-(n.gate==='XOR'?50:48);n.ins.forEach((ref,i)=>{const s=source(ref),ty=p.y+(i-(n.ins.length-1)/2)*22,mx=Math.max(s.x+14,(s.x+targetX)/2);edges+=`<path class="edge${s.on?' on':''}" d="M${s.x} ${s.y} H${mx} V${ty} H${targetX}"/>`;});});
+ function source(ref){if(typeof ref==='number')return {x:0,y:inY[ref],on:!!b[ref]};const n=L.circuit.find(x=>x.id===ref);return {x:pos[ref].x+(n.gate==='NOT'?53:50)*gateScale,y:pos[ref].y,on:!!values[ref]};}
+ L.circuit.forEach(n=>{const p=pos[n.id],targetX=p.x-(n.gate==='XOR'?50:48)*gateScale;n.ins.forEach((ref,i)=>{const s=source(ref),ty=p.y+(i-(n.ins.length-1)/2)*22*gateScale,mx=Math.max(s.x+14,(s.x+targetX)/2);edges+=`<path class="edge${s.on?' on':''}" d="M${s.x} ${s.y} H${mx} V${ty} H${targetX}"/>`;});});
  L.outputRefs.forEach((ref,i)=>{const s=source(ref),mx=(s.x+W)/2;edges+=`<path class="edge${s.on?' on':''}" d="M${s.x} ${s.y} H${mx} V${outY[i]} H${W}"/>`;});
- L.circuit.forEach(n=>{gates+=olGateSymbol(n,pos[n.id],values[n.id]);});
+ L.circuit.forEach(n=>{gates+=olGateSymbol(n,pos[n.id],values[n.id],gateScale);});
  return `<svg class="olNet" viewBox="0 0 ${W} ${H}" role="img" aria-label="Circuito con simboli standard delle porte logiche">${edges}${gates}</svg>`;
 }
 function olRoundOK(){
@@ -190,13 +192,13 @@ function olDraw(){
  const i=LI(),L=ol.L; if(!L)return;
  ol.outs=olOutputs(L,ol.bits);
  const singleGate=['AND','OR','NOT','XOR'].includes(L.gate),hasDiagram=!!L.circuit||singleGate;
- const diagramL=L.circuit?L:{circuit:[{id:'out',gate:L.gate,ins:Array.from({length:L.inputs},(_,n)=>n)}],outputRefs:['out']};
+ const diagramL=L.circuit?L:{circuit:[{id:'out',gate:L.gate,ins:Array.from({length:L.inputs},(_,n)=>n)}],outputRefs:['out'],largeGate:true};
  const labels=L.labels?L.labels[i]:[(i?'SWITCH A':'LEVA A'),(i?'SWITCH B':'LEVA B')];
  $('olInputs').innerHTML='';$('olInputs').style.gridTemplateRows=`repeat(${L.inputs},1fr)`;
  for(let n=0;n<L.inputs;n++){
   const b=document.createElement('button'); b.className='olSwitch'+(ol.bits[n]?' on':'');
   b.innerHTML='<span class="olLever">🎚️</span> '+labels[n]+'<span class="olBit">'+(ol.bits[n]?1:0)+'</span>';
-  b.onclick=()=>{if(ol.won)return;ol.bits[n]=!ol.bits[n];ol.moves++;olDraw();}; $('olInputs').appendChild(b);
+  b.onclick=()=>{ol.bits[n]=!ol.bits[n];ol.moves++;olDraw();}; $('olInputs').appendChild(b);
  }
  const gn=L.gate==='COMBO'?'AND + NOT':L.gate==='ADD'?'XOR + AND':L.gate;
  $('olLogic').classList.toggle('network',hasDiagram);

@@ -18,6 +18,9 @@
   .paHealthTrack{height:13px;margin:4px 0;border:2px solid #7d4a1d;border-radius:10px;background:#5b2f20;overflow:hidden}.paHealthTrack>div{height:100%;width:100%;border-radius:8px;background:linear-gradient(90deg,#43b95a,#8ddd58);transition:width .3s,background .3s}
   #paHiveHits{display:block;font-size:11px;color:#6d4b24;line-height:1.15}
   #paHudBtns{margin-left:auto;display:flex;gap:7px;pointer-events:auto}
+  #paPause .card{max-width:430px;border:4px solid #f1b82f;background:linear-gradient(#fffdf1,#ffefb5)}
+  #paPause h2{margin:4px;color:#9a6200;font-size:clamp(30px,6vw,42px)}
+  #paPause p{font-size:19px;color:#674712}
   #paMsg{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:10;max-width:min(680px,92vw);padding:11px 18px;border-radius:18px;background:#3f2b20e8;color:#fff;font-size:18px;font-weight:700;text-align:center;box-shadow:0 5px 16px #0004;pointer-events:none}
   #paTask{position:absolute;top:82px;left:12px;z-index:9;max-width:330px;background:#fff9dfef;border:3px solid #efb92f;border-radius:18px;padding:10px 14px;color:#674712;font-weight:700;line-height:1.35;pointer-events:none}
   #paAsk{position:absolute;z-index:11;display:grid;grid-template-columns:48px 1fr;align-items:center;width:184px;height:70px;padding:6px 11px 6px 7px;border:3px solid #7b480e;border-radius:22px;font:700 16px/1.05 Andika,sans-serif;color:#5a3308;text-align:left;background:linear-gradient(145deg,#fff7a8,#ffc832 68%,#efa514);box-shadow:0 7px 0 #9a5b0c,0 11px 22px #0003;cursor:pointer;transform:rotate(-2deg);animation:paAskBob 2.8s ease-in-out infinite}
@@ -56,7 +59,7 @@
         <div class="paMeter" id="paEggs">🥚 0</div><div class="paMeter" id="paWorkers">🌼 0</div>
         <div class="paMeter" id="paBuilders">🔨 0</div><div class="paMeter" id="paWarriors">🛡️ 0</div><div class="paMeter" id="paHoney">🍯 0</div>
         <div class="paMeter" id="paHiveHealth"><div class="paHealthTop"><strong>❤️ SALUTE ALVEARE</strong><span id="paHiveHpText">100 / 100</span></div><div class="paHealthTrack"><div id="paHiveHpFill"></div></div><small id="paHiveHits">Può resistere ancora a 10 colpi leggeri</small></div>
-        <div class="paMeter" id="paWave">⚔️ 1</div><div id="paHudBtns"><button class="hudBtn" id="paMusicBtn">🎵</button><button class="hudBtn" id="paHomeBtn">🏠</button></div>
+        <div class="paMeter" id="paWave">⚔️ 1</div><div id="paHudBtns"><button class="hudBtn" id="paPauseBtn" aria-label="Metti in pausa" title="Pausa">⏸️</button><button class="hudBtn" id="paMusicBtn" aria-label="Attiva o disattiva la musica" title="Musica">🎵</button><button class="hudBtn" id="paHomeBtn" aria-label="Torna ai giochi" title="Torna ai giochi">🏠</button></div>
       </div>
       <div id="paTask"></div><div id="paMsg"></div><button id="paAsk" aria-label="Fai nascere nuove api"><span class="paAskIcon">🥚✨</span><span>FAI NASCERE<small>LE API</small></span></button>
     </div>
@@ -71,6 +74,7 @@
     </div>
       <div id="paQText"></div><button id="paQSpeak" class="jollyBtn">🔊 Leggimela</button><div id="paQAnswers"></div><div id="paQMsg"></div><button id="paQBack" style="border:0;background:none;color:#777;text-decoration:underline;margin-top:8px">torna al gioco</button>
     </div></div>
+    <div class="overlay" id="paPause"><div class="card"><div style="font-size:70px">⏸️🐝</div><h2>PAUSA</h2><p>L’alveare è fermo. Riprendi quando sei pronto!</p><button class="bigBtn" id="paResume">Riprendi ▶️</button></div></div>
     <div class="overlay" id="paEnd"><div class="card"><div id="paEndEm" style="font-size:74px"></div><div id="paEndTitle" style="font-size:34px;color:#b27300;font-weight:700"></div><div id="paEndTxt" style="font-size:20px;line-height:1.5;margin:12px"></div><button class="bigBtn" id="paAgain">Gioca ancora</button><br><button id="paEndHome" style="border:0;background:none;text-decoration:underline;margin-top:12px">Torna ai giochi</button></div></div>`);
 })();
 
@@ -196,12 +200,12 @@ const PA_HIVE_START_HP=100;
 const PA_BUILDER_REINFORCE=15;
 const PA_BUILDER_REPAIR=1.15;
 
-let pa={on:false,paused:true,raf:0,last:0,w:0,h:0,time:0,eggs:1,eggClock:0,workerClock:0,workers:2,builders:0,warriors:1,honey:4,honeyFrac:0,hiveHp:PA_HIVE_START_HP,hiveMaxHp:PA_HIVE_START_HP,builderRepairFrac:0,
+let pa={on:false,paused:true,manualPaused:false,raf:0,last:0,w:0,h:0,time:0,eggs:1,eggClock:0,workerClock:0,workers:2,builders:0,warriors:1,honey:4,honeyFrac:0,hiveHp:PA_HIVE_START_HP,hiveMaxHp:PA_HIVE_START_HP,builderRepairFrac:0,
   bees:[],hornets:[],flowers:[],fx:[],wave:1,waveKills:0,killed:0,lost:0,spawnClock:3,nextId:1,msgTimer:0,qUsed:[],queen:null,hive:null};
 const paCv=$('paCv'),paC=paCv.getContext('2d');
 
 function paResize(){const d=Math.min(devicePixelRatio||1,2);pa.w=innerWidth;pa.h=innerHeight;paCv.width=pa.w*d;paCv.height=pa.h*d;paCv.style.width=pa.w+'px';paCv.style.height=pa.h+'px';paC.setTransform(d,0,0,d,0,0);paLayout();}
-function paLayout(){pa.hive={x:pa.w*.22,y:pa.h*.72};pa.queen={x:pa.hive.x,y:pa.hive.y-15};pa.flowers=[];for(let i=0;i<7;i++)pa.flowers.push({x:pa.w*(.48+(i%4)*.14),y:pa.h*(.68+Math.floor(i/4)*.18),c:i%PA_FLOWERS.length});const ask=$('paAsk');if(ask){const aw=pa.w<650?158:184,ah=pa.w<650?62:70;ask.style.left=Math.max(8,Math.min(pa.w-aw-8,pa.hive.x+68))+'px';ask.style.top=Math.min(pa.h-ah-12,pa.hive.y-38)+'px';}}
+function paLayout(){pa.hive={x:pa.w*.22,y:pa.h*.72};pa.queen={x:pa.hive.x,y:pa.hive.y-15};pa.flowers=[];for(let i=0;i<7;i++)pa.flowers.push({x:pa.w*(.48+(i%4)*.14),y:pa.h*(.68+Math.floor(i/4)*.18),c:i%PA_FLOWERS.length});const ask=$('paAsk');if(ask){const ah=pa.w<650?62:70;/* Sotto l'alveare, fuori dalle rotte tra alveare e fiori. */ask.style.left='10px';ask.style.top=Math.max(8,pa.h-ah-12)+'px';}}
 function paSay(t,ms=2600){$('paMsg').textContent=t;$('paMsg').style.display='block';pa.msgTimer=ms/1000;}
 function paHud(){
   const avail=pa.bees.filter(b=>b.role==='warrior'&&b.state==='idle').length;
@@ -211,13 +215,14 @@ function paHud(){
   const health=Math.max(0,Math.min(1,pa.hiveHp/pa.hiveMaxHp)),pct=Math.round(health*100),lightHits=Math.ceil(pa.hiveHp/PA_HORNET_TYPES.scout.hiveDamage);
   $('paHiveHpText').textContent=Math.ceil(pa.hiveHp)+' / '+pa.hiveMaxHp;$('paHiveHpFill').style.width=pct+'%';$('paHiveHpFill').style.background=pct>60?'linear-gradient(90deg,#43b95a,#8ddd58)':pct>30?'linear-gradient(90deg,#e69b25,#ffd45a)':'linear-gradient(90deg,#c93636,#f06a4d)';
   $('paHiveHits').textContent=lightHits?'Può resistere ancora a '+lightHits+(lightHits===1?' colpo leggero':' colpi leggeri'):'Non può resistere a un altro colpo';
-  $('paWave').textContent='⚔️ '+pa.wave+'/8 · '+pa.waveKills+'/'+paWaveGoal();$('paMusicBtn').textContent=MUSICON?'🎵':'🔇';
+  $('paWave').textContent='⚔️ '+pa.wave+'/8 · '+Math.min(pa.waveKills,paWaveGoal())+'/'+paWaveGoal();$('paPauseBtn').textContent=pa.manualPaused?'▶️':'⏸️';$('paPauseBtn').setAttribute('aria-label',pa.manualPaused?'Riprendi il gioco':'Metti in pausa');$('paMusicBtn').textContent=MUSICON?'🎵':'🔇';
   $('paTask').innerHTML='<b>ORGANIZZA L’ALVEARE</b><br>🥚 Fai nascere 1, 2 o 3 api insieme.<br>🌼 Le bottinatrici producono miele.<br>🔨 Le costruttrici aumentano la salute massima e riparano i danni.<br>🛡️ Tocca più volte un calabrone per creare una squadra.';
 }
 function paWaveGoal(){return 2+Math.ceil(pa.wave/2);}
 function paBee(role){const a=Math.random()*PA_TWO_PI,r=35+Math.random()*45;return{id:pa.nextId++,role,state:'idle',x:pa.hive.x+Math.cos(a)*r,y:pa.hive.y-45+Math.sin(a)*r*.5,vx:0,vy:0,phase:Math.random()*PA_TWO_PI,energy:100,target:null,flower:null,carry:false,rest:0,refuelPaid:false};}
 function paReset(){
-  Object.assign(pa,{paused:true,last:0,time:0,eggs:1,eggClock:0,workerClock:0,workers:2,builders:0,warriors:1,honey:4,honeyFrac:0,hiveHp:PA_HIVE_START_HP,hiveMaxHp:PA_HIVE_START_HP,builderRepairFrac:0,bees:[],hornets:[],fx:[],wave:1,waveKills:0,killed:0,lost:0,spawnClock:3,nextId:1,msgTimer:0,qUsed:[]});
+  Object.assign(pa,{paused:true,manualPaused:false,last:0,time:0,eggs:1,eggClock:0,workerClock:0,workers:2,builders:0,warriors:1,honey:4,honeyFrac:0,hiveHp:PA_HIVE_START_HP,hiveMaxHp:PA_HIVE_START_HP,builderRepairFrac:0,bees:[],hornets:[],fx:[],wave:1,waveKills:0,killed:0,lost:0,spawnClock:3,nextId:1,msgTimer:0,qUsed:[]});
+  $('paPause').style.display='none';
   paLayout();for(let i=0;i<2;i++)pa.bees.push(paBee('worker'));pa.bees.push(paBee('warrior'));paHud();
 }
 function paSpawnHornet(){
@@ -245,7 +250,7 @@ function paMove(b,tx,ty,s,dt){const dx=tx-b.x,dy=ty-b.y,d=Math.hypot(dx,dy)||1;b
 function paUpdate(dt){
   pa.time+=dt;if(pa.msgTimer>0){pa.msgTimer-=dt;if(pa.msgTimer<=0)$('paMsg').style.display='none';}
   pa.eggClock+=dt;if(pa.eggClock>6){pa.eggClock=0;pa.eggs++;pa.fx.push({x:pa.queen.x,y:pa.queen.y,t:0,text:'🥚 +1'});paSay('👑 La regina ha deposto un uovo!');paHud();}
-  pa.spawnClock-=dt;if(pa.spawnClock<=0&&pa.hornets.length<Math.min(5,2+Math.floor(pa.wave/2))){paSpawnHornet();pa.spawnClock=Math.max(3.4,6.2-pa.wave*.32);}
+  pa.spawnClock-=dt;if(pa.waveKills<paWaveGoal()&&pa.spawnClock<=0&&pa.hornets.length<Math.min(5,2+Math.floor(pa.wave/2))){paSpawnHornet();pa.spawnClock=Math.max(3.4,6.2-pa.wave*.32);}
   for(const b of pa.bees){b.phase+=dt*12;
     if(b.role==='worker'){
       if(!b.flower)b.flower=pa.flowers[Math.floor(Math.random()*pa.flowers.length)];
@@ -286,8 +291,10 @@ function paUpdate(dt){
   }
   pa.hornets=pa.hornets.filter(h=>!h.dead);
   for(const f of pa.fx)f.t+=dt;pa.fx=pa.fx.filter(f=>f.t<1.4);
-  if(pa.waveKills>=paWaveGoal()){if(pa.wave>=8)paFinish(true);else{pa.wave++;pa.waveKills=0;pa.spawnClock=2.2;paSay('🌟 Ondata superata! Prepara nuove guerriere: ora saranno di più.');paHud();}}
-  if(pa.hiveHp<=0)paFinish(false);
+  if(pa.hiveHp<=0){paFinish(false);return;}
+  /* Raggiunto l'obiettivo non arrivano altri nemici. L'ondata, e soprattutto
+     la partita finale, si chiude soltanto quando il campo è davvero libero. */
+  if(pa.waveKills>=paWaveGoal()&&pa.hornets.length===0){if(pa.wave>=8)paFinish(true);else{pa.wave++;pa.waveKills=0;pa.spawnClock=2.2;paSay('🌟 Ondata superata! Prepara nuove guerriere: ora saranno di più.');paHud();}}
 }
 
 function paRound(x,y,w,h,r=12){paC.beginPath();paC.roundRect(x,y,w,h,r);}
@@ -307,9 +314,16 @@ function paStartQ(level,count){const reward=Number(count)||PA_Q_REWARD[level]||1
 function paAnswer(b,ok){if(paQDone)return;if(ok){paQDone=true;b.classList.add('right');document.querySelectorAll('#paQAnswers button').forEach(x=>x.disabled=true);const reward=paQCount,isWorker=paQLevel==='worker',isBuilder=paQLevel==='builder';pa.eggs-=reward;if(isWorker){for(let i=0;i<reward;i++)pa.bees.push(paBee('worker'));pa.workers+=reward;}else if(isBuilder){for(let i=0;i<reward;i++)pa.bees.push(paBee('builder'));pa.builders+=reward;pa.hiveMaxHp+=reward*PA_BUILDER_REINFORCE;pa.hiveHp+=reward*PA_BUILDER_REINFORCE;}else{for(let i=0;i<reward;i++)pa.bees.push(paBee('warrior'));pa.warriors+=reward;}score+=reward*5;save();sCorrect();const born=reward===1?'È nata 1 '+(isWorker?'bottinatrice':isBuilder?'costruttrice':'guerriera'):'Sono nate '+reward+' '+(isWorker?'bottinatrici':isBuilder?'costruttrici':'guerriere');$('paQMsg').style.color='#299447';$('paQMsg').textContent='Bravissimo! '+born+'! '+(isWorker?'🌼🐝':isBuilder?'🔨🐝':'🐝🛡️');paHud();setTimeout(()=>{$('paQ').style.display='none';pa.paused=false;pa.last=0;paSay(isWorker?'Le nuove bottinatrici raccoglieranno nettare e produrranno miele.':isBuilder?'Le costruttrici hanno rinforzato l’alveare e ora ripareranno i danni.':'Le nuove guerriere sono pronte. Tocca un calabrone più volte per creare una squadra!');},1400);}else{b.disabled=true;b.classList.add('wrong');sWrong();$('paQMsg').style.color='#d53e3e';$('paQMsg').textContent='Quasi! Prova un’altra risposta.';}}
 $('paQLevels').querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>paStartQ(b.dataset.level,b.dataset.count));
 $('paAsk').onclick=paShowQ;$('paQBack').onclick=()=>{stopSpeak();$('paQ').style.display='none';pa.paused=false;pa.last=0;};$('paQSpeak').onclick=()=>speak([{t:paCurrentQ?paCurrentQ[0]:'',el:$('paQText')}]);
-function paFinish(win){if(pa.paused)return;pa.paused=true;stopMusic();$('paEndEm').textContent=win?'🏆🐝':'🌧️🐝';$('paEndTitle').textContent=win?'ALVEARE SALVO!':'RIPROVIAMO!';$('paEndTxt').innerHTML=win?'Hai guidato bottinatrici, costruttrici e guerriere fino alla vittoria!<br>Calabroni sconfitti: '+pa.killed+' · Punti: '+score:'La salute dell’alveare è arrivata a zero. Fai nascere costruttrici per rinforzarlo e ripararlo!';$('paEnd').style.display='flex';if(win){fanfare();confetti();}}
+function paFinish(win){if(pa.paused)return;pa.paused=true;stopMusic();$('paEndEm').textContent=win?'🏆🐝':'🌧️🐝';$('paEndTitle').textContent=win?'ALVEARE SALVO!':'RIPROVIAMO!';$('paEndTxt').innerHTML=win?'Tutti i calabroni sono stati sconfitti!<br>Hai guidato bottinatrici, costruttrici e guerriere fino alla vittoria.<br>Calabroni sconfitti: '+pa.killed+' · Punti: '+score:'La salute dell’alveare è arrivata a zero. Fai nascere costruttrici per rinforzarlo e ripararlo!';$('paEnd').style.display='flex';if(win){fanfare();confetti();}}
+function paTogglePause(force){
+  if(!pa.on||(!pa.manualPaused&&pa.paused))return;
+  const pause=typeof force==='boolean'?force:!pa.manualPaused;
+  pa.manualPaused=pause;pa.paused=pause;$('paPause').style.display=pause?'flex':'none';
+  if(pause){stopSpeak();stopMusic();}else{pa.last=0;if(MUSICON){mCtx();playMusic(TRK_HIVE);}}
+  paHud();
+}
 $('paAgain').onclick=()=>{$('paEnd').style.display='none';paReset();pa.paused=false;paSay('La Regina ha iniziato a deporre le uova!');if(MUSICON){mCtx();playMusic(TRK_HIVE);}};$('paEndHome').onclick=paExit;
 function paEnter(){if(VOICEON)initTTS();paused=true;stopSpeak();['modeSel','menu'].forEach(id=>$(id).style.display='none');$('hud').style.display='none';$('joy').style.display='none';$('pa').style.display='block';pa.on=true;paResize();paReset();if(!pa.raf)pa.raf=requestAnimationFrame(paFrame);$('paIntro').style.display='flex';}
-function paExit(){cancelAnimationFrame(pa.raf);pa.raf=0;pa.on=false;pa.paused=true;['pa','paIntro','paQ','paEnd'].forEach(id=>$(id).style.display='none');stopSpeak();showModeSel();}
-$('paIntroGo').onclick=()=>{$('paIntro').style.display='none';pa.paused=false;pa.last=0;paSay('La Regina depone le uova. Le operaie stanno andando ai fiori!');if(MUSICON){mCtx();playMusic(TRK_HIVE);}};$('paHomeBtn').onclick=paExit;$('paMusicBtn').onclick=()=>{MUSICON=!MUSICON;save();if(MUSICON){mCtx();playMusic(TRK_HIVE);}else stopMusic();paHud();};addEventListener('resize',()=>{if(pa.on)paResize();});
+function paExit(){cancelAnimationFrame(pa.raf);pa.raf=0;pa.on=false;pa.paused=true;pa.manualPaused=false;['pa','paIntro','paQ','paPause','paEnd'].forEach(id=>$(id).style.display='none');stopSpeak();showModeSel();}
+$('paIntroGo').onclick=()=>{$('paIntro').style.display='none';pa.paused=false;pa.last=0;paSay('La Regina depone le uova. Le operaie stanno andando ai fiori!');if(MUSICON){mCtx();playMusic(TRK_HIVE);}};$('paPauseBtn').onclick=()=>paTogglePause();$('paResume').onclick=()=>paTogglePause(false);$('paHomeBtn').onclick=paExit;$('paMusicBtn').onclick=()=>{MUSICON=!MUSICON;save();if(MUSICON){mCtx();playMusic(TRK_HIVE);}else stopMusic();paHud();};addEventListener('resize',()=>{if(pa.on)paResize();});
 registerGame({id:'pallaapi',emoji:'🐝',nm:['L’Alveare di Gabriele','Gabriele’s Hive'],sub:['Fai nascere api, raccogli miele e difendi l’alveare!','Raise bees, collect honey and defend the hive!'],colore:'linear-gradient(180deg,#ffd23f,#e8890b)',enter:paEnter,exit:paExit});

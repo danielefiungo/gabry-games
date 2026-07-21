@@ -44,8 +44,17 @@ registerGame({
   '.modeSetting { border:2px solid #b7c4ee;border-radius:13px;background:#fff;color:#29386f;padding:9px 13px;font:bold 14px inherit;cursor:pointer;box-shadow:0 3px 0 #c5cffb; }',
   '.modeSetting.danger { color:#a52626;border-color:#efb4b4;background:#fff7f7;box-shadow:0 3px 0 #efcaca; }',
   '.modeSetting:active { transform:translateY(2px);box-shadow:none; }',
+  '#modeTimerSetting { display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border:2px solid #b7c4ee;border-radius:13px;background:#fff;color:#29386f;box-shadow:0 3px 0 #c5cffb; }',
+  '#modeTimerLabel { font:bold 14px inherit;margin-right:2px;white-space:nowrap; }',
+  '#modeTimerActiveControls,#modeTimerInactiveControls { display:flex;align-items:center;gap:6px; }',
+  '#modeTimerActiveControls[hidden],#modeTimerInactiveControls[hidden] { display:none!important; }',
+  '.modeTimerAction { border:0;border-radius:9px;padding:7px 10px;background:#e3e9ff;color:#2b3a8f;font:bold 12px inherit;cursor:pointer;white-space:nowrap; }',
+  '#modeTimerStop { background:#ffe3e3;color:#a12a2a; }',
+  '#modeTimerStart { background:#dff6e4;color:#247137; }',
+  '#modeTimerExact { width:58px;height:30px;border:2px solid #bbc7ee;border-radius:9px;padding:3px 5px;color:#29386f;font:bold 14px inherit;text-align:center; }',
+  '#modeTimerExactLabel { font-size:12px;white-space:nowrap; }',
   '.modeBtn[data-game="officina"] .em { width:70px;height:70px;margin:0 auto 6px;background:url("assets/characters/gibi.png") center 8%/145% auto no-repeat;font-size:0;filter:drop-shadow(0 4px 3px rgba(0,0,0,.22)); }',
-  '@media(max-width:600px){#modeSel .modeCard{padding:14px 9px}#modeRow{grid-template-columns:repeat(2,minmax(125px,1fr));gap:10px}.modeBtn{min-height:158px;padding:12px 8px}.modeBtn .em{font-size:39px}.modeBtn[data-game="officina"] .em{width:58px;height:58px}#modeSettings{padding:11px 7px}.modeSetting{font-size:12px;padding:8px 9px}}'
+  '@media(max-width:700px){#modeSel .modeCard{padding:14px 9px}#modeRow{grid-template-columns:repeat(2,minmax(125px,1fr));gap:10px}.modeBtn{min-height:158px;padding:12px 8px}.modeBtn .em{font-size:39px}.modeBtn[data-game="officina"] .em{width:58px;height:58px}#modeSettings{padding:11px 7px}.modeSetting{font-size:12px;padding:8px 9px}#modeTimerSetting{width:100%;justify-content:center;flex-wrap:wrap}#modeTimerLabel{width:100%;font-size:12px;text-align:center}#modeTimerInactiveControls{flex-wrap:wrap;justify-content:center}}'
   ].join('\n');
   document.head.appendChild(css);
   document.body.insertAdjacentHTML('beforeend',
@@ -60,7 +69,19 @@ registerGame({
         '<div id="modeSettingsBtns">'+
           '<button class="modeSetting" id="modeDiff"></button><button class="modeSetting" id="modeVoice"></button>'+
           '<button class="modeSetting" id="modeMusic"></button><button class="modeSetting" id="modeArrow"></button>'+
-          '<button class="modeSetting" id="modeAlbum"></button><button class="modeSetting danger" id="modeReset"></button>'+
+          '<button class="modeSetting" id="modeAlbum"></button>'+
+          '<div id="modeTimerSetting"><span id="modeTimerLabel">⏱ Timer fermo · 20:00</span>'+
+            '<div id="modeTimerActiveControls" hidden>'+
+              '<button class="modeTimerAction" id="modeTimerStop" type="button">Ferma timer</button>'+
+            '</div>'+
+            '<div id="modeTimerInactiveControls">'+
+              '<button class="modeTimerAction" id="modeTimerAdd" type="button">+5 min</button>'+
+              '<label id="modeTimerExactLabel" for="modeTimerExact">Minuti</label>'+
+              '<input id="modeTimerExact" type="number" min="1" max="180" step="1" value="20" inputmode="numeric">'+
+              '<button class="modeTimerAction" id="modeTimerStart" type="button">Attiva timer</button>'+
+            '</div>'+
+          '</div>'+
+          '<button class="modeSetting danger" id="modeReset"></button>'+
         '</div>'+
       '</div>'+
     '</div>'+
@@ -77,6 +98,7 @@ function applyModeSettings(){
   $('modeAlbum').textContent=UI.albumBtn[i]+' ('+words.length+')';
   $('modeReset').textContent=UI.resetBtn[i];
   $('modeStats').innerHTML='<span class="statChip">⭐ '+score+' '+UI.statPoints[i]+'</span><span class="statChip">🔥 '+bestStreak+' '+UI.statBest[i]+'</span><span class="statChip">🌟 '+totalStars()+'/'+(THEMES.length*3)+' '+UI.statStars[i]+'</span>';
+  if(window.GabriPlayTimer) window.GabriPlayTimer.refreshHome();
 }
 
 function showModeSel(){

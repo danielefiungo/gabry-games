@@ -73,7 +73,7 @@ test('la salute dell’alveare è visibile, subisce danni e viene riparata', () 
   assert.match(source, /pa\.hiveHp=Math\.max\(0,pa\.hiveHp-h\.cfg\.hiveDamage\)/);
   assert.match(source, /pa\.hiveMaxHp\+=reward\*PA_BUILDER_REINFORCE/);
   assert.match(source, /pa\.builderRepairFrac\+=PA_BUILDER_REPAIR\*dt/);
-  assert.match(source, /if\(pa\.hiveHp<=0\)paFinish\(false\)/);
+  assert.match(source, /if\(pa\.hiveHp<=0\)\{paFinish\(false\);return;\}/);
 });
 
 test('la scheda delle domande non crea scorrimento orizzontale', () => {
@@ -81,4 +81,23 @@ test('la scheda delle domande non crea scorrimento orizzontale', () => {
   assert.match(source, /#paQAnswers \.ansBtn\{[^}]*min-width:0/);
   assert.match(source, /#paQ \.card\{[^}]*overflow-x:hidden/);
   assert.match(source, /@media\(max-width:820px\)\{#paQAnswers\{grid-template-columns:1fr/);
+});
+
+test('la vittoria arriva solo quando tutti i calabroni sono spariti', () => {
+  assert.match(source, /pa\.waveKills<paWaveGoal\(\).*paSpawnHornet\(\)/s, 'raggiunto l’obiettivo non vengono generati altri nemici');
+  assert.match(source, /pa\.waveKills>=paWaveGoal\(\)&&pa\.hornets\.length===0/, 'l’ondata termina soltanto a campo vuoto');
+  assert.match(source, /Tutti i calabroni sono stati sconfitti!/);
+});
+
+test('il gioco delle api ha una pausa completa e riprendibile', () => {
+  assert.match(source, /id="paPauseBtn"/);
+  assert.match(source, /id="paPause"/);
+  assert.match(source, /id="paResume"/);
+  assert.match(source, /function paTogglePause\(force\)/);
+  assert.match(source, /pa\.manualPaused=pause;pa\.paused=pause/);
+});
+
+test('il pulsante per far nascere le api resta fuori dalla rotta delle bottinatrici', () => {
+  assert.match(source, /ask\.style\.left='10px'/, 'il pulsante è ancorato al margine sinistro');
+  assert.match(source, /ask\.style\.top=Math\.max\(8,pa\.h-ah-12\)/, 'il pulsante è ancorato sotto l’alveare');
 });

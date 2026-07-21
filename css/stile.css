@@ -3,6 +3,53 @@
   #game { position:absolute; inset:0; }
   canvas { display:block; }
 
+  /* ---------- Timer globale della sessione ---------- */
+  #playTimer { --timer-progress:100%; --timer-color:#72e6a5; position:fixed; z-index:10020;
+    right:max(14px,env(safe-area-inset-right)); bottom:max(14px,env(safe-area-inset-bottom));
+    display:flex; align-items:center; gap:2px; min-width:112px; justify-content:center; padding:4px 5px 4px 7px;
+    border:1px solid rgba(255,255,255,.42); border-radius:999px; background:rgba(7,11,28,.66); color:#fff;
+    box-shadow:0 3px 12px rgba(0,0,0,.2); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+    font-size:13px; font-weight:bold; line-height:1; letter-spacing:.03em; user-select:none; touch-action:none; opacity:.82; }
+  #playTimer:hover,#playTimer.dragging { opacity:1; }
+  #playTimer[hidden],#playTimerRestore[hidden],#playTimerNotice[hidden] { display:none!important; }
+  #playTimerDrag { display:flex; align-items:center; gap:7px; padding:0; border:0; background:none; color:inherit;
+    font:bold 13px inherit; letter-spacing:.03em; cursor:grab; touch-action:none; }
+  #playTimer.dragging #playTimerDrag { cursor:grabbing; }
+  .playTimerProgress { position:relative; width:31px; height:31px; flex:0 0 31px; display:grid; place-items:center;
+    border-radius:50%; background:conic-gradient(var(--timer-color) var(--timer-progress),rgba(255,255,255,.18) 0); }
+  .playTimerProgress:before { content:""; position:absolute; inset:4px; border-radius:50%; background:#121932; }
+  .playTimerProgress span { position:relative; z-index:1; font-size:13px; }
+  #playTimerValue { min-width:43px; text-align:center; }
+  #playTimerHide { width:23px; height:23px; display:grid; place-items:center; padding:0; border:0; border-radius:50%;
+    background:rgba(255,255,255,.12); color:rgba(255,255,255,.76); font:18px/1 Arial,sans-serif; cursor:pointer; }
+  #playTimerHide:hover,#playTimerHide:focus-visible { background:rgba(255,255,255,.24); color:#fff; }
+  #playTimerRestore { position:fixed; z-index:10020; right:max(8px,env(safe-area-inset-right));
+    bottom:max(8px,env(safe-area-inset-bottom)); width:31px; height:31px; padding:0; border:1px solid rgba(255,255,255,.4);
+    border-radius:50%; background:rgba(7,11,28,.58); color:#fff; font-size:14px; opacity:.55; cursor:pointer;
+    box-shadow:0 3px 10px rgba(0,0,0,.2); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); }
+  #playTimerRestore:hover,#playTimerRestore:focus-visible { opacity:1; }
+  #playTimerNotice { position:fixed; z-index:10021; top:max(48px,calc(env(safe-area-inset-top) + 42px)); left:50%;
+    width:min(560px,calc(100vw - 24px)); transform:translateX(-50%); display:grid; grid-template-columns:auto 1fr auto;
+    align-items:center; gap:12px; padding:13px 14px; border:2px solid #ffe17a; border-radius:20px;
+    background:linear-gradient(135deg,rgba(31,42,102,.98),rgba(91,64,157,.98)); color:#fff;
+    box-shadow:0 12px 36px rgba(0,0,0,.42); animation:playTimerArrive .38s ease-out; }
+  .playTimerNoticeIcon { font-size:34px; }
+  .playTimerNoticeText { display:flex; flex-direction:column; min-width:0; line-height:1.25; }
+  .playTimerNoticeText strong { color:#ffe982; font-size:18px; }
+  .playTimerNoticeText span { margin-top:3px; font-size:14px; }
+  #playTimerDismiss { border:0; border-radius:13px; padding:9px 13px; background:#fff; color:#35428b;
+    box-shadow:0 3px 0 #c9cdf0; font:bold 14px inherit; white-space:nowrap; cursor:pointer; }
+  #playTimerDismiss:active { transform:translateY(2px); box-shadow:0 1px 0 #c9cdf0; }
+  @keyframes playTimerArrive { from { opacity:0; transform:translate(-50%,-12px) scale(.96); } }
+  @media(max-width:560px){
+    #playTimerNotice { grid-template-columns:auto 1fr; gap:8px 10px; padding:11px 12px; }
+    .playTimerNoticeIcon { font-size:29px; }
+    .playTimerNoticeText strong { font-size:16px; }
+    .playTimerNoticeText span { font-size:13px; }
+    #playTimerDismiss { grid-column:1/-1; justify-self:center; padding:7px 17px; }
+  }
+  @media(prefers-reduced-motion:reduce){ #playTimerNotice { animation:none; } }
+
   /* Feedback globale durante la generazione della voce naturale */
   #voiceGenerating { position:fixed; top:max(22px,env(safe-area-inset-top)); left:50%; z-index:10000;
     transform:translate(-50%,-8px); opacity:0; visibility:hidden; pointer-events:none;

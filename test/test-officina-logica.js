@@ -13,6 +13,7 @@ T('AND 1,1 = 1',OL.gate('AND',1,1)===true);T('AND 1,0 = 0',OL.gate('AND',1,0)===
 T('OR 0,1 = 1',OL.gate('OR',0,1)===true);T('NOT 0 = 1',OL.gate('NOT',0)===true);
 T('XOR uguali = 0',OL.gate('XOR',1,1)===false);T('XOR diversi = 1',OL.gate('XOR',1,0)===true);
 console.log('Livelli e progressione');ol.on=true;OL.goto(1,true);ol.bits=[true,true];OL.draw();settle();T('AND completa il livello',ol.won);T('sblocca livello seguente',ol.prog.unl>=2);T('salva stelle',ol.prog.stars[1]>0);
+const firstSwitch=w.document.querySelector('#olInputs .olSwitch'),bitBeforeWinClick=ol.bits[0];firstSwitch.click();T('le leve restano attive dopo il completamento',ol.bits[0]!==bitBeforeWinClick);T('il livello resta completato mentre si continua a giocare',ol.won);
 const gateSvg=w.document.querySelector('#olLogic .olNet'),gateEdges=[...w.document.querySelectorAll('#olLogic .edge')].map(e=>e.getAttribute('d'));
 T('AND usa il simbolo logico standard',!!gateSvg&&!!gateSvg.querySelector('.gateShape'));
 T('i fili toccano ingressi e uscita',gateEdges.some(d=>d.startsWith('M0 '))&&gateEdges.some(d=>d.endsWith('H520')));
