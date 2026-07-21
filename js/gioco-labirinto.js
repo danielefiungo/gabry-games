@@ -574,6 +574,7 @@ function applyUI(){
   if(!VOICEON){ $('ttsStatus').textContent=''; $('ttsBar').style.display='none'; }
 }
 function showMenu(){
+  if(window.GabriNavigation) window.GabriNavigation.visit({screen:'maze-menu',game:'maze'});
   paused=true;
   /* musica del menu (solo se l'audio è già stato sbloccato da un tocco) */
   if(MUSICON && actx && actx.state==='running') playMusic(TRK_MENU); else stopMusic();
@@ -582,6 +583,7 @@ function showMenu(){
   $('menu').style.display='flex';
 }
 function startLevel(i){
+  if(window.GabriNavigation) window.GabriNavigation.visit({screen:'maze-level',game:'maze',level:i});
   if(VOICEON) initTTS();
   try{ localStorage.setItem('gabri_last',String(i)); }catch(e){} /* per il segnaposto 🧑‍🚀 sulla mappa */
   $('menu').style.display='none';

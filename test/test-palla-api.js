@@ -19,7 +19,7 @@ const questions = readConst('PA_QUESTIONS', 'PA_Q_REWARD');
 const hornets = readConst('PA_HORNET_TYPES', 'PA_QUESTIONS');
 
 test('ogni percorso offre un parco ampio di domande valide', () => {
-  for (const level of ['worker', 'easy', 'medium', 'hard']) {
+  for (const level of ['worker', 'builder', 'easy', 'medium', 'hard']) {
     assert.ok(questions[level].length >= 15, `${level} ha almeno 15 domande`);
     for (const question of questions[level]) {
       assert.equal(question.length, 4, 'ogni domanda ha testo, risposta e due alternative');
@@ -55,6 +55,25 @@ test('il miele è prodotto dalle bottinatrici e consumato per rifocillare', () =
   assert.match(source, /pa\.honey--/);
   assert.match(source, /b\.state='hungry'/);
   assert.match(source, /data-level="worker"/);
+});
+
+test('bottinatrici e costruttrici possono nascere in gruppi da uno, due o tre', () => {
+  for (const role of ['worker', 'builder']) {
+    for (const count of [1, 2, 3]) {
+      assert.match(source, new RegExp(`data-level="${role}" data-count="${count}"`));
+    }
+  }
+  assert.match(source, /pa\.workers\+=reward/);
+  assert.match(source, /pa\.builders\+=reward/);
+});
+
+test('la salute dell’alveare è visibile, subisce danni e viene riparata', () => {
+  assert.match(source, /id="paHiveHealth"/);
+  assert.match(source, /hiveDamage:10/);
+  assert.match(source, /pa\.hiveHp=Math\.max\(0,pa\.hiveHp-h\.cfg\.hiveDamage\)/);
+  assert.match(source, /pa\.hiveMaxHp\+=reward\*PA_BUILDER_REINFORCE/);
+  assert.match(source, /pa\.builderRepairFrac\+=PA_BUILDER_REPAIR\*dt/);
+  assert.match(source, /if\(pa\.hiveHp<=0\)paFinish\(false\)/);
 });
 
 test('la scheda delle domande non crea scorrimento orizzontale', () => {

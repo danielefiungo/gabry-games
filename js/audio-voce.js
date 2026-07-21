@@ -187,9 +187,8 @@ function fanfare(){
 let piper=null, piperReady={}, ttsLoadingLang=null, ttsAudio=null, speakBusy=false, voiceGenerating=false;
 const VOICE={ it:'it_IT-paola-medium', en:'en_US-hfc_female-medium' };
 
-/* Indicatore unico per tutti i giochi. La generazione Piper può richiedere
-   qualche secondo: copriamo la pagina e intercettiamo i tocchi, così un
-   bambino non avvia per errore più richieste mentre aspetta. */
+/* Indicatore unico e non modale per tutti i giochi. La generazione Piper può
+   richiedere qualche secondo: informiamo il bambino senza coprire la pagina. */
 function setVoiceGenerating(on){
   voiceGenerating=on;
   let ov=$('voiceGenerating');

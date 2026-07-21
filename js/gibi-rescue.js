@@ -245,6 +245,6 @@
   function exit(){cancelAnimationFrame(gr.raf);gr.raf=0;gr.on=false;pause();grStopSpeak();['grApp','grMap','grIntro','grWin','grPrint'].forEach(id=>gr$(id).style.display='none');if(typeof root.showModeSel==='function')root.showModeSel();}
 
   installUI();
-  if(typeof root.registerGame==='function')root.registerGame({id:'gibi-rescue',emoji:'🚗',nm:['Gibi Rescue','Gibi Rescue'],sub:['Costruisci e programma l’Auto Intelligente!','Build and program the Smart Car!'],colore:'linear-gradient(180deg,#38b8d8,#3467c7)',enter});
+  if(typeof root.registerGame==='function')root.registerGame({id:'gibi-rescue',emoji:'🚗',nm:['Gibi Rescue','Gibi Rescue'],sub:['Costruisci e programma l’Auto Intelligente!','Build and program the Smart Car!'],colore:'linear-gradient(180deg,#38b8d8,#3467c7)',enter,exit});
   root.__GR={state:gr,enter,exit,start:startMission,run:runProgram,pause,step:advance,rewind,finish,validateProject:validProject,projectData};
 })(typeof globalThis!=='undefined'?globalThis:this);

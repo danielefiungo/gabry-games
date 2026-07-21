@@ -353,6 +353,6 @@
   mp$('mpNotebookBtn').onclick=openNotebook;mp$('mpNotebookClose').onclick=()=>hide('mpNotebook');mp$('mpUnlockPreview').onclick=()=>{mp.progress.settings.previewAll=!mp.progress.settings.previewAll;persist();hide('mpNotebook');renderMap();};mp$('mpResetProgress').onclick=resetProgress;
   mp$('mpMotionToggle').onclick=()=>{mp.progress.settings.reducedMotion=!mp.progress.settings.reducedMotion;persist();pauseScan();openNotebook();};
 
-  if(typeof root.registerGame==='function')root.registerGame({id:'macchina-parole',emoji:'⚙️',nm:['La Macchina delle Parole','La Macchina delle Parole'],sub:['Costruisci un piccolo LLM nella Biblioteca delle Storie Spezzate','Costruisci un piccolo LLM'],colore:'linear-gradient(180deg,#3f8190,#5c3f75)',enter});
+  if(typeof root.registerGame==='function')root.registerGame({id:'macchina-parole',emoji:'⚙️',nm:['La Macchina delle Parole','La Macchina delle Parole'],sub:['Costruisci un piccolo LLM nella Biblioteca delle Storie Spezzate','Costruisci un piccolo LLM'],colore:'linear-gradient(180deg,#3f8190,#5c3f75)',enter,exit});
   root.__MP={state:mp,data:D,model:M,enter,exit,start:startChapter,render:renderPhase,rebuild,validate:(pi,choices)=>M.validatePhase(D.phases[pi],choices),reset:resetProgress};
 })(typeof window!=='undefined'?window:globalThis);

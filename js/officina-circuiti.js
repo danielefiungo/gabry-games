@@ -1287,7 +1287,11 @@ registerGame({
   nm:['L’Officina di Gabri','Gabri’s Workshop'],
   sub:['Riaccendi Gibi il robot: circuiti veri con elettroni che corrono!','Restart Gibi the robot: real circuits with running electrons!'],
   colore:'linear-gradient(180deg,#8c5cf0,#4a2d94)',
-  enter:ocEnter
+  enter:ocEnter,
+  exit:()=>{
+    if(window.__OL&&window.__OL.ol&&window.__OL.ol.on) window.__OL.exit(false);
+    else ocExit();
+  }
 });
 
 /* ---------- aggancio per i test ---------- */

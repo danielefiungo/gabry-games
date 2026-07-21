@@ -1552,7 +1552,8 @@ registerGame({
   nm:['Missione Spaziale','Space Mission'],
   sub:['Leggi gli ordini della base e vola!','Read mission control and fly!'],
   colore:'linear-gradient(180deg,#5c6bc0,#1a237e)',
-  enter:msEnter
+  enter:msEnter,
+  exit:msExit
 });
 
 /* ---------- Aggancio per i test (jsdom) ---------- */

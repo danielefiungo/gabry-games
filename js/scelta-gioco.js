@@ -1,7 +1,7 @@
 /* ============================================================
    SCELTA DEL GIOCO 🎮
    Registro delle modalità: ogni gioco si registra con
-   registerGame({id, emoji, nm:[it,en], sub:[it,en], colore, enter})
+   registerGame({id, emoji, nm:[it,en], sub:[it,en], colore, enter, exit})
    e compare come pulsante nella schermata iniziale.
    ============================================================ */
 
@@ -14,7 +14,12 @@ registerGame({
   nm:['Il Labirinto','The Maze'],
   sub:['Leggi, apri le porte, trova la stella','Read, open doors, find the star'],
   colore:'linear-gradient(180deg,#3d6ef7,#2b3a8f)',
-  enter(){ $('modeSel').style.display='none'; showMenu(); }
+  enter(){ $('modeSel').style.display='none'; showMenu(); },
+  exit(){
+    paused=true; stopSpeak();
+    ['menu','question','win','boss','album'].forEach(id=>{ const e=$(id); if(e)e.style.display='none'; });
+    $('hud').style.display='none'; $('joy').style.display='none'; $('startHint').style.display='none';
+  }
 });
 
 /* ---------- stile + schermata ---------- */
@@ -75,6 +80,7 @@ function applyModeSettings(){
 }
 
 function showModeSel(){
+  if(window.GabriNavigation) window.GabriNavigation.visit({screen:'games'});
   paused=true; stopSpeak();
   const i=LI();
   const nm=(typeof PLAYER!=='undefined'&&PLAYER)?PLAYER:'Gabriele';
@@ -87,7 +93,7 @@ function showModeSel(){
     const b=document.createElement('button');
     b.className='modeBtn'; b.dataset.game=g.id; b.style.background=g.colore;
     b.innerHTML='<span class="em">'+g.emoji+'</span><span class="nm">'+g.nm[i]+'</span><small>'+g.sub[i]+'</small>';
-    b.onclick=()=>g.enter();
+    b.onclick=()=>window.GabriNavigation?window.GabriNavigation.openGame(g):g.enter();
     row.appendChild(b);
   });
   applyModeSettings();
@@ -126,6 +132,80 @@ applyUI=function(){
 addEventListener('pointerdown',()=>{
   if(MUSICON && !mTrack && $('modeSel').style.display==='flex'){ mCtx(); playMusic(TRK_MENU); }
 },true);
+
+/* ---------- cronologia Indietro / Avanti del browser ---------- */
+(function(root){
+  const STATE_KEY='gabriGameNavigation';
+  let applying=false, enabled=false, current={screen:'games'};
+
+  function normalise(route){
+    const r=route&&typeof route==='object'?route:{screen:'games'};
+    if(r.screen==='maze-level'){
+      const level=Math.max(0,Math.min(THEMES.length-1,Number(r.level)||0));
+      return {screen:'maze-level',game:'maze',level};
+    }
+    if(r.screen==='maze-menu') return {screen:'maze-menu',game:'maze'};
+    if(r.screen==='game'&&typeof r.game==='string') return {screen:'game',game:r.game};
+    return {screen:'games'};
+  }
+  function same(a,b){ return a.screen===b.screen&&a.game===b.game&&a.level===b.level; }
+  function stateFor(route,boundary){ return {[STATE_KEY]:true,route:normalise(route),boundary:!!boundary}; }
+  function gameFor(route){ return route&&route.game?GAMES.find(g=>g.id===route.game)||null:null; }
+
+  function visit(route){
+    const next=normalise(route);
+    if(applying){ current=next; return; }
+    if(same(current,next)) return;
+    current=next;
+    if(!enabled) return;
+    try{ history.pushState(stateFor(next,false),''); }
+    catch(_){ enabled=false; }
+  }
+  function openGame(game){
+    if(!game||typeof game.enter!=='function') return;
+    visit(game.id==='maze'?{screen:'maze-menu',game:'maze'}:{screen:'game',game:game.id});
+    game.enter();
+  }
+  function leaveCurrent(next){
+    const active=gameFor(current);
+    if(active&&!same(current,next)&&typeof active.exit==='function') active.exit();
+  }
+  function showRoute(route){
+    const next=normalise(route);
+    applying=true;
+    try{
+      leaveCurrent(next);
+      if(next.screen==='games') showModeSel();
+      else if(next.screen==='maze-menu'){
+        const maze=gameFor(next); if(maze) maze.enter();
+      }else if(next.screen==='maze-level'){
+        $('modeSel').style.display='none'; startLevel(next.level);
+      }else{
+        const game=gameFor(next); if(game) game.enter(); else showModeSel();
+      }
+      current=next;
+    }finally{ applying=false; }
+  }
+  function keepInsideGame(){
+    const safe={screen:'games'};
+    showRoute(safe);
+    try{ history.pushState(stateFor(safe,false),''); }
+    catch(_){ enabled=false; }
+  }
+
+  addEventListener('popstate',event=>{
+    const state=event.state;
+    if(!state||state[STATE_KEY]!==true) return;
+    if(state.boundary) keepInsideGame(); else showRoute(state.route);
+  });
+  try{
+    history.replaceState(stateFor({screen:'games'},true),'');
+    history.pushState(stateFor({screen:'games'},false),'');
+    enabled=true;
+  }catch(_){ enabled=false; }
+
+  root.GabriNavigation={visit,openGame,showRoute,get current(){return {...current};}};
+})(window);
 
 /* all'avvio (dopo che tutti i giochi si sono registrati) */
 addEventListener('load',()=>{ showModeSel(); });
