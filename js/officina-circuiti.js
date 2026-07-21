@@ -678,16 +678,16 @@ function ocDraw(){
   if(oc.preview){
     const p=oc.preview, [px,py]=ocXY(p.x,p.y);
     g.save();
-    g.fillStyle=p.valid?'rgba(92,220,112,.24)':'rgba(238,83,83,.25)';
-    g.strokeStyle=p.valid?'#70e383':'#ff7474'; g.lineWidth=Math.max(3,cs*0.055);
+    g.fillStyle=p.valid?'rgba(92,220,112,.24)':(p.rotate?'rgba(255,202,71,.25)':'rgba(238,83,83,.25)');
+    g.strokeStyle=p.valid?'#70e383':(p.rotate?'#ffd35c':'#ff7474'); g.lineWidth=Math.max(3,cs*0.055);
     g.beginPath(); g.arc(px,py,cs*0.43,0,7); g.fill(); g.stroke();
-    g.globalAlpha=p.valid?0.62:0.38;
+    g.globalAlpha=(p.valid||p.rotate)?0.62:0.38;
     const ghost=ocNewComp(p.t,p.x,p.y,p.r); ghost.ghost=true; ghost.res={I:0,P:0,V:0};
     ocDrawComp(g,ghost);
     g.globalAlpha=1;
-    g.fillStyle=p.valid?'#baffc4':'#ffd0d0';
+    g.fillStyle=p.valid?'#baffc4':(p.rotate?'#fff0a8':'#ffd0d0');
     g.font='bold '+Math.max(13,cs*0.23)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText(p.valid?'✓':'✕',px+cs*0.34,py-cs*0.32);
+    g.fillText(p.valid?'✓':(p.rotate?'↻':'✕'),px+cs*0.34,py-cs*0.32);
     g.restore();
   }
   /* componenti */
@@ -902,8 +902,8 @@ function ocPreviewAt(mx,my,radius){
   if(!ocIsComponentTool(oc.tool)){ oc.preview=null; return null; }
   const nd=ocHitNode(mx,my,radius||0.68);
   if(!nd){ oc.preview=null; return null; }
-  const occupied=oc.board.comps.has(ocNK(nd.x,nd.y));
-  oc.preview={t:oc.tool,x:nd.x,y:nd.y,r:ocSmartRot(oc.tool,nd.x,nd.y),valid:!occupied&&ocHasPiece(oc.tool)};
+  const c=oc.board.comps.get(ocNK(nd.x,nd.y)), occupied=!!c;
+  oc.preview={t:oc.tool,x:nd.x,y:nd.y,r:ocSmartRot(oc.tool,nd.x,nd.y),valid:!occupied&&ocHasPiece(oc.tool),rotate:!!(c&&c.t===oc.tool&&!c.lock)};
   return oc.preview;
 }
 function ocPointer(e){
@@ -932,7 +932,10 @@ function ocPointer(e){
   /* il componente si vede prima e viene posato al rilascio */
   if(ocIsComponentTool(oc.tool)){
     oc.placing=!!ocPreviewAt(mx,my,0.72);
-    if(oc.placing) e.preventDefault();
+    if(oc.placing){
+      e.preventDefault();
+      try{ $('ocCv').setPointerCapture(e.pointerId); }catch(err){}
+    }
   }
 }
 function ocPointerMove(e){
@@ -954,13 +957,14 @@ function ocPointerMove(e){
     oc.drag.last=nd;
   }
 }
-function ocPointerUp(){
+function ocPointerUp(e){
   if(oc.placing&&oc.preview){
     const p=oc.preview, c=oc.board.comps.get(ocNK(p.x,p.y));
     if(p.valid) ocPlace(p.t,p.x,p.y,p.r);
     else if(c&&c.t===p.t&&!c.lock) c.r=((c.r||0)+1)%4;
     else if(c) ocToast(OC_T.occupied[LI()]);
   }
+  if(e){ try{ if($('ocCv').hasPointerCapture(e.pointerId)) $('ocCv').releasePointerCapture(e.pointerId); }catch(err){} }
   oc.drag=null; oc.placing=false; oc.preview=null;
 }
 addEventListener('pointerdown',ocPointer);
@@ -1005,7 +1009,7 @@ function ocInfoShow(t){
   $('ocInfoTitle').textContent=(OC_T.icons[t]||'')+' '+OC_T.names[t][i];
   const help=$('ocInfoHelp');
   help.style.display=t==='wire'?'none':'block';
-  help.textContent=i===0?'👻 Sposta il pezzo fantasma sul foro: verde = libero. Tocca o trascina e rilascia per inserirlo.':'👻 Move the ghost part over a hole: green = free. Tap or drag and release to place it.';
+  help.textContent=i===0?'👻 Sposta il ghost sul foro: verde inserisce, giallo ruota, rosso è occupato. Tocca o trascina e rilascia.':'👻 Move the ghost over a hole: green places, yellow rotates, red is occupied. Tap or drag and release.';
   $('ocInfoMetaphor').innerHTML='<strong>'+(i===0?'🧰 NEL GIOCO':'🧰 IN THE GAME')+'</strong>';
   $('ocInfoMetaphor').appendChild(document.createTextNode(info.metaphor[i]));
   $('ocInfoReal').innerHTML='<strong>'+(i===0?'🔬 COME FUNZIONA DAVVERO':'🔬 HOW IT REALLY WORKS')+'</strong>';
@@ -1210,4 +1214,5 @@ registerGame({
 
 /* ---------- aggancio per i test ---------- */
 window.__OC={ oc, levels:OC_LEVELS, goto:ocGoto, step:ocStep, solve:ocSolve,
-  place:ocPlace, wire:ocAddWire, comp:ocComp, api:ocApi, enter:ocEnter, exit:ocExit };
+  place:ocPlace, wire:ocAddWire, comp:ocComp, api:ocApi, preview:ocPreviewAt,
+  pointerUp:ocPointerUp, enter:ocEnter, exit:ocExit };
