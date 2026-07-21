@@ -51,11 +51,20 @@ T('ghost giallo per ruotare lo stesso pezzo', ghost&&!ghost.valid&&ghost.rotate)
 oc.tool='lamp'; ghost=OC.preview(oc.ox+oc.cs,oc.oy+oc.cs);
 T('ghost rosso su un foro occupato da un altro pezzo', ghost&&!ghost.valid&&!ghost.rotate);
 T('piazzo una seconda pila', OC.place('batt',3,1));
+T('filo diagonale verso il basso', OC.wire(1,1,'D')&&oc.board.wires.has('1,1,D'));
+T('filo diagonale verso l’alto', OC.wire(2,1,'U')&&oc.board.wires.has('2,1,U'));
 const sandboxButtons=[...doc.querySelectorAll('#ocPalBar .ocTool')];
 const explained=sandboxButtons.filter(b=>!/MANO|GOMMA/.test(b.textContent));
+T('la palette usa i simboli reali del circuito', explained.every(b=>b.querySelector('canvas.ocCircuitSymbol')));
 explained.forEach(b=>b.click());
 T('ogni strumento del circuito apre una spiegazione', explained.length===11&&doc.getElementById('ocInfo').style.display==='block');
+T('anche la scheda usa il simbolo reale', !!doc.querySelector('#ocInfoTitle canvas.ocCircuitSymbol'));
 T('la spiegazione unisce metafora e funzionamento reale', doc.getElementById('ocInfoMetaphor').textContent.length>40&&doc.getElementById('ocInfoReal').textContent.length>80);
+OC.goto(-1);
+OC.place('batt',1,1,0); OC.place('lamp',3,1,0);
+[[1,1,'D'],[2,1,'U'],[3,0,'U'],[3,0,'H'],[2,0,'H'],[1,0,'H'],[0,0,'H'],[0,0,'D']].forEach(wd=>OC.wire(wd[0],wd[1],wd[2]));
+const diagonalLamp=oc.board.comps.get('3,1');
+T('un circuito diagonale conduce davvero corrente', until(1,()=>diagonalLamp.res.P>0.004), diagonalLamp.res.P.toFixed(3)+'W');
 
 console.log('L1 chiudi il cerchio');
 OC.goto(0);

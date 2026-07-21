@@ -51,13 +51,15 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '.ocTool { border:none; border-radius:16px; padding:8px 10px; min-width:64px; cursor:pointer; font-family:inherit; background:#3a3357; color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.35); text-align:center; position:relative; }',
   '.ocTool:active { transform:translateY(2px); box-shadow:none; }',
   '.ocTool.sel { background:linear-gradient(180deg,#ffd35c,#f0a818); color:#4a3200; }',
-  '.ocTool .ti { font-size:26px; display:block; }',
+  '.ocTool .ti { width:64px; height:40px; margin:0 auto; display:block; font-size:26px; line-height:40px; }',
+  '.ocTool canvas.ti { object-fit:contain; }',
   '.ocTool .tn { font-size:11px; font-weight:bold; display:block; margin-top:2px; letter-spacing:.04em; }',
   '.ocTool .tc { position:absolute; top:-7px; right:-5px; background:#e05555; color:#fff; border-radius:10px; font-size:12px; font-weight:bold; padding:1px 7px; }',
   '.ocTool .tc.inf { background:#3cba54; font-size:15px; min-width:18px; }',
   '#ocInfo { position:absolute; z-index:10; right:12px; top:62px; width:min(330px,calc(100vw - 24px)); max-height:calc(100vh - 170px); overflow:auto; box-sizing:border-box; display:none; background:rgba(255,252,239,.98); color:#333; border:3px solid #ffd35c; border-radius:20px; padding:12px 42px 13px 14px; box-shadow:0 8px 28px rgba(0,0,0,.28); }',
   '#ocInfoClose { position:absolute; right:8px; top:7px; width:30px; height:30px; border:0; border-radius:50%; background:#eee7d3; color:#594b2c; cursor:pointer; font:bold 18px sans-serif; }',
-  '#ocInfoTitle { color:#5935aa; font-size:20px; font-weight:900; margin-bottom:8px; }',
+  '#ocInfoTitle { color:#5935aa; font-size:20px; font-weight:900; margin-bottom:8px; display:flex; align-items:center; gap:8px; }',
+  '#ocInfoTitle .ocInfoSymbol { width:54px; height:34px; flex:0 0 auto; }',
   '#ocInfoHelp { display:none; background:#eaf9e5; color:#367227; border-radius:10px; padding:6px 9px; margin-bottom:7px; font-size:12px; font-weight:bold; line-height:1.35; }',
   '.ocInfoPart { border-radius:12px; padding:8px 10px; margin-top:7px; font-size:14px; line-height:1.42; }',
   '.ocInfoPart.metaphor { background:#fff0bd; border-left:5px solid #f1ad28; }',
@@ -82,7 +84,8 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '#ocIntroEm { display:none; }',
   '#ocIntroTit { font-size:clamp(24px,5vw,34px); color:#5a34b0; margin:6px 0 10px; }',
   '#ocIntroTxt { font-size:clamp(20px,4vw,26px); color:#333; line-height:1.6; letter-spacing:.02em; word-spacing:.1em; margin-bottom:8px; }',
-  '#ocIntroNew { display:none; background:#f3edff; border:2px solid #c9b8f2; border-radius:14px; padding:8px 12px; font-size:17px; color:#5a34b0; margin:0 auto 10px; max-width:90%; }',
+  '#ocIntroNew { display:none; align-items:center; justify-content:center; gap:8px; background:#f3edff; border:2px solid #c9b8f2; border-radius:14px; padding:8px 12px; font-size:17px; color:#5a34b0; margin:0 auto 10px; max-width:90%; }',
+  '#ocIntroNew canvas { width:54px; height:34px; flex:0 0 auto; }',
   '#ocIntroSpk { background:#eef2ff; border:2px solid #c5cffb; border-radius:12px; font-size:18px; padding:6px 22px; cursor:pointer; font-family:inherit; margin:0 auto 10px;align-self:center; }',
   /* vittoria + lo sapevi */
   '#ocWin .card { background:linear-gradient(180deg,#f4ffe8,#e2f6cd); border:4px solid #9fd47a; }',
@@ -375,7 +378,7 @@ const OC_SANDBOX={ nx:12, ny:8, sun:1, comps:[], wires:[],
 const oc={ on:false, raf:0, lvl:0, sandbox:false, board:null, pal:{}, tool:'hand',
   time:0, last:0, winT:0, mish:0, hint:0, hintT:0, freeBurnLeft:0,
   flow:{}, nets:null, smoke:[], flags:{}, dayT:0, nightT:0, sun:true,
-  drag:null, preview:null, placing:false, won:false, cs:64, ox:0, oy:0, infoType:null };
+  drag:null, wireGhost:null, preview:null, placing:false, won:false, cs:64, ox:0, oy:0, infoType:null };
 
 function ocSave(){ try{ localStorage.setItem('gabri_off_c', JSON.stringify(oc.prog)); }catch(e){} }
 function ocLoad(){ try{ oc.prog=JSON.parse(localStorage.getItem('gabri_off_c'))||{unl:0,stars:[]}; }catch(e){ oc.prog={unl:0,stars:[]}; } }
@@ -384,6 +387,23 @@ ocLoad();
 /* ---------- modello del banco ---------- */
 function ocNK(x,y){ return x+','+y; }
 function ocEK(x,y,o){ return x+','+y+','+o; }
+function ocWireGeom(x,y,o){
+  if(o==='H') return {a:{x,y},b:{x:x+1,y}};
+  if(o==='V') return {a:{x,y},b:{x,y:y+1}};
+  if(o==='D') return {a:{x,y},b:{x:x+1,y:y+1}};       /* ↘ */
+  if(o==='U') return {a:{x,y:y+1},b:{x:x+1,y}};       /* ↗ */
+  return null;
+}
+function ocWireGeomKey(k){ const [x,y,o]=k.split(','); return ocWireGeom(+x,+y,o); }
+function ocWireSideAt(p,q,comp){
+  const horizontal=q.x>p.x?'E':'W', vertical=q.y>p.y?'S':'N';
+  const c=comp||oc.board.comps.get(ocNK(p.x,p.y));
+  if(!c) return horizontal;
+  const pins=ocPins(c);
+  if(pins[horizontal]!==undefined) return horizontal;
+  if(pins[vertical]!==undefined) return vertical;
+  return null;
+}
 const OC_PIN2=[['W','E'],['N','S'],['E','W'],['S','N']]; /* [primo,secondo] per rotazione */
 const OC_NPNPIN=[{b:'W',c:'N',e:'S'},{b:'E',c:'N',e:'S'},{b:'W',c:'S',e:'N'},{b:'E',c:'S',e:'N'}];
 
@@ -427,10 +447,10 @@ function ocSolve(dt){
   /* elementi */
   const els=[]; let ground=null;
   b.wires.forEach((w,k)=>{
-    const [x,y,o]=k.split(','); const xi=+x, yi=+y;
-    const a=(o==='H')?sk(xi,yi,'E'):sk(xi,yi,'S');
-    const c=(o==='H')?sk(xi+1,yi,'W'):sk(xi,yi+1,'N');
-    els.push({kind:'R', g:1/OC_RWIRE, a, b:c, edge:k});
+    const line=ocWireGeomKey(k), sa=ocWireSideAt(line.a,line.b), sb=ocWireSideAt(line.b,line.a);
+    const a=sk(line.a.x,line.a.y,sa), c=sk(line.b.x,line.b.y,sb);
+    const wireLength=Math.hypot(line.b.x-line.a.x,line.b.y-line.a.y);
+    els.push({kind:'R', g:1/(OC_RWIRE*wireLength), a, b:c, edge:k});
   });
   b.comps.forEach(c=>{
     const pins=ocPins(c), net={};
@@ -629,8 +649,8 @@ function ocDraw(){
       g.strokeStyle='rgba(255,255,255,.55)'; g.lineWidth=3; g.setLineDash([7,7]);
       g.beginPath(); g.arc(px,py,cs*0.32,0,7); g.stroke(); g.setLineDash([]);
       g.globalAlpha=0.4+0.15*Math.sin(oc.time*3);
-      g.font=cs*0.3+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-      g.fillText(OC_T.icons[c.t]||'❓', px, py);
+      const ghost=ocNewComp(c.t,c.x,c.y,c.r); ghost.ghost=true; ghost.res={I:0,P:0,V:0};
+      ocDrawComp(g,ghost);
       g.globalAlpha=1;
     });
   }
@@ -640,7 +660,8 @@ function ocDraw(){
     g.strokeStyle='rgba(255,240,120,'+blink+')'; g.lineWidth=cs*0.14; g.lineCap='round';
     (oc.L.sol.wires||[]).forEach(w=>{
       if(oc.board.wires.has(ocEK(w[0],w[1],w[2]))) return;
-      const [ax,ay]=ocXY(w[0],w[1]); const [bx,by]=(w[2]==='H')?ocXY(w[0]+1,w[1]):ocXY(w[0],w[1]+1);
+      const line=ocWireGeom(w[0],w[1],w[2]);
+      const [ax,ay]=ocXY(line.a.x,line.a.y), [bx,by]=ocXY(line.b.x,line.b.y);
       g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.stroke();
     });
     g.fillStyle='rgba(255,240,120,'+blink+')';
@@ -649,8 +670,8 @@ function ocDraw(){
   }
   /* fili */
   b.wires.forEach((w,k)=>{
-    const [x,y,o]=k.split(','); const xi=+x, yi=+y;
-    const [ax,ay]=ocXY(xi,yi); const [bx,by]=(o==='H')?ocXY(xi+1,yi):ocXY(xi,yi+1);
+    const line=ocWireGeomKey(k);
+    const [ax,ay]=ocXY(line.a.x,line.a.y), [bx,by]=ocXY(line.b.x,line.b.y);
     g.strokeStyle=w.lock?'#b7794a':'#d98e55'; g.lineWidth=cs*0.13; g.lineCap='round';
     g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.stroke();
     g.strokeStyle='rgba(255,255,255,.18)'; g.lineWidth=cs*0.05;
@@ -659,8 +680,8 @@ function ocDraw(){
   /* elettroni (si muovono dal − al +, come nella realtà!) */
   b.wires.forEach((w,k)=>{
     const I=oc.flow[k]||0; if(Math.abs(I)<0.0006) return;
-    const [x,y,o]=k.split(','); const xi=+x, yi=+y;
-    const [ax,ay]=ocXY(xi,yi); const [bx,by]=(o==='H')?ocXY(xi+1,yi):ocXY(xi,yi+1);
+    const line=ocWireGeomKey(k);
+    const [ax,ay]=ocXY(line.a.x,line.a.y), [bx,by]=ocXY(line.b.x,line.b.y);
     const len=Math.hypot(bx-ax,by-ay);
     const speed=Math.min(90, 25+Math.abs(I)*260);
     const dir=(I>0)?-1:1; /* elettroni contro la corrente convenzionale */
@@ -674,6 +695,12 @@ function ocDraw(){
       g.beginPath(); g.arc(ax+(bx-ax)*t, ay+(by-ay)*t, r, 0, 7); g.fill();
     }
   });
+  /* filo fantasma dal foro di partenza al puntatore */
+  if(oc.wireGhost){
+    const [ax,ay]=ocXY(oc.wireGhost.from.x,oc.wireGhost.from.y);
+    g.save(); g.strokeStyle='rgba(159,239,255,.8)'; g.lineWidth=cs*0.1; g.lineCap='round'; g.setLineDash([8,6]);
+    g.beginPath(); g.moveTo(ax,ay); g.lineTo(oc.wireGhost.mx,oc.wireGhost.my); g.stroke(); g.restore();
+  }
   /* anteprima magnetica del componente da inserire */
   if(oc.preview){
     const p=oc.preview, [px,py]=ocXY(p.x,p.y);
@@ -802,10 +829,14 @@ function ocDrawComp(g,c){
     case 'buz':{
       const on=(c.res?c.res.P:0)>OC_BUZ_ON;
       g.fillStyle='#4a4462'; g.beginPath(); g.arc(px,py,cs*0.24,0,7); g.fill();
-      g.fillStyle=on?'#ffd35c':'#888'; g.font=cs*0.3+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-      g.fillText('🔔',px,py);
-      if(on){ g.strokeStyle='rgba(255,211,92,'+(0.4+0.3*Math.sin(oc.time*20))+')'; g.lineWidth=2;
-        g.beginPath(); g.arc(px,py,cs*0.32+3*Math.sin(oc.time*20),0,7); g.stroke(); }
+      /* campanella vettoriale: lo stesso simbolo compare nella palette */
+      g.fillStyle=on?'#ffd35c':'#aaa5b8'; g.beginPath();
+      g.moveTo(px-cs*0.12,py+cs*0.07); g.quadraticCurveTo(px-cs*0.08,py-cs*0.14,px,py-cs*0.15);
+      g.quadraticCurveTo(px+cs*0.08,py-cs*0.14,px+cs*0.12,py+cs*0.07);
+      g.lineTo(px+cs*0.16,py+cs*0.12); g.lineTo(px-cs*0.16,py+cs*0.12); g.closePath(); g.fill();
+      g.beginPath(); g.arc(px,py+cs*0.16,cs*0.035,0,7); g.fill();
+      if(on){ g.strokeStyle='rgba(255,211,92,'+(0.5+0.3*Math.sin(oc.time*20))+')'; g.lineWidth=2; g.lineCap='round';
+        g.beginPath(); g.arc(px,py,cs*0.32,-0.8,0.8); g.moveTo(px-cs*0.22,py-cs*0.22); g.arc(px,py,cs*0.32,Math.PI-0.8,Math.PI+0.8); g.stroke(); }
       break; }
     case 'ldr':{
       g.fillStyle='#4a4462'; g.fillRect(px-hw*0.7,py-hh,hw*1.4,hh*2);
@@ -841,28 +872,22 @@ function ocHitNode(mx,my,radius){
 function ocHitEdge(mx,my){
   const b=oc.board; let best=null, bd=oc.cs*0.3;
   b.wires.forEach((w,k)=>{
-    const [x,y,o]=k.split(','); const xi=+x, yi=+y;
-    const [ax,ay]=ocXY(xi,yi); const [bx,by]=(o==='H')?ocXY(xi+1,yi):ocXY(xi,yi+1);
-    const d=Math.hypot(mx-(ax+bx)/2,my-(ay+by)/2);
+    const line=ocWireGeomKey(k);
+    const [ax,ay]=ocXY(line.a.x,line.a.y), [bx,by]=ocXY(line.b.x,line.b.y);
+    const vx=bx-ax, vy=by-ay, len2=vx*vx+vy*vy;
+    const t=Math.max(0,Math.min(1,((mx-ax)*vx+(my-ay)*vy)/len2));
+    const d=Math.hypot(mx-(ax+vx*t),my-(ay+vy*t));
     if(d<bd){ bd=d; best=k; }
   });
   return best;
 }
-function ocSideOfEdge(x,y,o,nx2,ny2){ /* lato del nodo (nx2,ny2) toccato dall'arco */
-  if(o==='H') return (nx2===x)?'E':'W';
-  return (ny2===y)?'S':'N';
-}
-function ocCanAttach(x,y,side){
-  const c=oc.board.comps.get(ocNK(x,y));
-  if(!c) return true;
-  return ocPins(c)[side]!==undefined;
-}
 function ocAddWire(x,y,o){
-  const b=oc.board, k=ocEK(x,y,o);
+  const b=oc.board, k=ocEK(x,y,o), line=ocWireGeom(x,y,o);
+  if(!line) return false;
   if(b.wires.has(k)) return false;
-  const x2=(o==='H')?x+1:x, y2=(o==='H')?y:y+1;
-  if(x2>=b.nx||y2>=b.ny) return false;
-  if(!ocCanAttach(x,y,ocSideOfEdge(x,y,o,x,y))||!ocCanAttach(x2,y2,ocSideOfEdge(x,y,o,x2,y2))){ ocToast(OC_T.noPin[LI()]); return false; }
+  const inside=p=>p.x>=0&&p.y>=0&&p.x<b.nx&&p.y<b.ny;
+  if(!inside(line.a)||!inside(line.b)) return false;
+  if(!ocWireSideAt(line.a,line.b)||!ocWireSideAt(line.b,line.a)){ ocToast(OC_T.noPin[LI()]); return false; }
   if(!ocHasPiece('wire')){ ocToast(OC_T.noPiece[LI()]); return false; }
   b.wires.set(k,{}); ocTakePiece('wire'); ocPalDraw(); return true;
 }
@@ -870,13 +895,12 @@ function ocSmartRot(t,x,y){
   /* scegli la rotazione che aggancia più fili vicini */
   const b=oc.board, rmax=(t==='npn')?4:4; let best=0, bestN=-1;
   for(let r=0;r<rmax;r++){
-    const pins=ocPins({t,r}); let n2=0;
-    for(const s in pins){
-      let k=null;
-      if(s==='E') k=ocEK(x,y,'H'); else if(s==='W') k=ocEK(x-1,y,'H');
-      else if(s==='S') k=ocEK(x,y,'V'); else if(s==='N') k=ocEK(x,y-1,'V');
-      if(k&&b.wires.has(k)) n2++;
-    }
+    const candidate={t,r}, here={x,y}; let n2=0;
+    b.wires.forEach((w,k)=>{
+      const line=ocWireGeomKey(k);
+      if(line.a.x===x&&line.a.y===y&&ocWireSideAt(here,line.b,candidate)) n2++;
+      else if(line.b.x===x&&line.b.y===y&&ocWireSideAt(here,line.a,candidate)) n2++;
+    });
     if(n2>bestN){ bestN=n2; best=r; }
   }
   return best;
@@ -926,12 +950,23 @@ function ocPointer(e){
     return;
   }
   if(oc.tool==='wire'){
-    if(nd) oc.drag={last:nd};
+    if(nd){ oc.drag={last:nd}; oc.wireGhost={from:nd,mx,my}; }
     return;
   }
   /* il componente si vede prima e viene posato al rilascio */
   if(ocIsComponentTool(oc.tool)){
-    oc.placing=!!ocPreviewAt(mx,my,0.72);
+    const p=ocPreviewAt(mx,my,0.72);
+    if(!p) return;
+    /* Sul PC il clic deve essere immediato: il ghost ha già scelto il foro. */
+    if(!e.pointerType||e.pointerType==='mouse'){
+      const c=oc.board.comps.get(ocNK(p.x,p.y));
+      if(p.valid) ocPlace(p.t,p.x,p.y,p.r);
+      else if(p.rotate&&c) c.r=((c.r||0)+1)%4;
+      else if(c) ocToast(OC_T.occupied[LI()]);
+      oc.preview=null; oc.placing=false;
+      return;
+    }
+    oc.placing=true;
     if(oc.placing){
       e.preventDefault();
       try{ $('ocCv').setPointerCapture(e.pointerId); }catch(err){}
@@ -946,15 +981,22 @@ function ocPointerMove(e){
     return;
   }
   if(oc.drag){
+    oc.wireGhost={from:oc.drag.last,mx:e.clientX,my:e.clientY};
     const nd=ocHitNode(e.clientX,e.clientY,0.48); if(!nd) return;
     const L2=oc.drag.last;
     const dx=nd.x-L2.x, dy=nd.y-L2.y;
-    if(Math.abs(dx)+Math.abs(dy)!==1) { if(dx||dy) oc.drag.last=nd; return; }
-    if(dx===1) ocAddWire(L2.x,L2.y,'H');
-    else if(dx===-1) ocAddWire(nd.x,nd.y,'H');
-    else if(dy===1) ocAddWire(L2.x,L2.y,'V');
-    else ocAddWire(nd.x,nd.y,'V');
+    if(!dx&&!dy) return;
+    if(Math.abs(dx)>1||Math.abs(dy)>1){ oc.drag.last=nd; oc.wireGhost.from=nd; return; }
+    if(dx===1&&dy===0) ocAddWire(L2.x,L2.y,'H');
+    else if(dx===-1&&dy===0) ocAddWire(nd.x,nd.y,'H');
+    else if(dx===0&&dy===1) ocAddWire(L2.x,L2.y,'V');
+    else if(dx===0&&dy===-1) ocAddWire(nd.x,nd.y,'V');
+    else if(dx===1&&dy===1) ocAddWire(L2.x,L2.y,'D');
+    else if(dx===-1&&dy===-1) ocAddWire(nd.x,nd.y,'D');
+    else if(dx===1&&dy===-1) ocAddWire(L2.x,nd.y,'U');
+    else if(dx===-1&&dy===1) ocAddWire(nd.x,L2.y,'U');
     oc.drag.last=nd;
+    oc.wireGhost.from=nd;
   }
 }
 function ocPointerUp(e){
@@ -965,13 +1007,38 @@ function ocPointerUp(e){
     else if(c) ocToast(OC_T.occupied[LI()]);
   }
   if(e){ try{ if($('ocCv').hasPointerCapture(e.pointerId)) $('ocCv').releasePointerCapture(e.pointerId); }catch(err){} }
-  oc.drag=null; oc.placing=false; oc.preview=null;
+  oc.drag=null; oc.wireGhost=null; oc.placing=false; oc.preview=null;
 }
 addEventListener('pointerdown',ocPointer);
 addEventListener('pointermove',ocPointerMove);
 addEventListener('pointerup',ocPointerUp);
 addEventListener('pointercancel',ocPointerUp);
 addEventListener('resize',()=>{ if(oc.on) ocResize(); });
+
+/* miniatura identica al simbolo disegnato sul circuito */
+function ocToolIconMarkup(t,extraClass){
+  if(t==='hand'||t==='erase') return '<span class="ti" aria-hidden="true">'+OC_T.icons[t]+'</span>';
+  return '<canvas class="ti ocCircuitSymbol '+(extraClass||'')+'" width="128" height="80" aria-hidden="true"></canvas>';
+}
+function ocPaintToolSymbol(canvas,t){
+  if(!canvas||t==='hand'||t==='erase') return;
+  const g=canvas.getContext('2d'); if(!g) return;
+  g.clearRect(0,0,canvas.width,canvas.height); g.save();
+  g.scale(canvas.width/64,canvas.height/40);
+  if(t==='wire'){
+    g.strokeStyle='#d98e55'; g.lineWidth=7; g.lineCap='round';
+    g.beginPath(); g.moveTo(7,25); g.lineTo(57,15); g.stroke();
+    g.strokeStyle='rgba(255,255,255,.28)'; g.lineWidth=2.5;
+    g.beginPath(); g.moveTo(7,23); g.lineTo(57,13); g.stroke();
+  }else{
+    const saved={cs:oc.cs,ox:oc.ox,oy:oc.oy,sandbox:oc.sandbox};
+    oc.cs=52; oc.ox=32; oc.oy=18; oc.sandbox=false;
+    const c=ocNewComp(t,0,0,0); c.ghost=true; c.res={I:0,P:0,V:0};
+    ocDrawComp(g,c);
+    oc.cs=saved.cs; oc.ox=saved.ox; oc.oy=saved.oy; oc.sandbox=saved.sandbox;
+  }
+  g.restore();
+}
 
 /* ---------- palette ---------- */
 function ocPalDraw(){
@@ -987,10 +1054,11 @@ function ocPalDraw(){
     const raw=(t==='wire'?oc.pal.wire:oc.pal[t]);
     const cnt=(t==='hand'||t==='erase')?'':(raw===Infinity?'∞':raw);
     if(cnt===0) btn.classList.add('zero');
-    btn.innerHTML='<span class="ti">'+OC_T.icons[t]+'</span><span class="tn">'+OC_T.names[t][i]+'</span>'+(cnt!==''?'<span class="tc'+(cnt==='∞'?' inf':'')+'">'+cnt+'</span>':'');
+    btn.innerHTML=ocToolIconMarkup(t)+'<span class="tn">'+OC_T.names[t][i]+'</span>'+(cnt!==''?'<span class="tc'+(cnt==='∞'?' inf':'')+'">'+cnt+'</span>':'');
     btn.title=oc.sandbox&&OC_INFO[t]?((i===0?'Scegli e scopri: ':'Choose and discover: ')+OC_T.names[t][i]):OC_T.names[t][i];
-    btn.onclick=()=>{ oc.tool=t; oc.preview=null; oc.placing=false; if(oc.sandbox&&OC_INFO[t]) ocInfoShow(t); ocPalDraw(); };
+    btn.onclick=()=>{ oc.tool=t; oc.preview=null; oc.placing=false; oc.drag=null; oc.wireGhost=null; if(oc.sandbox&&OC_INFO[t]) ocInfoShow(t); ocPalDraw(); };
     bar.appendChild(btn);
+    ocPaintToolSymbol(btn.querySelector('canvas'),t);
   });
   /* filo subito dopo la mano */
   const kids=[...bar.children];
@@ -1006,10 +1074,15 @@ function ocGiveBack(t){ if(oc.pal[t]!==Infinity) oc.pal[t]=(oc.pal[t]||0)+1; }
 function ocInfoShow(t){
   const info=OC_INFO[t]; if(!oc.sandbox||!info) return;
   const i=LI(); oc.infoType=t;
-  $('ocInfoTitle').textContent=(OC_T.icons[t]||'')+' '+OC_T.names[t][i];
+  const title=$('ocInfoTitle');
+  title.innerHTML=ocToolIconMarkup(t,'ocInfoSymbol')+'<span></span>';
+  title.querySelector('span:last-child').textContent=OC_T.names[t][i];
+  ocPaintToolSymbol(title.querySelector('canvas'),t);
   const help=$('ocInfoHelp');
-  help.style.display=t==='wire'?'none':'block';
-  help.textContent=i===0?'👻 Sposta il ghost sul foro: verde inserisce, giallo ruota, rosso è occupato. Tocca o trascina e rilascia.':'👻 Move the ghost over a hole: green places, yellow rotates, red is occupied. Tap or drag and release.';
+  help.style.display='block';
+  help.textContent=t==='wire'
+    ?(i===0?'〰️ Trascina da un foro a quello vicino: ora puoi andare anche in diagonale.':'〰️ Drag from one hole to a nearby one: diagonal wires are now supported too.')
+    :(i===0?'👻 PC: muovi il ghost e clicca per fissarlo. Touch: trascina e rilascia. Verde inserisce, giallo ruota, rosso è occupato.':'👻 PC: move the ghost and click to attach it. Touch: drag and release. Green places, yellow rotates, red is occupied.');
   $('ocInfoMetaphor').innerHTML='<strong>'+(i===0?'🧰 NEL GIOCO':'🧰 IN THE GAME')+'</strong>';
   $('ocInfoMetaphor').appendChild(document.createTextNode(info.metaphor[i]));
   $('ocInfoReal').innerHTML='<strong>'+(i===0?'🔬 COME FUNZIONA DAVVERO':'🔬 HOW IT REALLY WORKS')+'</strong>';
@@ -1038,7 +1111,7 @@ function ocGoto(n){
   oc.mish=0; oc.hint=0; oc.hintT=0; oc.winT=0; oc.won=false;
   oc.flags={}; oc.dayT=0; oc.nightT=0; oc.sun=true; oc.smoke=[];
   oc.freeBurnLeft=(L.freeBurn||0);
-  oc.infoType=null; oc.preview=null; oc.placing=false; oc.drag=null; $('ocInfo').style.display='none';
+  oc.infoType=null; oc.preview=null; oc.placing=false; oc.drag=null; oc.wireGhost=null; $('ocInfo').style.display='none';
   const i=LI();
   $('ocLvl').textContent=oc.sandbox?(i===0?'🧪 BANCO 12×8 · PEZZI ∞':'🧪 BENCH 12×8 · PARTS ∞'):'⚡ '+(oc.lvl+1)+'/'+OC_LEVELS.length;
   ocStarHud();
@@ -1055,7 +1128,12 @@ function ocGoto(n){
     $('ocIntroTxt').textContent=L.g[i];
     const newComp=Object.keys(L.pal||{}).filter(t=>t!=='wire')[0];
     const nv=$('ocIntroNew');
-    if(newComp){ nv.style.display='block'; nv.textContent=OC_T.icons[newComp]+' '+((i===0)?'Nuovo pezzo: ':'New piece: ')+OC_T.names[newComp][i]; }
+    if(newComp){
+      nv.style.display='flex';
+      nv.innerHTML=ocToolIconMarkup(newComp,'ocIntroSymbol')+'<span></span>';
+      nv.querySelector('span:last-child').textContent=((i===0)?'Nuovo pezzo: ':'New piece: ')+OC_T.names[newComp][i];
+      ocPaintToolSymbol(nv.querySelector('canvas'),newComp);
+    }
     else nv.style.display='none';
     $('ocIntro').style.display='flex';
     $('ocGibiDesk').style.display='none';

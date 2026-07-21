@@ -45,12 +45,16 @@ Stelle: 3⭐ = livello risolto senza bruciare LED e senza "Aiutino" (soluzione
 fantasma). Il 🔊 sulla consegna NON penalizza. "Lo sapevi?" dopo ogni livello.
 
 ## Banco 2 — 💡 Porte logiche (gli Occhi)
-Le porte sono **guardiani con la faccia**: AND severo (apre solo se ENTRAMBE le
-leve sono su), OR generoso (basta una), NOT dispettoso (inverte sempre), XOR
-pignolo (una sola, non due). Segnale = filo che si illumina. Livelli: accendi la
-luce giusta, apri il caveau a due chiavi (AND), allarme della porta (NOT), campanello
-a due pulsanti (OR), fino a XOR e a un mini-sommatore che fa 1+1 con le lampadine.
-Livello-cerniera col Banco 1: si vede che dentro il guardiano ci sono i transistor.
+Le porte usano i **simboli standard ANSI**: AND a D, OR curvo, NOT triangolare con
+il pallino d’inversione e XOR con la doppia curva. Il nome resta scritto dentro al
+simbolo per aiutare l’apprendimento. Segnale = filo che si illumina e i fili sono
+agganciati visivamente ai morsetti di leve, porte e uscite. Dopo le porte singole,
+i collegamenti diventano visibili in una serie di applicazioni: allarme della porta,
+mini-sommatore, porta automatica con sensore di sicurezza, voto a maggioranza di
+tre sensori e sommatore completo. Gli ultimi livelli usano tre ingressi e mostrano
+anche i valori intermedi, per far vedere come blocchi semplici costruiscono una
+funzione più avanzata.
+Livello-cerniera col Banco 1: si collega la logica ai transistor del banco elettrico.
 
 ## Banco 3 — 🤖 Programmazione (le Gambe)
 Gibi cammina su una griglia; si compongono **blocchi trascinabili con nome scritto**
