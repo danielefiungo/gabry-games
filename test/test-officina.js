@@ -33,8 +33,22 @@ function T(name,cond,extra){
 function steps(sec){ const n=Math.round(sec/0.02); for(let i=0;i<n;i++) OC.step(0.02); }
 function until(sec,fn){ const n=Math.round(sec/0.02); for(let i=0;i<n;i++){ OC.step(0.02); if(fn()) return true; } return fn(); }
 const oc=OC.oc;
+const doc=w.window.document;
 function unlockAll(){ oc.prog.unl=99; }
 unlockAll();
+
+console.log('Banco libero grande e infinito');
+OC.goto(-1);
+T('tavola ampliata a 12×8', oc.board.nx===12&&oc.board.ny===8, oc.board.nx+'×'+oc.board.ny);
+T('tutti i pezzi sono infiniti', Object.values(oc.pal).every(v=>v===Infinity));
+T('piazzo una pila', OC.place('batt',1,1));
+T('la pila resta infinita dopo averla usata', oc.pal.batt===Infinity);
+T('piazzo una seconda pila', OC.place('batt',3,1));
+const sandboxButtons=[...doc.querySelectorAll('#ocPalBar .ocTool')];
+const explained=sandboxButtons.filter(b=>!/MANO|GOMMA/.test(b.textContent));
+explained.forEach(b=>b.click());
+T('ogni strumento del circuito apre una spiegazione', explained.length===11&&doc.getElementById('ocInfo').style.display==='block');
+T('la spiegazione unisce metafora e funzionamento reale', doc.getElementById('ocInfoMetaphor').textContent.length>40&&doc.getElementById('ocInfoReal').textContent.length>80);
 
 console.log('L1 chiudi il cerchio');
 OC.goto(0);
@@ -46,7 +60,6 @@ steps(1.2);
 T('vittoria', oc.won);
 T('elettroni in movimento', Object.values(oc.flow).some(I=>Math.abs(I)>0.01));
 /* vittoria NON modale: banner visibile, overlay chiuso, si gioca ancora */
-const doc=w.window.document;
 T('banner vittoria visibile', doc.getElementById('ocWinBar').style.display==='flex');
 T('overlay NON aperto (non modale)', doc.getElementById('ocWin').style.display!=='flex');
 oc.board.wires.delete('0,1,H'); /* stacco un filo: il circuito è ancora vivo */

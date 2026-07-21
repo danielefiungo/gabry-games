@@ -46,12 +46,24 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '#ocGibiDesk { position:absolute;left:10px;bottom:86px;width:clamp(70px,11vw,135px);height:clamp(92px,16vw,180px);z-index:7;background:url("assets/characters/gibi.png") center/contain no-repeat;filter:drop-shadow(0 8px 8px rgba(0,0,0,.35));pointer-events:none;transition:transform .25s; }',
   '#ocGoal button { background:none; border:none; font-size:20px; cursor:pointer; padding:0 4px; font-family:inherit; }',
   '#ocPalBar { position:absolute; bottom:0; left:0; right:0; z-index:9; display:none; justify-content:center; gap:8px; padding:8px 10px calc(10px + env(safe-area-inset-bottom)); flex-wrap:wrap; background:rgba(20,16,34,.72); }',
+  '#ocPalBar.sandbox { justify-content:flex-start; flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; scrollbar-color:#ffd35c #2b2641; }',
+  '#ocPalBar.sandbox .ocTool { flex:0 0 auto; }',
   '.ocTool { border:none; border-radius:16px; padding:8px 10px; min-width:64px; cursor:pointer; font-family:inherit; background:#3a3357; color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.35); text-align:center; position:relative; }',
   '.ocTool:active { transform:translateY(2px); box-shadow:none; }',
   '.ocTool.sel { background:linear-gradient(180deg,#ffd35c,#f0a818); color:#4a3200; }',
   '.ocTool .ti { font-size:26px; display:block; }',
   '.ocTool .tn { font-size:11px; font-weight:bold; display:block; margin-top:2px; letter-spacing:.04em; }',
   '.ocTool .tc { position:absolute; top:-7px; right:-5px; background:#e05555; color:#fff; border-radius:10px; font-size:12px; font-weight:bold; padding:1px 7px; }',
+  '.ocTool .tc.inf { background:#3cba54; font-size:15px; min-width:18px; }',
+  '#ocInfo { position:absolute; z-index:10; right:12px; top:62px; width:min(330px,calc(100vw - 24px)); max-height:calc(100vh - 170px); overflow:auto; box-sizing:border-box; display:none; background:rgba(255,252,239,.98); color:#333; border:3px solid #ffd35c; border-radius:20px; padding:12px 42px 13px 14px; box-shadow:0 8px 28px rgba(0,0,0,.28); }',
+  '#ocInfoClose { position:absolute; right:8px; top:7px; width:30px; height:30px; border:0; border-radius:50%; background:#eee7d3; color:#594b2c; cursor:pointer; font:bold 18px sans-serif; }',
+  '#ocInfoTitle { color:#5935aa; font-size:20px; font-weight:900; margin-bottom:8px; }',
+  '#ocInfoHelp { display:none; background:#eaf9e5; color:#367227; border-radius:10px; padding:6px 9px; margin-bottom:7px; font-size:12px; font-weight:bold; line-height:1.35; }',
+  '.ocInfoPart { border-radius:12px; padding:8px 10px; margin-top:7px; font-size:14px; line-height:1.42; }',
+  '.ocInfoPart.metaphor { background:#fff0bd; border-left:5px solid #f1ad28; }',
+  '.ocInfoPart.real { background:#e6f5ff; border-left:5px solid #3c9ed5; }',
+  '.ocInfoPart strong { display:block; color:#493b70; font-size:11px; letter-spacing:.05em; margin-bottom:2px; }',
+  '#ocInfoSpeak { margin-top:9px; border:2px solid #c5cffb; border-radius:10px; background:#eef2ff; padding:5px 12px; cursor:pointer; font-family:inherit; }',
   '.ocTool.zero { opacity:.4; }',
   '#ocMsg { position:absolute; bottom:96px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.68); color:#fff; padding:9px 20px; border-radius:18px; font-size:18px; z-index:9; display:none; pointer-events:none; max-width:92vw; text-align:center; }',
   '#ocSun { position:absolute; right:12px; top:56px; z-index:9; display:none; border:none; border-radius:18px; font-size:34px; padding:8px 12px; cursor:pointer; font-family:inherit; box-shadow:0 4px 0 rgba(0,0,0,.3); }',
@@ -102,7 +114,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '.ocLvBtn .lt { font-size:12px;font-weight:bold;display:block; margin:3px 0; min-height:30px; line-height:1.2; }',
   '.ocLvBtn .ls { font-size:13px; display:block; }',
   '#ocPickBack { margin-top:16px; background:#eeeaf8;border:2px solid #d0c6ea;border-radius:12px;color:#635487;font-size:15px;padding:7px 13px;cursor:pointer;font-family:inherit; }',
-  '@media(max-width:760px){#ocBtns .bl{display:none}#ocBtns .hudBtn{min-width:42px;padding:4px}#ocGoal{top:58px;width:84vw}#ocGibiDesk{opacity:.75;left:-8px}.ocTool{min-width:57px;padding:7px 6px}#ocPick .card{padding:16px 10px 18px}#ocPickGibi{position:relative;display:block;width:100%;height:110px;bottom:auto;left:auto;background-position:center 10%;background-size:145px auto}#ocPickGrid{grid-template-columns:repeat(2,minmax(120px,1fr))}.ocLvBtn{min-height:96px}#ocIntro .card{padding:18px 14px 20px;min-height:0}#ocIntroGibi{position:relative;left:auto;bottom:auto;width:100%;height:110px;background-position:center 7%;background-size:145px auto}#ocWin .card{padding:18px 12px}#ocWinGibi{display:none}}'
+  '@media(max-width:760px){#ocBtns .bl{display:none}#ocBtns .hudBtn{min-width:42px;padding:4px}#ocGoal{top:58px;width:84vw}#ocGibiDesk{opacity:.75;left:-8px}.ocTool{min-width:57px;padding:7px 6px}#ocInfo{top:58px;right:8px;width:calc(100vw - 16px);max-height:205px}#ocPick .card{padding:16px 10px 18px}#ocPickGibi{position:relative;display:block;width:100%;height:110px;bottom:auto;left:auto;background-position:center 10%;background-size:145px auto}#ocPickGrid{grid-template-columns:repeat(2,minmax(120px,1fr))}.ocLvBtn{min-height:96px}#ocIntro .card{padding:18px 14px 20px;min-height:0}#ocIntroGibi{position:relative;left:auto;bottom:auto;width:100%;height:110px;background-position:center 7%;background-size:145px auto}#ocWin .card{padding:18px 12px}#ocWinGibi{display:none}}'
   ].join('\n');
   document.head.appendChild(css);
 
@@ -126,6 +138,14 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
     '<div id="ocGoal"><span id="ocGoalTxt"></span> <button id="ocGoalSpk">🔊</button></div>'+
     '<button id="ocSun" class="day">☀️</button>'+
     '<div id="ocPalBar"></div>'+
+    '<div id="ocInfo" role="dialog" aria-live="polite">'+
+      '<button id="ocInfoClose" aria-label="Chiudi">×</button>'+
+      '<div id="ocInfoTitle"></div>'+
+      '<div id="ocInfoHelp"></div>'+
+      '<div id="ocInfoMetaphor" class="ocInfoPart metaphor"></div>'+
+      '<div id="ocInfoReal" class="ocInfoPart real"></div>'+
+      '<button id="ocInfoSpeak">🔊</button>'+
+    '</div>'+
     '<div id="ocMsg"></div>'+
     '<div id="ocWinBar"><span id="ocWinBarTxt"></span><button id="ocWinBarGo"></button><span id="ocWinBarSub"></span></div>'+
   '</div>'+
@@ -185,6 +205,41 @@ const OC_T={
   hintMsg:['💡 Guarda i pezzi fantasma... (niente 3⭐)','💡 Watch the ghost pieces... (no 3⭐)'],
   names:{ batt:['PILA','BATTERY'], lamp:['LAMPADINA','BULB'], sw:['INTERRUTTORE','SWITCH'], led:['LED','LED'], res:['RESISTENZA','RESISTOR'], cap:['CONDENSATORE','CAPACITOR'], npn:['TRANSISTOR','TRANSISTOR'], mot:['MOTORE','MOTOR'], buz:['CICALINO','BUZZER'], ldr:['SENSORE LUCE','LIGHT SENSOR'], wire:['FILO','WIRE'], hand:['MANO','HAND'], erase:['GOMMA','ERASER'] },
   icons:{ batt:'🔋', lamp:'💡', sw:'🔘', led:'🚦', res:'🚧', cap:'🪣', npn:'🚰', mot:'🌀', buz:'🔔', ldr:'🌗', wire:'〰️', hand:'🖐️', erase:'🧽' }
+};
+const OC_INFO={
+  wire:{
+    metaphor:['È la strada di rame su cui viaggiano le cariche. Se la strada si interrompe, il giro non si chiude.','It is the copper road travelled by electric charges. If the road breaks, the loop cannot close.'],
+    real:['Il rame conduce bene perché alcuni suoi elettroni possono muoversi facilmente. In un circuito chiuso il campo elettrico mette in moto le cariche già presenti nel filo; il rivestimento isolante aiuta a evitare contatti pericolosi.','Copper conducts well because some of its electrons can move easily. In a closed circuit, the electric field sets charges already inside the wire in motion; insulation helps prevent dangerous contact.']},
+  batt:{
+    metaphor:['È la pompa del circuito: dà la spinta che fa partire il viaggio delle cariche.','It is the circuit’s pump: it provides the push that starts the charges moving.'],
+    real:['Le reazioni chimiche della pila mantengono una differenza di potenziale tra i poli + e −. Così trasformano energia chimica in energia elettrica; la pila non “fabbrica” elettroni.','Chemical reactions maintain a potential difference between the + and − terminals. They turn chemical energy into electrical energy; the battery does not “make” electrons.']},
+  lamp:{
+    metaphor:['È una casetta che prende energia dalla strada elettrica e la trasforma in luce e calore.','It is a little house that takes energy from the electric road and turns it into light and heat.'],
+    real:['La corrente attraversa un filamento resistivo, che si scalda fino a emettere luce. Più potenza elettrica riceve, più la lampadina appare luminosa, entro i suoi limiti.','Current crosses a resistive filament, heating it until it emits light. The more electrical power it receives, the brighter the bulb appears, within its limits.']},
+  sw:{
+    metaphor:['È un ponte levatoio: abbassato completa la strada, alzato la interrompe.','It is a drawbridge: lowered it completes the road, raised it breaks the road.'],
+    real:['Quando è chiuso, i contatti metallici si toccano e la corrente può circolare. Quando è aperto, il percorso è interrotto e la corrente si ferma.','When closed, metal contacts touch and current can flow. When open, the path is broken and current stops.']},
+  led:{
+    metaphor:['È un tunnel luminoso a senso unico: lascia passare solo nel verso giusto e va protetto da una resistenza.','It is a glowing one-way tunnel: it passes current only in the right direction and needs a resistor for protection.'],
+    real:['Il LED è un diodo: conduce dall’anodo al catodo oltre una tensione minima e converte parte dell’energia in luce. Troppa corrente lo surriscalda e può danneggiarlo.','An LED is a diode: it conducts from anode to cathode above a minimum voltage and converts some energy into light. Too much current overheats and can damage it.']},
+  res:{
+    metaphor:['È una strettoia nella strada: frena il traffico delle cariche e protegge i pezzi delicati.','It is a narrow section of road: it slows charge traffic and protects delicate parts.'],
+    real:['La resistenza limita la corrente secondo la legge di Ohm, V = R × I, e trasforma parte dell’energia elettrica in calore. Non consuma cariche: riduce la corrente nel circuito.','A resistor limits current according to Ohm’s law, V = R × I, and turns some electrical energy into heat. It does not use up charge: it reduces circuit current.']},
+  cap:{
+    metaphor:['È un piccolo serbatoio: si riempie di energia e può restituirla per poco tempo.','It is a small tank: it fills with energy and can give it back for a short time.'],
+    real:['Il condensatore separa cariche sulle sue due armature e conserva energia nel campo elettrico tra esse. La corrente scorre mentre si carica o si scarica; a carica stabile, la corrente continua si arresta.','A capacitor separates charge on two plates and stores energy in the electric field between them. Current flows while it charges or discharges; at steady charge, direct current stops.']},
+  npn:{
+    metaphor:['È un rubinetto elettrico: un piccolo comando apre o chiude il passaggio di una corrente più grande.','It is an electric tap: a small control opens or closes the path for a larger current.'],
+    real:['Nel transistor NPN una piccola corrente nella base controlla il passaggio di corrente tra collettore ed emettitore. Qui lavora come interruttore elettronico.','In an NPN transistor, a small base current controls current between collector and emitter. Here it works as an electronic switch.']},
+  mot:{
+    metaphor:['È una ruota che beve energia elettrica e la restituisce come movimento.','It is a wheel that drinks electrical energy and gives it back as motion.'],
+    real:['La corrente crea campi magnetici negli avvolgimenti. La loro forza fa ruotare il rotore, trasformando energia elettrica in energia meccanica, con una parte dispersa in calore.','Current creates magnetic fields in the windings. Their force turns the rotor, converting electrical energy into mechanical energy, with some lost as heat.']},
+  buz:{
+    metaphor:['È il campanello del circuito: quando riceve energia, fa vibrare l’aria e si sente un suono.','It is the circuit’s bell: when powered, it makes the air vibrate and produces a sound.'],
+    real:['Il cicalino trasforma energia elettrica in vibrazioni meccaniche. Una parte interna vibra rapidamente e genera onde di pressione che il nostro orecchio percepisce come suono.','A buzzer turns electrical energy into mechanical vibration. An internal part vibrates rapidly and creates pressure waves that our ears perceive as sound.']},
+  ldr:{
+    metaphor:['È l’occhio del circuito: al sole apre una strada facile, al buio la rende molto stretta.','It is the circuit’s eye: in sunlight it opens an easy road, in darkness it makes the road very narrow.'],
+    real:['La fotoresistenza cambia resistenza con la luce: in questo modello ha bassa resistenza quando è illuminata e resistenza molto alta al buio. Il circuito misura il cambiamento per reagire.','A photoresistor changes resistance with light: in this model it has low resistance when lit and very high resistance in darkness. The circuit uses that change to react.']}
 };
 const OC_LEVEL_ICONS=['🔌','🔘','🧰','🚦','🛡️','🚂','🛤️','⚡','🚰','🌙'];
 
@@ -313,14 +368,14 @@ const OC_LEVELS=[
 ];
 
 /* palette del banco libero */
-const OC_SANDBOX={ nx:8, ny:5, sun:1, comps:[], wires:[],
-  pal:{wire:60,batt:2,lamp:4,sw:3,led:4,res:4,cap:2,npn:2,mot:2,buz:2,ldr:2} };
+const OC_SANDBOX={ nx:12, ny:8, sun:1, comps:[], wires:[],
+  pal:{wire:Infinity,batt:Infinity,lamp:Infinity,sw:Infinity,led:Infinity,res:Infinity,cap:Infinity,npn:Infinity,mot:Infinity,buz:Infinity,ldr:Infinity} };
 
 /* ---------- stato ---------- */
 const oc={ on:false, raf:0, lvl:0, sandbox:false, board:null, pal:{}, tool:'hand',
   time:0, last:0, winT:0, mish:0, hint:0, hintT:0, freeBurnLeft:0,
   flow:{}, nets:null, smoke:[], flags:{}, dayT:0, nightT:0, sun:true,
-  drag:null, won:false, cs:64, ox:0, oy:0 };
+  drag:null, preview:null, placing:false, won:false, cs:64, ox:0, oy:0, infoType:null };
 
 function ocSave(){ try{ localStorage.setItem('gabri_off_c', JSON.stringify(oc.prog)); }catch(e){} }
 function ocLoad(){ try{ oc.prog=JSON.parse(localStorage.getItem('gabri_off_c'))||{unl:0,stars:[]}; }catch(e){ oc.prog={unl:0,stars:[]}; } }
@@ -529,9 +584,12 @@ function ocXY(x,y){ return [oc.ox+x*oc.cs, oc.oy+y*oc.cs]; }
 function ocResize(){
   const cv=$('ocCv'); cv.width=innerWidth; cv.height=innerHeight;
   const b=oc.board; if(!b) return;
-  const availW=innerWidth-40, availH=innerHeight-210;
-  oc.cs=Math.max(44, Math.min(110, Math.min(availW/(b.nx-1||1), availH/(b.ny-1||1))));
-  oc.ox=(innerWidth-(b.nx-1)*oc.cs)/2;
+  const infoSpace=oc.sandbox&&innerWidth>=1000?350:0;
+  const boardW=innerWidth-infoSpace;
+  const availW=boardW-40, availH=innerHeight-210;
+  const minCell=oc.sandbox?26:44;
+  oc.cs=Math.max(minCell, Math.min(110, Math.min(availW/(b.nx-1||1), availH/(b.ny-1||1))));
+  oc.ox=(boardW-(b.nx-1)*oc.cs)/2;
   oc.oy=120+(availH-(b.ny-1)*oc.cs)/2;
 }
 function ocDraw(){
@@ -616,6 +674,22 @@ function ocDraw(){
       g.beginPath(); g.arc(ax+(bx-ax)*t, ay+(by-ay)*t, r, 0, 7); g.fill();
     }
   });
+  /* anteprima magnetica del componente da inserire */
+  if(oc.preview){
+    const p=oc.preview, [px,py]=ocXY(p.x,p.y);
+    g.save();
+    g.fillStyle=p.valid?'rgba(92,220,112,.24)':'rgba(238,83,83,.25)';
+    g.strokeStyle=p.valid?'#70e383':'#ff7474'; g.lineWidth=Math.max(3,cs*0.055);
+    g.beginPath(); g.arc(px,py,cs*0.43,0,7); g.fill(); g.stroke();
+    g.globalAlpha=p.valid?0.62:0.38;
+    const ghost=ocNewComp(p.t,p.x,p.y,p.r); ghost.ghost=true; ghost.res={I:0,P:0,V:0};
+    ocDrawComp(g,ghost);
+    g.globalAlpha=1;
+    g.fillStyle=p.valid?'#baffc4':'#ffd0d0';
+    g.font='bold '+Math.max(13,cs*0.23)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(p.valid?'✓':'✕',px+cs*0.34,py-cs*0.32);
+    g.restore();
+  }
   /* componenti */
   b.comps.forEach(c=>ocDrawComp(g,c));
   /* fumo */
@@ -742,19 +816,27 @@ function ocDrawComp(g,c){
       break; }
   }
   g.restore();
-  /* nome scritto (lettura leggera) + lucchetto */
-  ocCap(g,c,px,py,cs,name);
-  if(c.lock){ g.font=Math.max(9,cs*0.14)+'px sans-serif'; g.textAlign='center'; g.fillText('🔩', px+cs*0.3, py-cs*0.3); }
+  if(!c.ghost){
+    /* nome scritto (lettura leggera) + lucchetto */
+    ocCap(g,c,px,py,cs,name);
+    if(oc.sandbox){
+      g.fillStyle='#fff7cc'; g.strokeStyle='#6c51b8'; g.lineWidth=Math.max(1.5,cs*0.025);
+      g.beginPath(); g.arc(px-cs*0.28,py-cs*0.29,Math.max(7,cs*0.105),0,7); g.fill(); g.stroke();
+      g.fillStyle='#563aa7'; g.font='bold '+Math.max(10,cs*0.16)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+      g.fillText('i',px-cs*0.28,py-cs*0.285);
+    }
+    if(c.lock){ g.font=Math.max(9,cs*0.14)+'px sans-serif'; g.textAlign='center'; g.fillText('🔩', px+cs*0.3, py-cs*0.3); }
+  }
 }
 
 /* ---------- interazione ---------- */
-function ocHitNode(mx,my){
-  const b=oc.board;
+function ocHitNode(mx,my,radius){
+  const b=oc.board; let best=null, bd=oc.cs*(radius||0.38);
   for(let x=0;x<b.nx;x++) for(let y=0;y<b.ny;y++){
-    const [px,py]=ocXY(x,y);
-    if(Math.hypot(mx-px,my-py)<oc.cs*0.38) return {x,y};
+    const [px,py]=ocXY(x,y), d=Math.hypot(mx-px,my-py);
+    if(d<bd){ bd=d; best={x,y}; }
   }
-  return null;
+  return best;
 }
 function ocHitEdge(mx,my){
   const b=oc.board; let best=null, bd=oc.cs*0.3;
@@ -781,8 +863,8 @@ function ocAddWire(x,y,o){
   const x2=(o==='H')?x+1:x, y2=(o==='H')?y:y+1;
   if(x2>=b.nx||y2>=b.ny) return false;
   if(!ocCanAttach(x,y,ocSideOfEdge(x,y,o,x,y))||!ocCanAttach(x2,y2,ocSideOfEdge(x,y,o,x2,y2))){ ocToast(OC_T.noPin[LI()]); return false; }
-  if((oc.pal.wire||0)<=0){ ocToast(OC_T.noPiece[LI()]); return false; }
-  b.wires.set(k,{}); oc.pal.wire--; ocPalDraw(); return true;
+  if(!ocHasPiece('wire')){ ocToast(OC_T.noPiece[LI()]); return false; }
+  b.wires.set(k,{}); ocTakePiece('wire'); ocPalDraw(); return true;
 }
 function ocSmartRot(t,x,y){
   /* scegli la rotazione che aggancia più fili vicini */
@@ -802,9 +884,9 @@ function ocSmartRot(t,x,y){
 function ocPlace(t,x,y,r){
   const b=oc.board, k=ocNK(x,y);
   if(b.comps.has(k)) return false;
-  if((oc.pal[t]||0)<=0){ ocToast(OC_T.noPiece[LI()]); return false; }
+  if(!ocHasPiece(t)){ ocToast(OC_T.noPiece[LI()]); return false; }
   b.comps.set(k, ocNewComp(t,x,y,(r===undefined)?ocSmartRot(t,x,y):r));
-  oc.pal[t]--; ocPalDraw(); return true;
+  ocTakePiece(t); ocPalDraw(); return true;
 }
 function ocInteract(c){
   if(c.t==='sw'){ c.state.closed=!c.state.closed; return; }
@@ -815,70 +897,121 @@ function ocInteract(c){
   }
   if(!c.lock) c.r=((c.r||0)+1)%4;
 }
+function ocIsComponentTool(t){ return t!=='hand'&&t!=='wire'&&t!=='erase'; }
+function ocPreviewAt(mx,my,radius){
+  if(!ocIsComponentTool(oc.tool)){ oc.preview=null; return null; }
+  const nd=ocHitNode(mx,my,radius||0.68);
+  if(!nd){ oc.preview=null; return null; }
+  const occupied=oc.board.comps.has(ocNK(nd.x,nd.y));
+  oc.preview={t:oc.tool,x:nd.x,y:nd.y,r:ocSmartRot(oc.tool,nd.x,nd.y),valid:!occupied&&ocHasPiece(oc.tool)};
+  return oc.preview;
+}
 function ocPointer(e){
   if($('oc').style.display!=='block') return;
+  if(e.target.closest&&e.target.closest('#ocInfo,#ocHud,#ocPalBar,#ocSun')) return;
   const mx=e.clientX, my=e.clientY;
-  if(my>innerHeight-92||my<110) return; /* palette e hud */
-  const nd=ocHitNode(mx,my);
+  const palTop=$('ocPalBar').getBoundingClientRect().top||innerHeight-92;
+  if(my>palTop||my<110) return; /* palette e hud */
+  const nd=ocHitNode(mx,my,0.48);
   if(oc.tool==='hand'){
-    if(nd){ const c=oc.board.comps.get(ocNK(nd.x,nd.y)); if(c) ocInteract(c); }
+    if(nd){ const c=oc.board.comps.get(ocNK(nd.x,nd.y)); if(c){ if(oc.sandbox) ocInfoShow(c.t); ocInteract(c); } }
     return;
   }
   if(oc.tool==='erase'){
     if(nd){ const k=ocNK(nd.x,nd.y), c=oc.board.comps.get(k);
-      if(c){ if(c.lock){ ocToast(OC_T.locked[LI()]); } else { oc.board.comps.delete(k); oc.pal[c.t]=(oc.pal[c.t]||0)+1; ocPalDraw(); } return; } }
+      if(c){ if(c.lock){ ocToast(OC_T.locked[LI()]); } else { oc.board.comps.delete(k); ocGiveBack(c.t); ocPalDraw(); } return; } }
     const ek=ocHitEdge(mx,my);
     if(ek){ const w=oc.board.wires.get(ek);
-      if(w.lock){ ocToast(OC_T.locked[LI()]); } else { oc.board.wires.delete(ek); oc.pal.wire=(oc.pal.wire||0)+1; ocPalDraw(); } }
+      if(w.lock){ ocToast(OC_T.locked[LI()]); } else { oc.board.wires.delete(ek); ocGiveBack('wire'); ocPalDraw(); } }
     return;
   }
   if(oc.tool==='wire'){
     if(nd) oc.drag={last:nd};
     return;
   }
-  /* strumento componente */
-  if(nd){
-    const c=oc.board.comps.get(ocNK(nd.x,nd.y));
-    if(c){ if(c.t===oc.tool&&!c.lock){ c.r=((c.r||0)+1)%4; } else ocToast(OC_T.occupied[LI()]); }
-    else ocPlace(oc.tool,nd.x,nd.y);
+  /* il componente si vede prima e viene posato al rilascio */
+  if(ocIsComponentTool(oc.tool)){
+    oc.placing=!!ocPreviewAt(mx,my,0.72);
+    if(oc.placing) e.preventDefault();
   }
 }
 function ocPointerMove(e){
-  if(!oc.drag) return;
-  const nd=ocHitNode(e.clientX,e.clientY); if(!nd) return;
-  const L2=oc.drag.last;
-  const dx=nd.x-L2.x, dy=nd.y-L2.y;
-  if(Math.abs(dx)+Math.abs(dy)!==1) { if(dx||dy) oc.drag.last=nd; return; }
-  if(dx===1) ocAddWire(L2.x,L2.y,'H');
-  else if(dx===-1) ocAddWire(nd.x,nd.y,'H');
-  else if(dy===1) ocAddWire(L2.x,L2.y,'V');
-  else ocAddWire(nd.x,nd.y,'V');
-  oc.drag.last=nd;
+  if($('oc').style.display!=='block') return;
+  if(ocIsComponentTool(oc.tool)){
+    if(oc.placing||e.target===$('ocCv')) ocPreviewAt(e.clientX,e.clientY,oc.placing?0.9:0.68);
+    else oc.preview=null;
+    return;
+  }
+  if(oc.drag){
+    const nd=ocHitNode(e.clientX,e.clientY,0.48); if(!nd) return;
+    const L2=oc.drag.last;
+    const dx=nd.x-L2.x, dy=nd.y-L2.y;
+    if(Math.abs(dx)+Math.abs(dy)!==1) { if(dx||dy) oc.drag.last=nd; return; }
+    if(dx===1) ocAddWire(L2.x,L2.y,'H');
+    else if(dx===-1) ocAddWire(nd.x,nd.y,'H');
+    else if(dy===1) ocAddWire(L2.x,L2.y,'V');
+    else ocAddWire(nd.x,nd.y,'V');
+    oc.drag.last=nd;
+  }
+}
+function ocPointerUp(){
+  if(oc.placing&&oc.preview){
+    const p=oc.preview, c=oc.board.comps.get(ocNK(p.x,p.y));
+    if(p.valid) ocPlace(p.t,p.x,p.y,p.r);
+    else if(c&&c.t===p.t&&!c.lock) c.r=((c.r||0)+1)%4;
+    else if(c) ocToast(OC_T.occupied[LI()]);
+  }
+  oc.drag=null; oc.placing=false; oc.preview=null;
 }
 addEventListener('pointerdown',ocPointer);
 addEventListener('pointermove',ocPointerMove);
-addEventListener('pointerup',()=>{ oc.drag=null; });
+addEventListener('pointerup',ocPointerUp);
+addEventListener('pointercancel',ocPointerUp);
 addEventListener('resize',()=>{ if(oc.on) ocResize(); });
 
 /* ---------- palette ---------- */
 function ocPalDraw(){
   const bar=$('ocPalBar'); bar.innerHTML='';
+  bar.className=oc.sandbox?'sandbox':'';
   const i=LI();
   const tools=['hand','wire','erase'].concat(Object.keys(oc.pal).filter(t=>t!=='wire'));
   tools.forEach(t=>{
     if(t==='wire'&&oc.pal.wire===undefined) return;
     const btn=document.createElement('button');
     btn.className='ocTool'+(oc.tool===t?' sel':'');
-    const cnt=(t==='hand'||t==='erase')?'':(t==='wire'?oc.pal.wire:oc.pal[t]);
+    btn.setAttribute('aria-pressed',oc.tool===t?'true':'false');
+    const raw=(t==='wire'?oc.pal.wire:oc.pal[t]);
+    const cnt=(t==='hand'||t==='erase')?'':(raw===Infinity?'∞':raw);
     if(cnt===0) btn.classList.add('zero');
-    btn.innerHTML='<span class="ti">'+OC_T.icons[t]+'</span><span class="tn">'+OC_T.names[t][i]+'</span>'+(cnt!==''?'<span class="tc">'+cnt+'</span>':'');
-    btn.onclick=()=>{ oc.tool=t; ocPalDraw(); };
+    btn.innerHTML='<span class="ti">'+OC_T.icons[t]+'</span><span class="tn">'+OC_T.names[t][i]+'</span>'+(cnt!==''?'<span class="tc'+(cnt==='∞'?' inf':'')+'">'+cnt+'</span>':'');
+    btn.title=oc.sandbox&&OC_INFO[t]?((i===0?'Scegli e scopri: ':'Choose and discover: ')+OC_T.names[t][i]):OC_T.names[t][i];
+    btn.onclick=()=>{ oc.tool=t; oc.preview=null; oc.placing=false; if(oc.sandbox&&OC_INFO[t]) ocInfoShow(t); ocPalDraw(); };
     bar.appendChild(btn);
   });
   /* filo subito dopo la mano */
   const kids=[...bar.children];
   if(oc.pal.wire===undefined&&kids.length){ /* nothing */ }
+  $('ocCv').style.cursor=ocIsComponentTool(oc.tool)?'crosshair':(oc.tool==='erase'?'not-allowed':'default');
   bar.style.display='flex';
+}
+
+function ocHasPiece(t){ return oc.pal[t]===Infinity||(oc.pal[t]||0)>0; }
+function ocTakePiece(t){ if(oc.pal[t]!==Infinity) oc.pal[t]--; }
+function ocGiveBack(t){ if(oc.pal[t]!==Infinity) oc.pal[t]=(oc.pal[t]||0)+1; }
+
+function ocInfoShow(t){
+  const info=OC_INFO[t]; if(!oc.sandbox||!info) return;
+  const i=LI(); oc.infoType=t;
+  $('ocInfoTitle').textContent=(OC_T.icons[t]||'')+' '+OC_T.names[t][i];
+  const help=$('ocInfoHelp');
+  help.style.display=t==='wire'?'none':'block';
+  help.textContent=i===0?'👻 Sposta il pezzo fantasma sul foro: verde = libero. Tocca o trascina e rilascia per inserirlo.':'👻 Move the ghost part over a hole: green = free. Tap or drag and release to place it.';
+  $('ocInfoMetaphor').innerHTML='<strong>'+(i===0?'🧰 NEL GIOCO':'🧰 IN THE GAME')+'</strong>';
+  $('ocInfoMetaphor').appendChild(document.createTextNode(info.metaphor[i]));
+  $('ocInfoReal').innerHTML='<strong>'+(i===0?'🔬 COME FUNZIONA DAVVERO':'🔬 HOW IT REALLY WORKS')+'</strong>';
+  $('ocInfoReal').appendChild(document.createTextNode(info.real[i]));
+  $('ocInfoClose').setAttribute('aria-label',i===0?'Chiudi':'Close');
+  $('ocInfo').style.display='block';
 }
 
 /* ---------- messaggi ---------- */
@@ -901,8 +1034,9 @@ function ocGoto(n){
   oc.mish=0; oc.hint=0; oc.hintT=0; oc.winT=0; oc.won=false;
   oc.flags={}; oc.dayT=0; oc.nightT=0; oc.sun=true; oc.smoke=[];
   oc.freeBurnLeft=(L.freeBurn||0);
+  oc.infoType=null; oc.preview=null; oc.placing=false; oc.drag=null; $('ocInfo').style.display='none';
   const i=LI();
-  $('ocLvl').textContent=oc.sandbox?'🧪':'⚡ '+(oc.lvl+1)+'/'+OC_LEVELS.length;
+  $('ocLvl').textContent=oc.sandbox?(i===0?'🧪 BANCO 12×8 · PEZZI ∞':'🧪 BENCH 12×8 · PARTS ∞'):'⚡ '+(oc.lvl+1)+'/'+OC_LEVELS.length;
   ocStarHud();
   $('ocSun').style.display=L.sun?'block':'none'; ocSunDraw();
   $('ocHintBtn').style.display=oc.sandbox?'none':'';
@@ -1009,6 +1143,8 @@ function ocSunDraw(){
 
 /* ---------- pulsanti ---------- */
 $('ocSun').onclick=()=>{ oc.sun=!oc.sun; ocSunDraw(); };
+$('ocInfoClose').onclick=()=>{ $('ocInfo').style.display='none'; oc.infoType=null; stopSpeak(); };
+$('ocInfoSpeak').onclick=()=>{ if(oc.infoType&&OC_INFO[oc.infoType]){ const i=LI(),d=OC_INFO[oc.infoType]; speak(OC_T.names[oc.infoType][i]+'. '+d.metaphor[i]+' '+d.real[i]); } };
 $('ocIntroGo').onclick=()=>{ $('ocIntro').style.display='none'; $('ocGibiDesk').style.display='block'; stopSpeak(); };
 $('ocIntroSpk').onclick=()=>{ if(oc.L) speak(oc.L.g[LI()]); };
 $('ocGoalSpk').onclick=()=>{ if(oc.L) speak(oc.L.g[LI()]); };
@@ -1057,7 +1193,7 @@ function ocEnter(){
 }
 function ocExit(){
   cancelAnimationFrame(oc.raf); oc.raf=0; oc.on=false;
-  ['oc','ocIntro','ocWin','ocPick','ocWinBar'].forEach(id=>$(id).style.display='none');
+  ['oc','ocIntro','ocWin','ocPick','ocWinBar','ocInfo'].forEach(id=>$(id).style.display='none');
   $('ocPalBar').style.display='none';
   stopSpeak();
   showModeSel();
