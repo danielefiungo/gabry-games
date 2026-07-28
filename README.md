@@ -1,6 +1,6 @@
 # I Giochi delle Parole 🚀🐝
 
-Gioco per imparare a leggere con più modalità, tra cui **Il Labirinto** con mappa-avventura FPV, **La Palla di Api**, **Missione Spaziale**, **Volo Planetario** e **Gibi Rescue**, un percorso in 12 missioni per costruire e programmare un’auto Arduino simulata.
+Gioco per imparare a leggere con più modalità, tra cui **Il Labirinto** con mappa-avventura FPV, **La Palla di Api**, **Missione Spaziale**, **Volo Planetario**, **Il Sistema Solare** (planetario 3D con la fisica vera) e **Gibi Rescue**, un percorso in 12 missioni per costruire e programmare un’auto Arduino simulata.
 
 ## Struttura dei file
 
@@ -18,6 +18,7 @@ Gioco per imparare a leggere con più modalità, tra cui **Il Labirinto** con ma
 | `js/palla-api.js` | Modalità "La Palla di Api": esploratori, palla a 46°C, difese sbloccabili con le domande | Per modificare la seconda modalità |
 | `js/missione-spaziale.js` | Modalità "Missione Spaziale": ordini scritti dalla base, plancia, carburante, imprevisti, quiz dell'astronauta | Per modificare la terza modalità |
 | `js/mappa-avventura-3d.js` | Mappa FPV del labirinto: strade, cartelli, incroci e portali dei livelli | Per cambiare il percorso tra i livelli |
+| `js/mappa-spazio.js` | `EDGES` (rete dei livelli) + modalità "Il Sistema Solare": planetario 3D con orbite kepleriane vere e schede dei pianeti | Per correggere dati astronomici o l'aspetto dei pianeti |
 | `js/volo-planetario.js` | Mini-gioco FPV di avvicinamento e atterraggio planetario | Per cambiare destinazioni, fisica e curiosità |
 | `js/gibi-rescue-data.js` | Kit Arduino, blocchi, testi e dati delle 12 missioni | Per cambiare contenuti e progressione di Gibi Rescue |
 | `js/gibi-rescue-sim.js` | Fisica differenziale, collisioni, sensore HC-SR04 e servo | Per cambiare la simulazione dell’auto |
@@ -67,6 +68,20 @@ Test del nuovo gioco:
 
 ```sh
 node --test test/test-gibi-rescue.js
+```
+
+## Il Sistema Solare
+
+Dal selettore principale scegli **Il Sistema Solare**: non è un gioco, è un planetario da esplorare. Toccando un pianeta si apre la sua scheda con i dati veri (giorno, anno, gravità, temperatura, inclinazione dell'asse, lune), il pulsante 🔊 per farsela leggere e l'accesso al livello del Labirinto o alla sua letturina.
+
+Cosa è fedele: orbite ellittiche con l'eccentricità reale e il Sole in un fuoco (1ª legge), velocità che cambia lungo l'orbita (2ª legge), periodi dai semiassi veri (3ª legge), orientamento 3D con inclinazione, nodo e perielio J2000, posizioni di partenza calcolate alla data del giorno, periodi di rotazione siderali, inclinazioni assiali vere (Venere e Urano girano al contrario perché sono capovolti), Luna in rotazione sincrona, anelli ai raggi veri con la divisione di Cassini, ISS inclinata di 51,64° sull'equatore terrestre e telescopio Webb in L2.
+
+Cosa non è in scala, e il gioco lo dice: distanze, diametri, orbite dei satelliti terrestri e i due orologi (orbite e rotazioni). Le costanti `SS_*` in cima al file governano solo la resa; i valori misurati in `SS_BODIES` non vanno "aggiustati".
+
+Due viste col pulsante in alto a destra: **pianeti in fila** (predefinita, comoda per scegliere) e **orbite** (tutto in movimento — si vede Plutone entrare nell'orbita di Nettuno). Con il puntatore sulla mappa le orbite rallentano.
+
+```sh
+node test/test-sistema-solare.js     # richiede: npm install jsdom
 ```
 
 ## La Macchina delle Parole
