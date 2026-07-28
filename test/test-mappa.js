@@ -1,8 +1,8 @@
 /* Test jsdom: mappa a rete + letturine */
 const fs=require('fs'), path=require('path');
 const {JSDOM}=require('jsdom');
-const DIR='/sessions/intelligent-serene-pascal/mnt/GabriGame';
-const SCRIPTS=['domande.js','sfide.js','testi.js','audio-voce.js','labirinto-3d.js','gioco-labirinto.js','letturine.js'];
+const DIR=require('path').resolve(__dirname,'..');
+const SCRIPTS=['domande.js','sfide.js','testi.js','audio-voce.js','musica.js','labirinto-3d.js','gioco-labirinto.js','letturine.js'];
 
 let pass=0, fail=0;
 function ok(cond,msg){ if(cond){pass++;console.log('  ✓ '+msg);} else {fail++;console.log('  ✗ FAIL: '+msg);} }

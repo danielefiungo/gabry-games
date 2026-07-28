@@ -1245,7 +1245,7 @@ $('ocPickBack').onclick=()=>{ ocExit(); };
 $('ocHomeBtn').onclick=()=>{ ocExit(); };
 $('ocMusicBtn').onclick=()=>{
   MUSICON=!MUSICON; if(typeof save==='function') save();
-  if(!MUSICON) stopMusic(); else { mCtx(); playMusic(TRK_LEVEL); }
+  if(!MUSICON) stopMusic(); else { mCtx(); playMusic(TRK_FUNK); }
 };
 
 /* ---------- ciclo ---------- */
@@ -1270,7 +1270,7 @@ function ocEnter(){
   ocGoto(Math.min(oc.prog.unl,OC_LEVELS.length-1));
   ocPickShow();
   $('ocIntro').style.display='none';
-  if(typeof MUSICON!=='undefined'&&MUSICON){ mCtx(); playMusic(TRK_LEVEL); }
+  if(typeof MUSICON!=='undefined'&&MUSICON){ mCtx(); playMusic(TRK_FUNK); }
   if(!oc.raf) oc.raf=requestAnimationFrame(ocFrame);
 }
 function ocExit(){

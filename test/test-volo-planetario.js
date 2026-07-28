@@ -4,9 +4,15 @@
 const fs=require('fs'), path=require('path');
 const {JSDOM}=require('jsdom');
 const DIR=path.resolve(__dirname,'..');
-const SCRIPTS=['domande.js','sfide.js','testi.js','audio-voce.js','labirinto-3d.js',
-               'mappa-spazio.js','mappa-avventura-3d.js','gioco-labirinto.js','letturine.js',
-               'scelta-gioco.js','volo-planetario.js'];
+/* L'elenco degli script si legge da index.html: se qualcuno aggiunge o sposta
+   un file (è già successo), il test resta allineato da solo. */
+function scriptList(stopAfter){
+  const html=fs.readFileSync(path.join(DIR,'index.html'),'utf8');
+  const all=[...html.matchAll(/<script src="js\/([^"?]+)/g)].map(m=>m[1]);
+  const i=all.indexOf(stopAfter);
+  return i<0 ? all : all.slice(0,i+1);
+}
+const SCRIPTS=scriptList('volo-planetario.js');
 
 let pass=0, fail=0;
 function ok(cond,msg){ if(cond){pass++;console.log('  ✓ '+msg);} else {fail++;console.log('  ✗ FAIL: '+msg);} }

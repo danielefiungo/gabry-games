@@ -1,7 +1,14 @@
 /* ============================================================
    MOTORE 3D — generazione labirinto, grafica, input, collisioni, salvataggi
    ============================================================ */
-/* ================= LABIRINTO ================= */
+/* ================= LABIRINTO =================
+   Valori della griglia:
+     0 = corridoio libero
+     1 = muro (viene disegnato)
+     2 = basamento di un monumento: blocca il passaggio ma NON è un muro
+   ============================================================ */
+let ROOMS=[];   /* piazze aperte: {cx,cy} con il monumento al centro */
+
 function genMaze(w,h){
   const g=Array.from({length:h},()=>Array(w).fill(1));
   const stack=[[1,1]]; g[1][1]=0;
@@ -17,6 +24,30 @@ function genMaze(w,h){
     }
     if(!moved) stack.pop();
   }
+  /* --- PIAZZE: aree 3x3 aperte con un monumento al centro.
+     Servono da punto di riferimento: senza, i corridoi sono tutti uguali
+     e non si capisce mai dove si è. --- */
+  ROOMS=[];
+  const wanted=w<=15?2:3;
+  const spots=[];
+  for(let cy=3;cy<=h-4;cy+=2) for(let cx=3;cx<=w-4;cx+=2){
+    if(Math.abs(cx-1)+Math.abs(cy-1)<5) continue;            /* non sulla partenza */
+    if(Math.abs(cx-(w-2))+Math.abs(cy-(h-2))<5) continue;    /* non sulla stella */
+    spots.push([cx,cy]);
+  }
+  shuffle(spots);
+  /* prima si prova a tenere le piazze ben distanti; nei labirinti piccoli
+     non c'è spazio, allora si accetta una distanza minore */
+  for(const sep of [6,4,3]){
+    if(ROOMS.length>=wanted) break;
+    for(const s of spots){
+      if(ROOMS.length>=wanted) break;
+      const cx=s[0], cy=s[1];
+      if(ROOMS.some(r=>Math.abs(r.cx-cx)<sep && Math.abs(r.cy-cy)<sep)) continue;
+      for(let y=cy-1;y<=cy+1;y++) for(let x=cx-1;x<=cx+1;x++) g[y][x]=0;
+      ROOMS.push({cx:cx,cy:cy});
+    }
+  }
   /* labirinto più articolato: apre qualche muro interno per creare
      anelli e percorsi alternativi (non un solo corridoio giusto) */
   const extra=Math.max(2,Math.floor(w*h/45));
@@ -30,6 +61,9 @@ function genMaze(w,h){
     const vv=g[y-1][x]===0 && g[y+1][x]===0 && g[y][x-1]===1 && g[y][x+1]===1;
     if(hh||vv){ g[y][x]=0; removed++; }
   }
+  /* il centro della piazza diventa il basamento del monumento: si gira
+     intorno come in una rotonda, ma non ci si passa attraverso */
+  ROOMS.forEach(r=>{ g[r.cy][r.cx]=2; });
   return g;
 }
 function findPath(g,sx,sy,ex,ey){
@@ -58,6 +92,8 @@ const SIZES=[13,15,15,17,17,19,19,21,21,21,21,21,21];
 let renderer, scene=null, camera, player, arrowGroup=null;
 let grid, W, H, doors=[], star=null, glow=null, decos=[], bursts=[];
 let themeParts=null, themeVel=1;
+/* punti di riferimento, cartelli, torce, minimappa */
+let marks=[], signs=[], torches=[], seenCells=null, MAPON=true, curSign=null;
 let curLevel=0, keysGot=0, paused=true, currentDoor=null, walk=0;
 let lives=MAXLIVES, tokens=0, qpool=[];
 /* power-up raccoglibili nel labirinto */
@@ -95,6 +131,7 @@ try{
   VOICEON=localStorage.getItem('gabri_voice')!=='0';
   MUSICON=localStorage.getItem('gabri_music')!=='0';
   ARROWON=localStorage.getItem('gabri_arrow')!=='0';
+  MAPON=localStorage.getItem('gabri_map')!=='0';
   FPV=localStorage.getItem('gabri_fpv')==='1';
   score=parseInt(localStorage.getItem('gabri_score')||'0')||0;
   bestStreak=parseInt(localStorage.getItem('gabri_beststreak')||'0')||0;
@@ -107,6 +144,7 @@ function save(){ try{
   localStorage.setItem('gabri_voice',VOICEON?'1':'0');
   localStorage.setItem('gabri_music',MUSICON?'1':'0');
   localStorage.setItem('gabri_arrow',ARROWON?'1':'0');
+  localStorage.setItem('gabri_map',MAPON?'1':'0');
   localStorage.setItem('gabri_fpv',FPV?'1':'0');
   localStorage.setItem('gabri_score',String(score));
   localStorage.setItem('gabri_beststreak',String(bestStreak));
@@ -128,27 +166,109 @@ function showComboBig(mult){
 function g2w(gx,gz){ return new THREE.Vector3((gx-(W-1)/2)*CELL, 0, (gz-(H-1)/2)*CELL); }
 
 /* ================= TEXTURE ================= */
+/* Pavimento a piastrelle consumate: fughe scure, macchie, qualche crepa. */
 function groundTexture(t){
-  const cv=document.createElement('canvas'); cv.width=cv.height=128;
+  const cv=document.createElement('canvas'); cv.width=cv.height=256;
   const c=cv.getContext('2d');
   const base=new THREE.Color(t.floor);
-  const lite=base.clone().lerp(new THREE.Color(0xffffff),0.10);
-  c.fillStyle='#'+base.getHexString(); c.fillRect(0,0,128,128);
-  c.fillStyle='#'+lite.getHexString(); c.fillRect(0,0,64,64); c.fillRect(64,64,64,64);
+  const lite=base.clone().lerp(new THREE.Color(0xffffff),0.13);
+  const dark=base.clone().lerp(new THREE.Color(0x000000),0.34);
+  c.fillStyle='#'+base.getHexString(); c.fillRect(0,0,256,256);
+  /* quattro piastrelle con la fuga in mezzo */
+  c.fillStyle='#'+lite.getHexString();
+  [[0,0],[128,128]].forEach(p=>c.fillRect(p[0],p[1],128,128));
+  c.strokeStyle='#'+dark.getHexString(); c.lineWidth=6;
+  c.beginPath(); c.moveTo(128,0); c.lineTo(128,256); c.moveTo(0,128); c.lineTo(256,128); c.stroke();
+  c.strokeRect(3,3,250,250);
+  /* usura: chiazze chiare e scure */
+  for(let i=0;i<160;i++){
+    c.fillStyle='rgba('+(Math.random()>.5?'255,255,255':'0,0,0')+','+(0.02+Math.random()*0.06).toFixed(3)+')';
+    c.beginPath(); c.arc(Math.random()*256,Math.random()*256,3+Math.random()*16,0,7); c.fill();
+  }
+  /* crepe */
+  c.strokeStyle='rgba(0,0,0,.22)'; c.lineWidth=2;
+  for(let i=0;i<6;i++){
+    let x=Math.random()*256,y=Math.random()*256; c.beginPath(); c.moveTo(x,y);
+    for(let k=0;k<5;k++){ x+=(Math.random()-.5)*46; y+=(Math.random()-.5)*46; c.lineTo(x,y); }
+    c.stroke();
+  }
   const tex=new THREE.CanvasTexture(cv);
   tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
   return tex;
 }
+/* Muro a blocchi di pietra sfalsati, con malta e luce dall'alto. */
 function wallTexture(t){
-  const cv=document.createElement('canvas'); cv.width=cv.height=128;
+  const cv=document.createElement('canvas'); cv.width=cv.height=256;
   const c=cv.getContext('2d');
   const base=new THREE.Color(t.wall);
-  const dark=base.clone().lerp(new THREE.Color(0x000000),0.25);
-  const lite=base.clone().lerp(new THREE.Color(0xffffff),0.18);
-  c.fillStyle='#'+base.getHexString(); c.fillRect(0,0,128,128);
-  c.strokeStyle='#'+dark.getHexString(); c.lineWidth=8; c.strokeRect(4,4,120,120);
-  c.strokeStyle='#'+lite.getHexString(); c.lineWidth=3;
-  c.beginPath(); c.moveTo(10,46); c.lineTo(118,46); c.moveTo(10,86); c.lineTo(118,86); c.stroke();
+  const mortar=base.clone().lerp(new THREE.Color(0x000000),0.42);
+  c.fillStyle='#'+mortar.getHexString(); c.fillRect(0,0,256,256);
+  const rows=5, bh=256/rows;
+  for(let r=0;r<rows;r++){
+    const off=(r%2)?-64:0, bw=128;
+    for(let x=off;x<256;x+=bw){
+      const shade=(Math.random()-0.5)*0.16;
+      const col=base.clone().lerp(new THREE.Color(shade>0?0xffffff:0x000000),Math.abs(shade));
+      c.fillStyle='#'+col.getHexString();
+      c.fillRect(x+3,r*bh+3,bw-6,bh-6);
+      /* spigolo illuminato in alto, ombra in basso: dà volume */
+      c.fillStyle='rgba(255,255,255,.16)'; c.fillRect(x+3,r*bh+3,bw-6,4);
+      c.fillStyle='rgba(0,0,0,.22)';       c.fillRect(x+3,r*bh+bh-8,bw-6,5);
+    }
+  }
+  /* granulosità della pietra */
+  for(let i=0;i<300;i++){
+    c.fillStyle='rgba('+(Math.random()>.5?'255,255,255':'0,0,0')+','+(0.02+Math.random()*0.05).toFixed(3)+')';
+    c.beginPath(); c.arc(Math.random()*256,Math.random()*256,1+Math.random()*5,0,7); c.fill();
+  }
+  return new THREE.CanvasTexture(cv);
+}
+/* Cupola del cielo: sfumatura verticale invece del colore piatto. */
+function skyDome(t){
+  const cv=document.createElement('canvas'); cv.width=8; cv.height=256;
+  const c=cv.getContext('2d');
+  const base=new THREE.Color(t.sky);
+  const top=base.clone().lerp(new THREE.Color(0x000010),0.55);
+  const mid=base.clone();
+  const low=base.clone().lerp(new THREE.Color(0xffffff),0.22);
+  const g=c.createLinearGradient(0,0,0,256);
+  g.addColorStop(0,'#'+top.getHexString());
+  g.addColorStop(0.55,'#'+mid.getHexString());
+  g.addColorStop(1,'#'+low.getHexString());
+  c.fillStyle=g; c.fillRect(0,0,8,256);
+  const tex=new THREE.CanvasTexture(cv);
+  const m=new THREE.Mesh(new THREE.SphereGeometry(150,20,14),
+    new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide,depthWrite:false}));
+  m.material.fog=false;
+  return m;
+}
+/* Macchia scura da appoggiare a terra sotto gli oggetti: ombra finta, costa nulla. */
+let _shadowTex=null;
+function shadowTexture(){
+  if(_shadowTex) return _shadowTex;
+  const cv=document.createElement('canvas'); cv.width=cv.height=64;
+  const c=cv.getContext('2d');
+  const g=c.createRadialGradient(32,32,2,32,32,32);
+  g.addColorStop(0,'rgba(0,0,0,.5)'); g.addColorStop(.6,'rgba(0,0,0,.22)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g; c.fillRect(0,0,64,64);
+  _shadowTex=new THREE.CanvasTexture(cv);
+  return _shadowTex;
+}
+function shadowBlob(size){
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size),
+    new THREE.MeshBasicMaterial({map:shadowTexture(),transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2; m.position.y=0.03; m.renderOrder=-1;
+  return m;
+}
+/* Fiamma della torcia: due sprite additivi che tremolano. */
+function torchFlameTexture(){
+  const cv=document.createElement('canvas'); cv.width=cv.height=64;
+  const c=cv.getContext('2d');
+  const g=c.createRadialGradient(32,38,1,32,38,30);
+  g.addColorStop(0,'rgba(255,255,225,.95)');
+  g.addColorStop(.35,'rgba(255,196,70,.7)');
+  g.addColorStop(1,'rgba(255,120,20,0)');
+  c.fillStyle=g; c.fillRect(0,0,64,64);
   return new THREE.CanvasTexture(cv);
 }
 function glowTexture(){
@@ -177,6 +297,161 @@ function letterSprite(ch,accent){
   c.fillStyle='#fff'; c.fillText(ch,64,68);
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
   s.scale.set(1.0,1.0,1); return s;
+}
+
+/* ================= PUNTI DI RIFERIMENTO =================
+   Ogni piazza ha un monumento alto e colorato che spunta sopra i muri.
+   Ha un nome scritto: i cartelli lo useranno per dare le indicazioni,
+   così per orientarsi bisogna LEGGERE.
+   ============================================================ */
+const LANDMARKS=[
+  {id:'torre',    col:0xe1483c, nm:['LA TORRE ROSSA','THE RED TOWER'],
+   near:['VICINO ALLA TORRE ROSSA','NEAR THE RED TOWER'],       beyond:['OLTRE LA TORRE ROSSA','BEYOND THE RED TOWER']},
+  {id:'fontana',  col:0x2f8ff0, nm:['LA FONTANA BLU','THE BLUE FOUNTAIN'],
+   near:['VICINO ALLA FONTANA BLU','NEAR THE BLUE FOUNTAIN'],   beyond:['OLTRE LA FONTANA BLU','BEYOND THE BLUE FOUNTAIN']},
+  {id:'cristallo',col:0x2fcf78, nm:['IL CRISTALLO VERDE','THE GREEN CRYSTAL'],
+   near:['VICINO AL CRISTALLO VERDE','NEAR THE GREEN CRYSTAL'], beyond:['OLTRE IL CRISTALLO VERDE','BEYOND THE GREEN CRYSTAL']},
+  {id:'arco',     col:0xf5c22b, nm:['L’ARCO GIALLO','THE YELLOW ARCH'],
+   near:['VICINO ALL’ARCO GIALLO','NEAR THE YELLOW ARCH'],      beyond:['OLTRE L’ARCO GIALLO','BEYOND THE YELLOW ARCH']},
+  {id:'statua',   col:0xa463e8, nm:['LA STATUA VIOLA','THE PURPLE STATUE'],
+   near:['VICINO ALLA STATUA VIOLA','NEAR THE PURPLE STATUE'],  beyond:['OLTRE LA STATUA VIOLA','BEYOND THE PURPLE STATUE']}
+];
+/* il monumento più vicino a una cella: serve a scrivere le indicazioni */
+function nearestMark(gx,gz){
+  let best=null,bd=1e9;
+  for(const m of marks){ const d=Math.abs(m.gx-gx)+Math.abs(m.gz-gz); if(d<bd){ bd=d; best=m; } }
+  return best;
+}
+function signPhrase(gx,gz,isStar){
+  const i=LI(), m=nearestMark(gx,gz);
+  if(!m) return isStar?['LA STELLA È IN FONDO AL LABIRINTO','THE STAR IS AT THE END OF THE MAZE'][i]
+                      :['LA PORTA È PIÙ AVANTI','THE DOOR IS FURTHER ON'][i];
+  if(isStar) return (i===0?'LA STELLA È ':'THE STAR IS ')+m.def.beyond[i];
+  return (i===0?'LA PORTA È ':'THE DOOR IS ')+m.def.near[i];
+}
+function makeLandmark(def){
+  const g=new THREE.Group();
+  const col=def.col;
+  const body =new THREE.MeshPhongMaterial({color:col,shininess:50});
+  const stone=new THREE.MeshPhongMaterial({color:0xd8d4c8,shininess:12});
+  const lit  =new THREE.MeshPhongMaterial({color:col,emissive:col,shininess:90});
+  /* basamento comune: si vede che è "appoggiato" nella piazza */
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(.72,.86,.34,12),stone);
+  base.position.y=.17; g.add(base);
+  if(def.id==='torre'){
+    const t=new THREE.Mesh(new THREE.CylinderGeometry(.34,.52,2.5,10),body); t.position.y=1.6; g.add(t);
+    for(let i=0;i<3;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(.44-i*.04,.06,6,12),stone);
+      r.rotation.x=Math.PI/2; r.position.y=.8+i*.7; g.add(r); }
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(.5,.8,10),stone); roof.position.y=3.2; g.add(roof);
+    const lamp=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),lit); lamp.position.y=3.75; g.add(lamp);
+    g.userData.spin=lamp;
+  } else if(def.id==='fontana'){
+    const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.9,.78,.4,14),stone); bowl.position.y=.5; g.add(bowl);
+    const water=new THREE.Mesh(new THREE.CylinderGeometry(.78,.78,.06,14),
+      new THREE.MeshPhongMaterial({color:col,transparent:true,opacity:.75,shininess:100})); water.position.y=.71; g.add(water);
+    const col1=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,1.5,10),stone); col1.position.y=1.45; g.add(col1);
+    const top=new THREE.Mesh(new THREE.SphereGeometry(.42,14,10),
+      new THREE.MeshPhongMaterial({color:col,transparent:true,opacity:.85,shininess:100})); top.position.y=2.35; g.add(top);
+    const jet=new THREE.Mesh(new THREE.ConeGeometry(.3,1.2,10,1,true),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false}));
+    jet.position.y=2.95; g.add(jet);
+    const lamp=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),lit); lamp.position.y=3.6; g.add(lamp);
+    g.userData.spin=top;
+  } else if(def.id==='cristallo'){
+    const ped=new THREE.Mesh(new THREE.CylinderGeometry(.34,.5,1.1,8),stone); ped.position.y=.85; g.add(ped);
+    const cr=new THREE.Mesh(new THREE.OctahedronGeometry(.62,0),
+      new THREE.MeshPhongMaterial({color:col,emissive:col,emissiveIntensity:.4,shininess:100,transparent:true,opacity:.9}));
+    cr.position.y=2.3; cr.scale.y=1.7; g.add(cr);
+    for(let i=0;i<3;i++){ const s=new THREE.Mesh(new THREE.OctahedronGeometry(.2,0),body);
+      const a=i/3*Math.PI*2; s.position.set(Math.cos(a)*.75,1.7,Math.sin(a)*.75); g.add(s); }
+    g.userData.spin=cr;
+  } else if(def.id==='arco'){
+    [-1,1].forEach(s=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(.34,2.5,.34),stone);
+      p.position.set(s*.62,1.25,0); g.add(p); });
+    const arch=new THREE.Mesh(new THREE.TorusGeometry(.62,.17,8,16,Math.PI),body);
+    arch.position.y=2.5; g.add(arch);
+    const key=new THREE.Mesh(new THREE.SphereGeometry(.2,12,9),lit); key.position.y=3.2; g.add(key);
+    const flag=new THREE.Mesh(new THREE.BoxGeometry(.55,.34,.03),body); flag.position.set(.28,3.55,0); g.add(flag);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.9,6),stone); pole.position.y=3.5; g.add(pole);
+    g.userData.spin=key;
+  } else {
+    const ped=new THREE.Mesh(new THREE.BoxGeometry(.9,.9,.9),stone); ped.position.y=.75; g.add(ped);
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(.3,.42,1.2,10),body); torso.position.y=1.8; g.add(torso);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.29,14,10),body); head.position.y=2.65; g.add(head);
+    [-1,1].forEach(s=>{ const a=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,1,8),body);
+      a.position.set(s*.42,2.15,0); a.rotation.z=s*.7; g.add(a); });
+    const halo=new THREE.Mesh(new THREE.TorusGeometry(.3,.05,6,14),lit);
+    halo.rotation.x=Math.PI/2; halo.position.y=3.15; g.add(halo);
+    g.userData.spin=halo;
+  }
+  const glowS=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture(),color:col,
+    blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));
+  glowS.scale.set(2.4,2.4,1); glowS.position.y=3.4; g.add(glowS);
+  g.add(shadowBlob(2.2));
+  /* pozza di luce colorata a terra: si vede benissimo dall'alto e costa
+     molto meno di una vera PointLight (sui tablet le luci si pagano care) */
+  const pool=new THREE.Mesh(new THREE.PlaneGeometry(5.2,5.2),
+    new THREE.MeshBasicMaterial({map:glowTexture(),color:col,blending:THREE.AdditiveBlending,
+      transparent:true,opacity:.34,depthWrite:false}));
+  pool.rotation.x=-Math.PI/2; pool.position.y=0.05; g.add(pool);
+  g.userData.glow=glowS; g.userData.pool=pool;
+  return g;
+}
+
+/* ================= CARTELLI =================
+   Un cartello dice a parole dov'è il prossimo obiettivo, usando il nome
+   di un monumento: «LA PORTA È VICINO ALLA TORRE ROSSA».
+   Non c'è nessuna freccia disegnata: bisogna leggere per davvero.
+   ============================================================ */
+function signTexture(text,accent){
+  const cv=document.createElement('canvas'); cv.width=512; cv.height=224;
+  const c=cv.getContext('2d');
+  /* tavola di legno con bordo */
+  const g=c.createLinearGradient(0,0,0,224);
+  g.addColorStop(0,'#8a5a2f'); g.addColorStop(.5,'#a06c3a'); g.addColorStop(1,'#7d5029');
+  c.fillStyle=g; c.fillRect(0,0,512,224);
+  for(let i=0;i<26;i++){ c.strokeStyle='rgba(0,0,0,'+(0.03+Math.random()*0.05).toFixed(3)+')';
+    c.lineWidth=1+Math.random()*3; c.beginPath(); c.moveTo(0,Math.random()*224);
+    c.bezierCurveTo(170,Math.random()*224,340,Math.random()*224,512,Math.random()*224); c.stroke(); }
+  c.strokeStyle=accent||'#ffd11a'; c.lineWidth=10; c.strokeRect(9,9,494,206);
+  c.fillStyle='#fff8e6'; c.textAlign='center'; c.textBaseline='middle';
+  c.shadowColor='rgba(0,0,0,.6)'; c.shadowBlur=6; c.shadowOffsetY=3;
+  /* il testo va a capo da solo su massimo tre righe */
+  const words=String(text).split(' ');
+  let size=46, lines=[];
+  for(;size>=26;size-=3){
+    c.font='bold '+size+'px Andika, sans-serif';
+    lines=[]; let cur='';
+    for(const w of words){
+      const test=cur?cur+' '+w:w;
+      if(c.measureText(test).width>452 && cur){ lines.push(cur); cur=w; } else cur=test;
+    }
+    if(cur) lines.push(cur);
+    if(lines.length<=3) break;
+  }
+  const lh=size*1.16, y0=112-(lines.length-1)*lh/2;
+  lines.forEach((ln,i)=>c.fillText(ln,256,y0+i*lh));
+  return new THREE.CanvasTexture(cv);
+}
+/* La targa si appoggia PIATTA al muro e guarda dentro al corridoio: così la
+   sua larghezza va nel senso di marcia e non stringe mai il passaggio. */
+function makeSign(text,accent,rotY){
+  const g=new THREE.Group();
+  const wood=new THREE.MeshPhongMaterial({color:0x6b4523,shininess:10});
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(1.58,.74,.05),wood);
+  frame.position.set(0,1.25,-.03); g.add(frame);
+  const board=new THREE.Mesh(new THREE.BoxGeometry(1.5,.66,.07),
+    [wood,wood,wood,wood,new THREE.MeshPhongMaterial({map:signTexture(text,accent),shininess:14}),wood]);
+  board.position.y=1.25; g.add(board);
+  const knob=new THREE.Mesh(new THREE.SphereGeometry(.085,10,8),
+    new THREE.MeshPhongMaterial({color:accent||'#ffd11a',emissive:0x332200,shininess:70}));
+  knob.position.set(0,1.70,0); g.add(knob);
+  /* due chiodi agli angoli: fa capire che è appesa al muro */
+  [-1,1].forEach(s=>{ const n=new THREE.Mesh(new THREE.SphereGeometry(.045,8,6),
+    new THREE.MeshPhongMaterial({color:0x9aa3ad,shininess:80}));
+    n.position.set(s*.68,1.25,.05); g.add(n); });
+  g.rotation.y=rotY||0;
+  return g;
 }
 
 /* ================= GRAFICA ================= */
@@ -237,7 +512,9 @@ function makePlayer(){
   const tip=new THREE.Mesh(new THREE.SphereGeometry(0.04,8,8),tipMat);
   tip.position.set(0.2,1.52,0); g.add(tip);
   const lamp=new THREE.PointLight(0xffe8c0,0.7,9); lamp.position.set(0,2.2,0); g.add(lamp);
-  g.userData={legL:legL,legR:legR,tipMat:tipMat};
+  /* ombra finta a terra: costa quasi nulla ma "incolla" l'astronauta al pavimento */
+  const sh=shadowBlob(1.5); g.add(sh);
+  g.userData={legL:legL,legR:legR,tipMat:tipMat,shadow:sh};
   return g;
 }
 
@@ -263,6 +540,7 @@ function makeDoor(gx,gz,q,theme,rotationY){
   const top=new THREE.Mesh(new THREE.BoxGeometry(doorWidth,.24,.42),metal); top.position.y=2.3; mesh.add(top);
   const lampMat=new THREE.MeshPhongMaterial({color:theme.accent,emissive:theme.accent,shininess:90});
   [-1,1].forEach(s=>{const lamp=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),lampMat);lamp.position.set(s*(doorWidth/2-.34),2.3,.24);mesh.add(lamp);});
+  mesh.add(shadowBlob(2.4));
   const p=g2w(gx,gz); mesh.position.set(p.x,0,p.z); scene.add(mesh);
   mesh.rotation.y=rotationY||0;
   return {gx:gx,gz:gz,mesh:mesh,q:q,open:false,cooldown:false};
@@ -309,48 +587,155 @@ function burst(pos,baseColor){
 
 function questionSet(){ return DIFF==='easy' ? THEMES[curLevel].easy : THEMES[curLevel].hard; }
 
+/* Mette i cartelli lungo il percorso. Ognuno indica il prossimo obiettivo
+   (la porta successiva, o la stella se non ce ne sono più) nominando il
+   monumento più vicino: l'unico modo per usarli è leggerli. */
+function buildSigns(path,used,t){
+  const spots=[0.06,0.28,0.5,0.72];
+  const taken=new Set();
+  spots.forEach(f=>{
+    const wanted=Math.max(1,Math.round(f*(path.length-1)));
+    let k=-1;
+    for(let radius=0;radius<path.length && k<0;radius++){
+      for(const ck of (radius?[wanted-radius,wanted+radius]:[wanted])){
+        if(ck<1||ck>=path.length-1) continue;
+        const cur=path[ck], pv=path[ck-1], nx=path[ck+1];
+        const key=cur[0]+','+cur[1];
+        if(used.has(key)||taken.has(key)) continue;
+        /* serve un muro laterale a cui appendere la targa: se il corridoio va
+           in orizzontale il muro deve stare sopra o sotto, e viceversa */
+        const hz=(nx[0]!==pv[0])||(pv[1]===cur[1]&&nx[1]===cur[1]);
+        const wall=hz ? (grid[cur[1]-1][cur[0]]!==0||grid[cur[1]+1][cur[0]]!==0)
+                      : (grid[cur[1]][cur[0]-1]!==0||grid[cur[1]][cur[0]+1]!==0);
+        if(!wall) continue;
+        k=ck; break;
+      }
+    }
+    if(k<0) return;
+    const cur=path[k], prev=path[Math.max(0,k-1)], next=path[Math.min(path.length-1,k+1)];
+    taken.add(cur[0]+','+cur[1]);
+    /* obiettivo successivo: la prima porta più avanti, altrimenti la stella */
+    let target=null, isStar=true;
+    let bestPk=1e9;
+    for(const d of doors) if(typeof d.pk==='number' && d.pk>k && d.pk<bestPk){ bestPk=d.pk; target=[d.gx,d.gz]; isStar=false; }
+    if(!target) target=[W-2,H-2];
+    const text=signPhrase(target[0],target[1],isStar);
+    /* il cartello si appoggia al muro laterale, non in mezzo al corridoio */
+    const horiz=(next[0]!==prev[0])||(prev[1]===cur[1]&&next[1]===cur[1]);
+    let ox=0,oz=0;
+    if(horiz) oz=(grid[cur[1]-1][cur[0]]!==0)?-0.80:0.80;
+    else      ox=(grid[cur[1]][cur[0]-1]!==0)?-0.80:0.80;
+    const p=g2w(cur[0],cur[1]);
+    /* la targa guarda dal muro verso il centro del corridoio */
+    const rotY=Math.atan2(-ox,-oz);
+    const grp=makeSign(text,t.accent,rotY);
+    grp.position.set(p.x+ox,0,p.z+oz); scene.add(grp);
+    signs.push({gx:cur[0],gz:cur[1],x:p.x+ox,z:p.z+oz,text:text,group:grp,read:false,knob:grp.children[2]});
+  });
+}
+
 function buildLevel(idx){
   curLevel=idx; keysGot=0; doors=[]; decos=[]; bursts=[]; currentDoor=null;
   lives=MAXLIVES; tokens=0; starCooldown=false;
   powerups=[]; hunt=null; freeJolly=0; shieldOn=false;
+  marks=[]; signs=[]; torches=[]; curSign=null;
   const t=THEMES[idx];
   scene=new THREE.Scene();
   scene.background=new THREE.Color(t.sky);
-  scene.fog=new THREE.Fog(t.sky,14,44);
-  scene.add(new THREE.HemisphereLight(0xdbeeff,0x26331f,0.82));
-  const dl=new THREE.DirectionalLight(0xfff4dd,0.95); dl.position.set(5,12,4); scene.add(dl);
+  scene.fog=new THREE.Fog(t.sky,16,52);
+  scene.add(new THREE.HemisphereLight(0xdbeeff,0x26331f,0.72));
+  const dl=new THREE.DirectionalLight(0xfff4dd,0.9); dl.position.set(5,12,4); scene.add(dl);
+  /* una seconda luce debole dal lato opposto: toglie le facce completamente nere */
+  const fill=new THREE.DirectionalLight(0x9fc4ff,0.28); fill.position.set(-7,6,-5); scene.add(fill);
+  scene.add(skyDome(t));
 
   W=H=SIZES[idx];
   grid=genMaze(W,H);
+  seenCells=Array.from({length:H},()=>new Uint8Array(W));
 
   const planeSize=Math.max(W,H)*CELL+50;
-  const gtex=groundTexture(t); gtex.repeat.set(planeSize/(CELL*2),planeSize/(CELL*2));
+  const gtex=groundTexture(t); gtex.repeat.set(planeSize/CELL,planeSize/CELL);
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(planeSize,planeSize), new THREE.MeshLambertMaterial({map:gtex}));
   floor.rotation.x=-Math.PI/2; scene.add(floor);
 
   const wallHeight=1.72;
   /* Pareti sottili ma continue: ogni cella di muro si collega al centro
      delle celle vicine. I segmenti si sovrappongono agli incroci, quindi
-     non restano fessure visive né nelle curve né lungo il perimetro. */
+     non restano fessure visive né nelle curve né lungo il perimetro.
+     Tutti i pezzi uguali finiscono in un solo InstancedMesh: da ~1200
+     oggetti da disegnare si scende a 6, e il gioco resta fluido su tablet. */
   const wallThickness=CELL*.28, wallLength=CELL*1.04;
-  const wallGeoH=new THREE.BoxGeometry(wallLength,wallHeight,wallThickness);
-  const wallGeoV=new THREE.BoxGeometry(wallThickness,wallHeight,wallLength);
-  const wallGeoPost=new THREE.BoxGeometry(wallThickness,wallHeight,wallThickness);
-  const capGeoH=new THREE.BoxGeometry(wallLength+.04,.13,wallThickness+.06);
-  const capGeoV=new THREE.BoxGeometry(wallThickness+.06,.13,wallLength+.04);
-  const capGeoPost=new THREE.BoxGeometry(wallThickness+.06,.13,wallThickness+.06);
-  const wallMat=new THREE.MeshPhongMaterial({map:wallTexture(t),shininess:18});
+  const wallMat=new THREE.MeshPhongMaterial({map:wallTexture(t),shininess:14});
   const capMat=new THREE.MeshPhongMaterial({color:t.accent,shininess:45});
+  const geos={
+    h:new THREE.BoxGeometry(wallLength,wallHeight,wallThickness),
+    v:new THREE.BoxGeometry(wallThickness,wallHeight,wallLength),
+    p:new THREE.BoxGeometry(wallThickness,wallHeight,wallThickness),
+    ch:new THREE.BoxGeometry(wallLength+.04,.13,wallThickness+.06),
+    cv:new THREE.BoxGeometry(wallThickness+.06,.13,wallLength+.04),
+    cp:new THREE.BoxGeometry(wallThickness+.06,.13,wallThickness+.06)
+  };
+  const slots={h:[],v:[],p:[]}, wallCells=[];
   for(let z=0;z<H;z++) for(let x=0;x<W;x++) if(grid[z][x]===1){
-    const p=g2w(x,z), horizontal=(x>0&&grid[z][x-1]===1)||(x<W-1&&grid[z][x+1]===1), vertical=(z>0&&grid[z-1][x]===1)||(z<H-1&&grid[z+1][x]===1);
-    const addWall=(geo,capGeo)=>{const m=new THREE.Mesh(geo,wallMat);m.position.set(p.x,wallHeight/2,p.z);scene.add(m);const cap=new THREE.Mesh(capGeo,capMat);cap.position.set(p.x,wallHeight+.065,p.z);scene.add(cap)};
-    if(horizontal)addWall(wallGeoH,capGeoH);
-    if(vertical)addWall(wallGeoV,capGeoV);
-    if(!horizontal&&!vertical)addWall(wallGeoPost,capGeoPost);
+    const p=g2w(x,z);
+    const horizontal=(x>0&&grid[z][x-1]===1)||(x<W-1&&grid[z][x+1]===1);
+    const vertical=(z>0&&grid[z-1][x]===1)||(z<H-1&&grid[z+1][x]===1);
+    if(horizontal) slots.h.push(p);
+    if(vertical)   slots.v.push(p);
+    if(!horizontal&&!vertical) slots.p.push(p);
+    wallCells.push([x,z]);
   }
+  const dummy=new THREE.Object3D();
+  const place=(geo,mat,list,y)=>{
+    if(!list.length) return;
+    const im=new THREE.InstancedMesh(geo,mat,list.length);
+    list.forEach((p,i)=>{ dummy.position.set(p.x,y,p.z); dummy.updateMatrix(); im.setMatrixAt(i,dummy.matrix); });
+    if(im.instanceMatrix) im.instanceMatrix.needsUpdate=true;
+    /* in questa versione di Three la sfera di ingombro di un InstancedMesh è
+       quella del singolo pezzo, centrata sull'origine: senza questa riga i
+       muri sparirebbero appena la telecamera si allontana dal centro. */
+    im.frustumCulled=false;
+    scene.add(im);
+  };
+  place(geos.h,wallMat,slots.h,wallHeight/2);
+  place(geos.v,wallMat,slots.v,wallHeight/2);
+  place(geos.p,wallMat,slots.p,wallHeight/2);
+  place(geos.ch,capMat,slots.h,wallHeight+.065);
+  place(geos.cv,capMat,slots.v,wallHeight+.065);
+  place(geos.cp,capMat,slots.p,wallHeight+.065);
 
   scene.add(makeStars());
   themeParts=makeThemeParticles(t); scene.add(themeParts);
+
+  /* --- torce appese ai muri: danno profondità e fanno "vivere" i corridoi --- */
+  const flameTex=torchFlameTexture();
+  const bracketMat=new THREE.MeshPhongMaterial({color:0x3a3226,shininess:10});
+  const torchCells=shuffle(wallCells.filter(c=>{
+    const x=c[0],z=c[1];
+    return x>0&&x<W-1&&z>0&&z<H-1 &&
+      (grid[z][x-1]===0||grid[z][x+1]===0||grid[z-1][x]===0||grid[z+1][x]===0);
+  })).slice(0,Math.min(14,Math.floor(W*H/34)));
+  torchCells.forEach(c=>{
+    const x=c[0], z=c[1], p=g2w(x,z);
+    let ox=0,oz=0;
+    if(grid[z][x-1]===0) ox=-wallThickness/2-.1; else if(grid[z][x+1]===0) ox=wallThickness/2+.1;
+    else if(grid[z-1][x]===0) oz=-wallThickness/2-.1; else oz=wallThickness/2+.1;
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(.045,.06,.34,6),bracketMat);
+    br.position.set(p.x+ox,1.28,p.z+oz); br.rotation.z=ox?Math.sign(ox)*0.5:0; br.rotation.x=oz?-Math.sign(oz)*0.5:0;
+    scene.add(br);
+    const fl=new THREE.Sprite(new THREE.SpriteMaterial({map:flameTex,color:0xffb14a,
+      blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));
+    fl.position.set(p.x+ox*1.5,1.52,p.z+oz*1.5); fl.scale.set(.62,.8,1);
+    scene.add(fl); torches.push(fl);
+  });
+
+  /* --- monumenti nelle piazze: i punti di riferimento del labirinto --- */
+  ROOMS.forEach((r,k)=>{
+    const def=LANDMARKS[(idx*2+k)%LANDMARKS.length];
+    const grp=makeLandmark(def);
+    const p=g2w(r.cx,r.cy); grp.position.set(p.x,0,p.z); scene.add(grp);
+    marks.push({def:def,gx:r.cx,gz:r.cy,group:grp});
+  });
 
   const path=findPath(grid,1,1,W-2,H-2);
   const used=new Set(['1,1',(W-2)+','+(H-2)]);
@@ -380,7 +765,8 @@ function buildLevel(idx){
     /* La faccia della porta taglia il tratto rettilineo del corridoio. */
     const prev=path[Math.max(0,k-1)];
     const rotationY=(prev && prev[0]!==gx)?Math.PI/2:0;
-    doors.push(makeDoor(gx,gz,qpool[qi%qpool.length],t,rotationY)); qi++;
+    const dr=makeDoor(gx,gz,qpool[qi%qpool.length],t,rotationY); dr.pk=k;
+    doors.push(dr); qi++;
   });
 
   star=new THREE.Mesh(new THREE.OctahedronGeometry(0.55), new THREE.MeshLambertMaterial({color:0xffd11a,emissive:0x996d00}));
@@ -388,6 +774,10 @@ function buildLevel(idx){
   glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture(),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));
   glow.position.copy(star.position); glow.scale.set(2.6,2.6,1); scene.add(glow);
   const sl=new THREE.PointLight(0xffd11a,0.8,10); sl.position.set(sp.x,2,sp.z); scene.add(sl);
+  const sbl=shadowBlob(1.6); sbl.position.set(sp.x,0.03,sp.z); scene.add(sbl);
+
+  /* --- CARTELLI: si leggono per capire dove andare --- */
+  buildSigns(path,used,t);
 
   const openCells=[];
   for(let z=1;z<H-1;z++) for(let x=1;x<W-1;x++)
@@ -474,7 +864,7 @@ function inputDir(){
 function solidAt(wx,wz){
   const gx=Math.round(wx/CELL+(W-1)/2), gz=Math.round(wz/CELL+(H-1)/2);
   if(gx<0||gx>=W||gz<0||gz>=H) return true;
-  if(grid[gz][gx]===1) return true;
+  if(grid[gz][gx]!==0) return true;   /* 1 = muro, 2 = basamento del monumento */
   for(const d of doors) if(!d.open && d.gx===gx && d.gz===gz) return true;
   return false;
 }

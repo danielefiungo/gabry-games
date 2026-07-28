@@ -72,6 +72,96 @@ function checkPowerups(){
     if(Math.hypot(player.position.x-p.x,player.position.z-p.z)<0.95){ collectLetter(l); break; }
   }
 }
+/* ================= CARTELLI =================
+   Avvicinandosi a un cartello compare la scritta in grande: leggerla dice
+   dov'è il prossimo obiettivo. La prima lettura vale stelle, dimezzate se
+   si usa il 🔊 (stessa regola di tutto il resto del gioco).
+   ============================================================ */
+const SIGN_BONUS=8;
+function showSign(s){
+  curSign=s;
+  $('signText').textContent=s.text;
+  $('signBanner').classList.add('show');
+  if(!s.read){
+    s.read=true;
+    score+=SIGN_BONUS; save(); updateHUD();
+    if(s.knob&&s.knob.material) s.knob.material.color.set(0x7ce8a0);
+    sToken();
+  }
+}
+function hideSign(){
+  curSign=null;
+  $('signBanner').classList.remove('show');
+}
+function checkSigns(){
+  let near=null, best=1e9;
+  for(const s of signs){
+    const d=Math.hypot(player.position.x-s.x, player.position.z-s.z);
+    if(d<1.9 && d<best){ best=d; near=s; }
+  }
+  if(near&&near!==curSign) showSign(near);
+  else if(!near) hideSign();
+}
+/* Farsi leggere il cartello vale la metà: la voce restituisce metà bonus. */
+function speakSign(){
+  if(!curSign) return;
+  if(!curSign.spoken){
+    curSign.spoken=true; lvVoiceUsed=true;
+    score=Math.max(0,score-Math.floor(SIGN_BONUS/2)); save(); updateHUD();
+  }
+  speak([{t:curSign.text,el:$('signText'),block:true}]);
+}
+
+/* ================= MINIMAPPA =================
+   Si scopre camminando (nebbia di guerra): mostra i muri già visti, le
+   porte aperte e chiuse, i monumenti, la stella e dove sei.
+   ============================================================ */
+const MAP_PX=150;
+let mapCtx=null, mapTick=0;
+function revealAround(){
+  if(!seenCells) return;
+  const gx=Math.round(player.position.x/CELL+(W-1)/2);
+  const gz=Math.round(player.position.z/CELL+(H-1)/2);
+  for(let z=gz-2;z<=gz+2;z++) for(let x=gx-2;x<=gx+2;x++)
+    if(x>=0&&x<W&&z>=0&&z<H) seenCells[z][x]=1;
+  /* entrando in una piazza si vede tutta la piazza (e il suo monumento) */
+  for(const r of ROOMS) if(Math.abs(r.cx-gx)<=2 && Math.abs(r.cy-gz)<=2)
+    for(let z=r.cy-2;z<=r.cy+2;z++) for(let x=r.cx-2;x<=r.cx+2;x++)
+      if(x>=0&&x<W&&z>=0&&z<H) seenCells[z][x]=1;
+}
+function drawMiniMap(){
+  const cv=$('miniMap');
+  if(!cv||!seenCells) return;
+  if(!mapCtx) mapCtx=cv.getContext('2d');
+  const c=mapCtx, s=MAP_PX/W;
+  c.clearRect(0,0,MAP_PX,MAP_PX);
+  c.fillStyle='rgba(6,10,24,.82)'; c.fillRect(0,0,MAP_PX,MAP_PX);
+  for(let z=0;z<H;z++) for(let x=0;x<W;x++){
+    if(!seenCells[z][x]) continue;
+    const v=grid[z][x];
+    c.fillStyle = v===1 ? 'rgba(150,170,215,.85)' : (v===2 ? 'rgba(120,110,90,.9)' : 'rgba(255,255,255,.20)');
+    c.fillRect(x*s,z*s,s+0.6,s+0.6);
+  }
+  const dot=(gx,gz,col,r)=>{ c.fillStyle=col; c.beginPath();
+    c.arc((gx+0.5)*s,(gz+0.5)*s,r,0,7); c.fill(); };
+  for(const m of marks) if(seenCells[m.gz][m.gx])
+    dot(m.gx,m.gz,'#'+new THREE.Color(m.def.col).getHexString(),s*0.62);
+  for(const sg of signs) if(seenCells[sg.gz][sg.gx])
+    dot(sg.gx,sg.gz, sg.read?'#8a6a3c':'#d8a24a', s*0.34);
+  for(const d of doors) if(seenCells[d.gz][d.gx]){
+    c.fillStyle=d.open?'rgba(124,232,160,.55)':'#ff9f43';
+    c.fillRect(d.gx*s+s*0.12,d.gz*s+s*0.12,s*0.76,s*0.76);
+  }
+  if(seenCells[H-2][W-2]) dot(W-2,H-2,'#ffd11a',s*0.55);
+  const px=player.position.x/CELL+(W-1)/2, pz=player.position.z/CELL+(H-1)/2;
+  c.fillStyle='#fff'; c.beginPath(); c.arc((px+0.5)*s,(pz+0.5)*s,s*0.42,0,7); c.fill();
+  c.strokeStyle='#2b3a8f'; c.lineWidth=2; c.stroke();
+}
+function applyMapBtn(){
+  $('btnMap').textContent=MAPON?'🗺️':'🚫';
+  $('miniMap').style.display=MAPON?'block':'none';
+}
+
 function updateArrow(){
   if(!arrowGroup) return;
   arrowGroup.visible=ARROWON;
@@ -579,6 +669,7 @@ function showMenu(){
   /* musica del menu (solo se l'audio è già stato sbloccato da un tocco) */
   if(MUSICON && actx && actx.state==='running') playMusic(TRK_MENU); else stopMusic();
   $('hud').style.display='none'; $('joy').style.display='none'; $('startHint').style.display='none';
+  $('miniMap').style.display='none'; hideSign();
   applyUI(); buildMap();
   $('menu').style.display='flex';
 }
@@ -589,6 +680,7 @@ function startLevel(i){
   $('menu').style.display='none';
   lvErrors=0; lvVoiceUsed=false; voiceUsedThisQ=false; lvBossMiss=0; resetStreak();
   buildLevel(i); updateHUD();
+  mapCtx=null; mapTick=0; applyMapBtn(); revealAround(); drawMiniMap();
   $('hud').style.display='flex';
   if(isTouch) $('joy').style.display='block';
   $('startHint').textContent=isTouch?UI.hintJoy[LI()]:UI.hintKeys[LI()];
@@ -638,6 +730,8 @@ function kickMenuMusic(){
 addEventListener('pointerdown',kickMenuMusic,true);
 addEventListener('keydown',kickMenuMusic,true);
 $('btnArrow').onclick=()=>{ ARROWON=!ARROWON; save(); applyUI(); };
+$('btnMap').onclick=()=>{ MAPON=!MAPON; save(); applyMapBtn(); applyUI(); if(MAPON) drawMiniMap(); };
+$('signSpeak').onclick=speakSign;
 function applyCamBtn(){ $('btnCam').textContent=FPV?'👁️':'🎥'; }
 $('btnCam').onclick=()=>{ FPV=!FPV; save(); applyCamBtn(); };
 applyCamBtn();
@@ -719,9 +813,15 @@ function animate(){
     checkDoors();
     if(!paused) checkStar();
     if(!paused) checkPowerups();
+    if(!paused) checkSigns();
+    revealAround();
   }
+  /* con una domanda o il Guardiano aperti il cartello sparisce */
+  if(paused && curSign) hideSign();
   const blink=(Math.sin(et*5)+1)/2;
   player.userData.tipMat.emissive.setRGB(blink,0.05,0.05);
+  /* l'ombra resta incollata a terra anche mentre l'astronauta saltella */
+  if(player.userData.shadow) player.userData.shadow.position.y=0.03-player.position.y;
 
   player.visible=!FPV;
   if(FPV){
@@ -739,6 +839,19 @@ function animate(){
   if(glow){ const gs=2.4+Math.sin(et*3)*0.35; glow.scale.set(gs,gs,1); glow.position.y=star.position.y; }
   for(const d of doors) if(d.open && d.mesh.position.y>-1.6) d.mesh.position.y-=dt*2.5;
   decos.forEach((s,i)=>{ s.position.y=1.3+Math.sin(et*1.5+i)*0.15; });
+  /* monumenti: la parte luminosa gira, l'alone respira */
+  marks.forEach((m,i)=>{
+    if(m.group.userData.spin) m.group.userData.spin.rotation.y+=dt*(0.8+i*0.2);
+    if(m.group.userData.glow){ const g=2.2+Math.sin(et*1.7+i)*0.4; m.group.userData.glow.scale.set(g,g,1); }
+  });
+  /* le fiamme delle torce tremolano ognuna per conto suo */
+  torches.forEach((f,i)=>{
+    const k=0.78+Math.sin(et*11+i*2.3)*0.13+Math.sin(et*27+i)*0.06;
+    f.scale.set(.6*k,.82*k,1);
+    f.material.opacity=0.75+Math.sin(et*17+i*1.7)*0.2;
+  });
+  /* il pomello del cartello lampeggia finché non è stato letto */
+  signs.forEach((s,i)=>{ if(s.knob) s.knob.position.y=1.70+Math.sin(et*3+i)*(s.read?0.02:0.07); });
   powerups.forEach((p,i)=>{ p.sprite.position.y=1.25+Math.sin(et*2+i*2.1)*0.2; });
   if(hunt) hunt.letters.forEach((l,i)=>{ if(!l.done) l.sprite.position.y=1.25+Math.sin(et*2.2+i)*0.18; });
 
@@ -761,6 +874,8 @@ function animate(){
     const sc=Math.max(b.life,0.05); b.m.scale.set(sc,sc,sc);
   }
   updateArrow();
+  /* la minimappa non ha bisogno di 60 fps: basta ogni 4 frame */
+  if(MAPON && (++mapTick%4===0)) drawMiniMap();
   renderer.render(scene,camera);
 }
 

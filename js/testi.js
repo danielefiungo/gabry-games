@@ -4,7 +4,8 @@
 /* ============ TESTI INTERFACCIA [it,en] ============ */
 const UI = {
   subtitle:["Leggi le domande, apri le porte, trova la stella!","Read the questions, open the doors, find the star!"],
-  howto:["💻 Frecce o WASD · 📱 Joystick sullo schermo","💻 Arrows or WASD · 📱 On-screen joystick"],
+  howto:["💻 Frecce o WASD · 📱 Joystick sullo schermo · 🪧 Leggi i cartelli: dicono dove andare!",
+         "💻 Arrows or WASD · 📱 On-screen joystick · 🪧 Read the signs: they tell you where to go!"],
   level:["Livello","Level"],
   readme:["🔊 Leggimi la domanda","🔊 Read the question to me"],
   reading:["🔊 Sto leggendo...","🔊 Reading..."],

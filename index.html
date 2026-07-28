@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/stile.css">
+<link rel="stylesheet" href="css/stile.css?v=lab-2">
 </head>
 <body>
 <div id="game"></div>
@@ -42,8 +42,14 @@
   <div class="hudBox" id="hudCombo">🔥 x2</div>
   <div class="hudBox" id="hudPow" style="display:none"></div>
   <div class="hudBox" id="hudHunt" style="display:none"></div>
-  <div id="hudBtns"><button class="hudBtn" id="btnCam" title="Visuale">🎥</button><button class="hudBtn" id="btnMusicHud" title="Musica">🎵</button><button class="hudBtn" id="btnHome" title="Menu">🏠</button></div>
+  <div id="hudBtns"><button class="hudBtn" id="btnMap" title="Minimappa">🗺️</button><button class="hudBtn" id="btnCam" title="Visuale">🎥</button><button class="hudBtn" id="btnMusicHud" title="Musica">🎵</button><button class="hudBtn" id="btnHome" title="Menu">🏠</button></div>
 </div>
+
+<!-- MINIMAPPA: si scopre camminando -->
+<canvas id="miniMap" width="150" height="150" aria-hidden="true"></canvas>
+
+<!-- CARTELLO: la scritta che dice dove andare -->
+<div id="signBanner"><span class="signPin">🪧</span><div id="signText"></div><button id="signSpeak" title="Leggimi il cartello">🔊</button></div>
 
 <div id="comboBig"></div>
 <div id="joy"><div id="joyKnob"></div></div>
@@ -162,10 +168,11 @@
 <script src="js/sfide.js"></script>
 <script src="js/testi.js"></script>
 <script src="js/audio-voce.js"></script>
-<script src="js/labirinto-3d.js"></script>
+<script src="js/musica.js?v=1"></script>
+<script src="js/labirinto-3d.js?v=lab-2"></script>
 <script src="js/mappa-spazio.js"></script>
 <script src="js/mappa-avventura-3d.js"></script>
-<script src="js/gioco-labirinto.js"></script>
+<script src="js/gioco-labirinto.js?v=lab-2"></script>
 <script src="js/letturine.js"></script>
 <script src="js/scelta-gioco.js?v=history-1"></script>
 <script src="js/palla-api.js?v=alveare-11"></script>

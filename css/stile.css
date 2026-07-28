@@ -285,3 +285,27 @@
   #bossOver { text-align:center; }
   #bossOver .bigBtn { margin:8px 6px 0; }
   #bossFlee { background:none; border:none; color:#d7b8ff; font-size:15px; cursor:pointer; font-family:inherit; text-decoration:underline; margin-top:10px; }
+
+  /* ---------- Minimappa del labirinto (nebbia di guerra) ---------- */
+  #miniMap { position:absolute; right:12px; bottom:14px; width:150px; height:150px; display:none;
+             border:3px solid rgba(255,255,255,.55); border-radius:14px; z-index:6;
+             box-shadow:0 4px 14px rgba(0,0,0,.5); background:rgba(6,10,24,.8); pointer-events:none; }
+
+  /* ---------- Cartello da leggere ---------- */
+  #signBanner { position:absolute; left:50%; top:64px; transform:translate(-50%,-14px); z-index:7;
+                display:flex; align-items:center; gap:10px; max-width:min(620px,92vw);
+                padding:10px 14px; border-radius:18px; border:3px solid #ffd11a;
+                background:linear-gradient(180deg,rgba(122,80,42,.96),rgba(78,49,24,.96));
+                box-shadow:0 6px 18px rgba(0,0,0,.5); color:#fff8e6;
+                opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; }
+  #signBanner.show { opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+  #signBanner .signPin { font-size:26px; line-height:1; }
+  #signText { font-size:clamp(19px,3.4vw,28px); font-weight:bold; line-height:1.2;
+              text-shadow:0 2px 3px rgba(0,0,0,.65); letter-spacing:.5px; }
+  #signSpeak { flex:none; border:2px solid #ffd11a; border-radius:999px; background:#3b2512; color:#fff;
+               font:bold 20px inherit; padding:6px 12px; cursor:pointer; }
+  #signSpeak:active { transform:translateY(2px); }
+  @media (max-width:560px){
+    #miniMap { width:112px; height:112px; right:8px; bottom:10px; }
+    #signBanner { top:56px; padding:8px 10px; gap:7px; }
+  }

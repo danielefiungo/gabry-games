@@ -128,7 +128,7 @@ function boot(){
     window.webkitAudioContext=window.AudioContext;
   `);
   /* i file che servono, nell'ordine di index.html */
-  ['domande.js','sfide.js','testi.js','audio-voce.js','labirinto-3d.js','mappa-spazio.js']
+  ['domande.js','sfide.js','testi.js','audio-voce.js','musica.js','labirinto-3d.js','mappa-spazio.js']
     .forEach(f=>{
       const s=w.document.createElement('script');
       s.textContent=fs.readFileSync(path.join(DIR,'js',f),'utf8');
