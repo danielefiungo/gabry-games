@@ -215,7 +215,7 @@ function ssAlignM(o){ return ssMFromNu(-o.periRad,o.e); }
 
 /* ---- stato del modulo ---- */
 let ssGL=null, ssScene=null, ssCam=null, ssCv=null, ssLbls=null, ssWrap=null;
-let ssB=[], ssEdges=[], ssBelt=null, ssMarker=null, ssRunning=false, ssOn=false;
+let ssB=[], ssEdges=[], ssBelt=null, ssMarker=null, ssRunning=false, ssOn=false, ssFrameAt=0;
 let ssCamTheta=SS_ORBIT_THETA, ssCamPhi=SS_ORBIT_PHI, ssCamR=SS_ZOOM_START;
 let ssClock=null, ssRay=null, ssHits=[];
 let ssSpeedF=1, ssPtrIn=false, ssLastTouch=0, ssLastW=0, ssLastH=0;
@@ -889,7 +889,7 @@ function ssBuildDOM(){
   ssWrap.addEventListener('pointerdown',()=>{ ssLastTouch=Date.now(); },true);
   ssWrap.addEventListener('pointermove',()=>{ ssLastTouch=Date.now(); },true);
   ssGL=new THREE.WebGLRenderer({canvas:ssCv,antialias:true});
-  ssGL.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  ssGL.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
   addEventListener('resize',ssResize);
   ssInput();
   ssResize();
@@ -997,9 +997,11 @@ function ssRefresh(){
    FRAME
    ============================================================ */
 const _sv=new THREE.Vector3(), _sv2=new THREE.Vector3(), _sc=new THREE.Vector3();
-function ssFrame(){
+function ssFrame(ts){
   if(!ssOn||!ssCv||!ssCv.isConnected){ ssRunning=false; return; }
   requestAnimationFrame(ssFrame);
+  if(Number.isFinite(ts)&&ssFrameAt&&ts-ssFrameAt<1000/30-1) return;
+  if(Number.isFinite(ts)) ssFrameAt=ts;
   const rdt=Math.min(ssClock.getDelta(),0.05), et=ssClock.elapsedTime;
   if(ssWrap.clientWidth!==ssLastW||ssWrap.clientHeight!==ssLastH) ssResize();
   if(unlockedSet.size!==ssUnlockedSeen) ssRefresh();   /* la letturina ha sbloccato qualcosa */
@@ -1130,7 +1132,7 @@ function ssEnter(){
   $('ss').style.display='flex';
   ssOn=true;
   ssResize();
-  if(!ssRunning){ ssRunning=true; ssClock.getDelta(); requestAnimationFrame(ssFrame); }
+  if(!ssRunning){ ssRunning=true; ssFrameAt=0; ssClock.getDelta(); requestAnimationFrame(ssFrame); }
 }
 function ssExit(){
   ssOn=false; ssRunning=false; stopSpeak();

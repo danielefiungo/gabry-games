@@ -1,6 +1,6 @@
 /* Mappa dei livelli in prima persona. Sostituisce buildMap() lasciando intatta
    la mappa astronomica, che viene riutilizzata dal gioco Volo Planetario. */
-let avScene=null,avCam=null,avRen=null,avCv=null,avRun=false,avClock=null,avResize=null;
+let avScene=null,avCam=null,avRen=null,avCv=null,avRun=false,avClock=null,avResize=null,avFrameAt=0,avRaf=0;
 let avYaw=0,avX=0,avZ=12,avKeys={},avTouch={f:0,t:0},avPortals=[];
 let avStepT=0,avAmbientT=0,avPromptLevel=-1;
 const AV_POS=[
@@ -70,9 +70,25 @@ function avMakeWorld(){
   });
   avCam=new THREE.PerspectiveCamera(72,1,.1,170);avClock=new THREE.Clock();
 }
+function avDisposeWorld(){
+  avRun=false;
+  if(avRaf)cancelAnimationFrame(avRaf);avRaf=0;
+  if(avResize)removeEventListener('resize',avResize);
+  if(avScene&&avScene.traverse)avScene.traverse(o=>{
+    if(o.geometry&&o.geometry.dispose)o.geometry.dispose();
+    if(o.material)[].concat(o.material).forEach(m=>{
+      if(m.map&&m.map.dispose)m.map.dispose();
+      if(m.dispose)m.dispose();
+    });
+  });
+  if(avRen){
+    try{avRen.dispose();if(avRen.forceContextLoss)avRen.forceContextLoss();}catch(_){/* già liberato */}
+  }
+  avScene=null;avCam=null;avRen=null;avCv=null;avClock=null;avResize=null;avPortals=[];
+}
 function avBuildDom(){
   const w=$('mapWrap');$('menu').classList.add('avMode');w.innerHTML='<canvas id="mapCanvas"></canvas><div id="avHud"><div class="avHudInfo"><b>🧭 MAPPA DEI LIVELLI</b><span id="avNear">Segui i cartelli e raggiungi un portale</span></div><div id="avPad"><button data-a="l" aria-label="Gira a sinistra">↶</button><button data-a="b" aria-label="Indietro">▼</button><button data-a="f" aria-label="Avanti">▲</button><button data-a="r" aria-label="Gira a destra">↷</button></div><div class="avHudActions"><button id="avMusic" aria-label="Musica">'+(MUSICON?'🎵':'🔇')+'</button><button id="avExit" aria-label="Altri giochi">🎮</button></div></div><div class="overlay" id="avConfirm"><div class="avConfirmCard"><div id="avConfirmEm"></div><h2 id="avConfirmTitle"></h2><p id="avConfirmText"></p><div><button id="avConfirmYes">ENTRA 🚪</button><button id="avConfirmNo">CONTINUA A ESPLORARE</button></div></div></div>';
-  avCv=$('mapCanvas');avRen=new THREE.WebGLRenderer({canvas:avCv,antialias:true});avRen.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  avCv=$('mapCanvas');avRen=new THREE.WebGLRenderer({canvas:avCv,antialias:true});avRen.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
   avResize=()=>{
     if(!avCv||!avCv.isConnected||!avRen||!avCam)return;
     const r=w.getBoundingClientRect();
@@ -86,7 +102,7 @@ function avBuildDom(){
   avResize();addEventListener('resize',avResize);
   w.tabIndex=0;w.onpointerdown=()=>w.focus();
   w.querySelectorAll('#avPad button').forEach(b=>{const a=b.dataset.a,down=e=>{e.preventDefault();mCtx();if(a==='f'||a==='b')avTouch.f=a==='f'?1:-1;else avTouch.t=a==='l'?1:-1;},up=()=>{if(a==='f'||a==='b')avTouch.f=0;else avTouch.t=0;};b.onpointerdown=down;b.onpointerup=up;b.onpointercancel=up;});
-  $('avExit').onclick=()=>{avRun=false;$('menu').classList.remove('avMode');$('menu').style.display='none';showModeSel();};
+  $('avExit').onclick=()=>{avRun=false;if(avRaf)cancelAnimationFrame(avRaf);avRaf=0;$('menu').classList.remove('avMode');$('menu').style.display='none';showModeSel();};
   $('avMusic').onclick=()=>{toggleMusic();$('avMusic').textContent=MUSICON?'🎵':'🔇';};
   $('avConfirmNo').onclick=()=>{avPromptLevel=-1;$('avConfirm').style.display='none';avSound('sign');};
   $('avConfirmYes').onclick=()=>{const k=avPromptLevel;avPromptLevel=-1;$('avConfirm').style.display='none';if(k<0)return;avPortals[k].un?startLevel(k):openLetturina(k);};
@@ -97,8 +113,11 @@ function avAskLevel(p){
   $('avConfirmText').textContent=p.un?'Vuoi entrare in questo labirinto?':'Questo livello è ancora chiuso. Vuoi leggere la storia per sbloccarlo?';
   $('avConfirmYes').textContent=p.un?'ENTRA NEL LABIRINTO 🚪':'LEGGI LA STORIA 📖';$('avConfirm').style.display='flex';
 }
-function avFrame(){
-  if($('menu').style.display==='none'||!avCv||!avCv.isConnected){avRun=false;return}requestAnimationFrame(avFrame);
+function avFrame(ts){
+  avRaf=0;
+  if($('menu').style.display==='none'||!avCv||!avCv.isConnected){avRun=false;return}avRaf=requestAnimationFrame(avFrame);
+  if(Number.isFinite(ts)&&avFrameAt&&ts-avFrameAt<1000/30-1)return;
+  if(Number.isFinite(ts))avFrameAt=ts;
   const dt=Math.min(avClock.getDelta(),.05),turn=(avKeys.ArrowLeft||avKeys.a?1:0)-(avKeys.ArrowRight||avKeys.d?1:0)+avTouch.t;
   const f=(avKeys.ArrowUp||avKeys.w?1:0)-(avKeys.ArrowDown||avKeys.s?1:0)+avTouch.f;avYaw+=turn*2.05*dt;
   if(f&&avPromptLevel<0){const nx=avX-Math.sin(avYaw)*f*7*dt,nz=avZ-Math.cos(avYaw)*f*7*dt;if(Math.abs(nx)<70&&nz<18&&nz>-112){avX=nx;avZ=nz;avStepT-=dt;if(avStepT<=0){avSound('step');avStepT=.36;}}}
@@ -111,9 +130,10 @@ function avFrame(){
 addEventListener('keydown',e=>{avKeys[e.key]=1;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)&&$('menu').style.display!=='none')e.preventDefault();});
 addEventListener('keyup',e=>{avKeys[e.key]=0;});
 function buildMap(){
+  avDisposeWorld();
   avX=0;avZ=12;avYaw=0;avMakeWorld();avBuildDom();
   $('howto').textContent=LI()===0?'Cammina in prima persona. Agli incroci leggi i cartelli; entra nei portali luminosi.':'Walk in first person. Read the signs and enter a glowing portal.';
   /* Il menu diventa display:flex subito dopo il ritorno da buildMap(). */
   requestAnimationFrame(()=>{if(avResize)avResize();requestAnimationFrame(()=>{if(avResize)avResize();});});
-  if(!avRun){avRun=true;avClock.getDelta();requestAnimationFrame(avFrame);}
+  if(!avRun){avRun=true;avFrameAt=0;avClock.getDelta();avRaf=requestAnimationFrame(avFrame);}
 }

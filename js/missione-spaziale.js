@@ -275,7 +275,7 @@ const MS_IMPREVISTI=[
 ];
 
 /* ---------- Stato ---------- */
-let msS={on:false, raf:0, last:0, paused:true, state:'idle',
+let msS={on:false, raf:0, last:0, frameAt:0, paused:true, state:'idle',
   fase:1, orders:[], idx:0, seqIdx:0, tries:0,
   fuel:MS_FUEL_MAX, phErr:0, phSpk:0,
   timer:0, timerMax:0, countN:0, countT:0,
@@ -292,7 +292,7 @@ const MS_STARS=[]; /* stelline di sfondo, generate una volta */
 for(let i=0;i<90;i++) MS_STARS.push([Math.random(),Math.random(),0.6+Math.random()*1.6,Math.random()*6.28]);
 
 function msResize(){
-  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
   msW=window.innerWidth; msH=window.innerHeight;
   msCv.width=Math.round(msW*dpr); msCv.height=Math.round(msH*dpr);
   msCv.style.width=msW+'px'; msCv.style.height=msH+'px';
@@ -1500,6 +1500,11 @@ function msDraw(t){
 }
 function msFrame(ts){
   msS.raf=requestAnimationFrame(msFrame);
+  /* Durante quiz e pannelli basta un aggiornamento leggero; durante il volo
+     30 fps dimezzano il lavoro del canvas senza cambiare la simulazione. */
+  const frameMs=msS.paused?100:1000/30;
+  if(Number.isFinite(ts)&&msS.frameAt&&ts-msS.frameAt<frameMs-1) return;
+  if(Number.isFinite(ts)) msS.frameAt=ts;
   if(!msS.last) msS.last=ts;
   const dt=Math.min((ts-msS.last)/1000,0.05); msS.last=ts;
   if(!msS.paused) msUpdate(dt);
@@ -1527,7 +1532,7 @@ function msEnter(){
   $('hud').style.display='none'; $('joy').style.display='none';
   msReset(); msResize(); msHud();
   $('ms').style.display='block';
-  msS.paused=false; msS.last=0;
+  msS.paused=false; msS.last=0; msS.frameAt=0;
   if(MUSICON){ mCtx(); playMusic(TRK_ROCKET); }
   if(!msS.raf) msS.raf=requestAnimationFrame(msFrame);
   msPhaseStart(1);

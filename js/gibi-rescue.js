@@ -14,7 +14,7 @@
 
   const gr={
     on:false,mission:0,isSandbox:false,program:[],mounted:[],wires:[],measurements:[],hintLevel:0,
-    runMode:'paused',sim:null,actions:[],actionIndex:0,actionTime:0,last:0,raf:0,variant:0,collisions:0,currentBlock:null,
+    runMode:'paused',sim:null,actions:[],actionIndex:0,actionTime:0,last:0,raf:0,frameAt:0,variant:0,collisions:0,currentBlock:null,
     trackTool:'obstacle',carColor:'#30aee0',
     progress:Object.assign({version:1,unlockedMission:0,stars:[],starDetail:[],unlocks:[]},safeJSON(KEY_PROGRESS,{})),
     settings:Object.assign({version:1,dashboard:'simple',reducedMotion:false,panels:{left:true,right:true}},safeJSON(KEY_SETTINGS,{})),
@@ -178,7 +178,7 @@
     if(gr.actionTime>=a.duration){gr.actionIndex++;gr.actionTime=0;if(gr.runMode==='step')gr.runMode='paused';if(gr.actionIndex>=gr.actions.length)endRun();}
   }
   function endRun(){gr.sim.stop();if(gr.correct){gr.runMode='done';setTimeout(()=>finish(true),gr.settings.reducedMotion?50:450);}else{gr.runMode='debug';gr$('grSpeech').textContent='Il programma è partito, ma manca un passaggio. Quale blocco serve per raggiungere la missione?';toast('Quasi! Modifica il programma e riprova.');}}
-  function frame(ts){if(!gr.on)return;const dt=Math.min(.05,(ts-gr.last)/1000||.016);gr.last=ts;if(gr.runMode==='running')advance(dt);draw();if(gr.activeTab==='dash'&&Math.floor(ts/160)!==gr.lastDash){gr.lastDash=Math.floor(ts/160);showTab('dash');}gr.raf=requestAnimationFrame(frame);}
+  function frame(ts){if(!gr.on)return;gr.raf=requestAnimationFrame(frame);const frameMs=gr.runMode==='running'?1000/30:100;if(Number.isFinite(ts)&&gr.frameAt&&ts-gr.frameAt<frameMs-1)return;if(Number.isFinite(ts))gr.frameAt=ts;const dt=Math.min(.05,(ts-gr.last)/1000||.016);gr.last=ts;if(gr.runMode==='running')advance(dt);draw();if(gr.activeTab==='dash'&&Math.floor(ts/160)!==gr.lastDash){gr.lastDash=Math.floor(ts/160);showTab('dash');}}
 
   function finish(ok){if(!ok)return;pause();const m=mission();if(gr.isSandbox){toast('Prova completata! Nel laboratorio puoi continuare a cambiare tutto.');return;}
     const missionStar=true,safety=gr.collisions===0,program=m.type==='build'||(gr.hintLevel<3&&gr.program.length<=m.required.length+1);const detail=[missionStar,safety,program],count=detail.filter(Boolean).length;
@@ -190,7 +190,7 @@
   function useHint(){const m=mission();gr.hintLevel=Math.min(3,gr.hintLevel+1);if(gr.hintLevel===1)gr$('grSpeech').textContent=m.type==='build'?'Guarda i nomi e il ruolo di ogni pezzo.':'Leggi la missione e cerca il primo verbo: quale blocco gli somiglia?';else if(gr.hintLevel===2){const missing=m.required.find(id=>!gr.program.includes(id));gr$('grSpeech').textContent=missing?`Prova il blocco ${D.blocks[missing].label}.`:'L’ordine dei blocchi segue l’ordine delle azioni nella consegna.';}else{if(m.type!=='build'){gr.program=m.required.slice();renderAll();}gr$('grSpeech').textContent='Ho messo una soluzione fantasma. Puoi cambiarla e provarla.';}gr$('grHintN').textContent=Math.min(3,gr.hintLevel+1);}
 
   function draw(){
-    const cv=gr$('grCanvas');if(!cv||!gr.sim)return;const box=cv.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,box.width),h=Math.max(1,box.height);if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+    const cv=gr$('grCanvas');if(!cv||!gr.sim)return;const box=cv.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1),w=Math.max(1,box.width),h=Math.max(1,box.height);if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
     const t=gr.sim.track,pad=22,sc=Math.min((w-pad*2)/t.width,(h-pad*2)/t.height),ox=(w-t.width*sc)/2,oy=(h-t.height*sc)/2;const X=v=>ox+v*sc,Y=v=>oy+v*sc;
     x.fillStyle='#8fd082';x.fillRect(0,0,w,h);x.fillStyle='#59656d';roundRect(x,X(0),Y(0),t.width*sc,t.height*sc,17);x.fill();x.strokeStyle='#f1f0cc';x.lineWidth=2;x.setLineDash([12,12]);x.beginPath();x.moveTo(X(8),Y(t.height/2));x.lineTo(X(t.width-8),Y(t.height/2));x.stroke();x.setLineDash([]);
     const g=t.goal;x.fillStyle='#67df84';x.globalAlpha=.85;x.fillRect(X(g.x),Y(g.y),g.w*sc,g.h*sc);x.globalAlpha=1;x.fillStyle='#114a2a';x.font=`bold ${Math.max(9,10*sc/1.5)}px Andika`;x.fillText(t.label,X(g.x),Y(g.y)-4);
@@ -240,7 +240,7 @@
   }
 
   function enter(){
-    gr.on=true;if(typeof root.paused!=='undefined')root.paused=true;grStopSpeak();['modeSel','menu','hud','joy'].forEach(id=>{const e=gr$(id);if(e)e.style.display='none';});gr$('grApp').style.display='block';if(!gr.sim)startMission(Math.min(gr.progress.unlockedMission,11));showMap();gr.last=0;if(!gr.raf)gr.raf=requestAnimationFrame(frame);
+    gr.on=true;if(typeof root.paused!=='undefined')root.paused=true;grStopSpeak();['modeSel','menu','hud','joy'].forEach(id=>{const e=gr$(id);if(e)e.style.display='none';});gr$('grApp').style.display='block';if(!gr.sim)startMission(Math.min(gr.progress.unlockedMission,11));showMap();gr.last=0;gr.frameAt=0;if(!gr.raf)gr.raf=requestAnimationFrame(frame);
   }
   function exit(){cancelAnimationFrame(gr.raf);gr.raf=0;gr.on=false;pause();grStopSpeak();['grApp','grMap','grIntro','grWin','grPrint'].forEach(id=>gr$(id).style.display='none');if(typeof root.showModeSel==='function')root.showModeSel();}
 

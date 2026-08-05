@@ -375,7 +375,7 @@ const OC_SANDBOX={ nx:12, ny:8, sun:1, comps:[], wires:[],
   pal:{wire:Infinity,batt:Infinity,lamp:Infinity,sw:Infinity,led:Infinity,res:Infinity,cap:Infinity,npn:Infinity,mot:Infinity,buz:Infinity,ldr:Infinity} };
 
 /* ---------- stato ---------- */
-const oc={ on:false, raf:0, lvl:0, sandbox:false, board:null, pal:{}, tool:'hand',
+const oc={ on:false, raf:0, frameAt:0, lvl:0, sandbox:false, board:null, pal:{}, tool:'hand',
   time:0, last:0, winT:0, mish:0, hint:0, hintT:0, freeBurnLeft:0,
   flow:{}, nets:null, smoke:[], flags:{}, dayT:0, nightT:0, sun:true,
   drag:null, wireGhost:null, preview:null, placing:false, won:false, cs:64, ox:0, oy:0, infoType:null };
@@ -1251,6 +1251,8 @@ $('ocMusicBtn').onclick=()=>{
 /* ---------- ciclo ---------- */
 function ocFrame(ts){
   if(!oc.on) return;
+  if(Number.isFinite(ts)&&oc.frameAt&&ts-oc.frameAt<1000/30-1){oc.raf=requestAnimationFrame(ocFrame);return;}
+  if(Number.isFinite(ts)) oc.frameAt=ts;
   const dt=Math.min(0.05, (ts-oc.last)/1000||0.016); oc.last=ts;
   ocStep(dt);
   ocDraw();
@@ -1266,7 +1268,7 @@ function ocEnter(){
   $('ocHintBtn').innerHTML='💡<span class="bl">'+(bi===0?'AIUTO':'HELP')+'</span>';
   $('ocResetBtn').innerHTML='🔄<span class="bl">'+(bi===0?'RIFAI':'RESET')+'</span>';
   $('ocPickBtn').innerHTML='📋<span class="bl">'+(bi===0?'LIVELLI':'LEVELS')+'</span>';
-  oc.on=true; oc.last=0;
+  oc.on=true; oc.last=0; oc.frameAt=0;
   ocGoto(Math.min(oc.prog.unl,OC_LEVELS.length-1));
   ocPickShow();
   $('ocIntro').style.display='none';

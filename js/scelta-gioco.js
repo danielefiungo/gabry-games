@@ -17,6 +17,7 @@ registerGame({
   enter(){ $('modeSel').style.display='none'; showMenu(); },
   exit(){
     paused=true; stopSpeak();
+    if(typeof stopMazeLoop==='function') stopMazeLoop();
     ['menu','question','win','boss','album'].forEach(id=>{ const e=$(id); if(e)e.style.display='none'; });
     $('hud').style.display='none'; $('joy').style.display='none'; $('startHint').style.display='none';
   }

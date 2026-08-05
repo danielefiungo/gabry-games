@@ -457,7 +457,10 @@ function makeSign(text,accent,rotY){
 /* ================= GRAFICA ================= */
 function initGL(){
   renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  /* 2x quadruplica quasi i pixel da disegnare e sui portatili fa partire le
+     ventole senza un vantaggio visibile nel gioco. 1.5x resta nitido anche
+     sui display Retina, ma alleggerisce sensibilmente la GPU. */
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
   renderer.setSize(innerWidth,innerHeight);
   $('game').appendChild(renderer.domElement);
   camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.1,300);
@@ -634,7 +637,21 @@ function buildSigns(path,used,t){
   });
 }
 
+function disposeLevelScene(){
+  if(!scene||!scene.traverse)return;
+  scene.traverse(o=>{
+    if(o.geometry&&o.geometry.dispose)o.geometry.dispose();
+    if(o.material)[].concat(o.material).forEach(m=>{
+      if(m.map&&m.map.dispose)m.map.dispose();
+      if(m.dispose)m.dispose();
+    });
+  });
+}
+
 function buildLevel(idx){
+  /* Ogni livello crea molte geometrie e texture. Senza questa pulizia Three.js
+     le conserva sulla GPU anche dopo il cambio di livello. */
+  disposeLevelScene();
   curLevel=idx; keysGot=0; doors=[]; decos=[]; bursts=[]; currentDoor=null;
   lives=MAXLIVES; tokens=0; starCooldown=false;
   powerups=[]; hunt=null; freeJolly=0; shieldOn=false;

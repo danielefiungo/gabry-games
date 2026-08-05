@@ -106,7 +106,7 @@ const VP_INCIDENTS=[
   q:'Perché una navicella si scalda quando entra nell’atmosfera?',ok:'Comprime e sfrega l’aria',no:['Si avvicina al Sole','Accende i motori']}
 ];
 
-let vp={on:false,d:null,sc:null,cam:null,ren:null,cv:null,clock:null,raf:0,
+let vp={on:false,d:null,sc:null,cam:null,ren:null,cv:null,clock:null,raf:0,frameAt:0,
  stage:'idle',t:0,tSim:0,paused:false,
  /* fisica salita */
  h:0,vx:0,vy:0,down:0,m:0,p1:0,p2:0,q:0,acc:0,maxQ:0,maxQdone:false,fairOut:false,
@@ -675,7 +675,7 @@ function vpStart(d){
  $('vp').style.display='block';$('vpGauge').style.display='none';$('vpChute').style.display='none';
  $('vpCtrl').style.display='grid';$('vpCtrl').children[1].classList.remove('fire','on');
  vp.cv=$('vpCv');
- if(!vp.ren){vp.ren=new THREE.WebGLRenderer({canvas:vp.cv,antialias:true});vp.ren.setPixelRatio(Math.min(devicePixelRatio||1,2))}
+ if(!vp.ren){vp.ren=new THREE.WebGLRenderer({canvas:vp.cv,antialias:true});vp.ren.setPixelRatio(Math.min(devicePixelRatio||1,1.5))}
  vpResize();
  $('vpTitle').textContent='DECOLLO';$('vpDist').textContent='TERRA';$('vpHull').textContent='🛡️ 100%';
  vpSay('Accensione! Nove motori, 7 600 kN di spinta.');
@@ -1007,6 +1007,9 @@ function vpReward(v){
 function vpFrame(){
  if(!vp.on){vp.raf=0;return}
  vp.raf=requestAnimationFrame(vpFrame);
+ const frameTs=arguments[0];
+ if(Number.isFinite(frameTs)&&vp.frameAt&&frameTs-vp.frameAt<1000/30-1)return;
+ if(Number.isFinite(frameTs))vp.frameAt=frameTs;
  const dt=Math.min(vp.clock.getDelta(),.05);
  if(!vp.paused){
   vp.t+=dt;
@@ -1030,7 +1033,7 @@ function vpDispose(w){
   if(o.material)[].concat(o.material).forEach(m=>{if(m.map&&m.map.dispose)m.map.dispose();if(m.dispose)m.dispose()})})
 }
 function vpExit(){
- vp.on=false;vp.stage='idle';
+ vp.on=false;vp.stage='idle';vp.frameAt=0;
  ['vp','vpPanel','vpPick'].forEach(id=>$(id).style.display='none');
  Object.values(vp.world||{}).forEach(vpDispose);
  vp.world={};vp.sc=null;

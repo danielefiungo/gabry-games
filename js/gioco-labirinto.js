@@ -666,6 +666,7 @@ function applyUI(){
 function showMenu(){
   if(window.GabriNavigation) window.GabriNavigation.visit({screen:'maze-menu',game:'maze'});
   paused=true;
+  stopMazeLoop();
   /* musica del menu (solo se l'audio è già stato sbloccato da un tocco) */
   if(MUSICON && actx && actx.state==='running') playMusic(TRK_MENU); else stopMusic();
   $('hud').style.display='none'; $('joy').style.display='none'; $('startHint').style.display='none';
@@ -687,6 +688,7 @@ function startLevel(i){
   $('startHint').style.display='block';
   setTimeout(()=>{ $('startHint').style.display='none'; },4000);
   paused=false;
+  startMazeLoop();
   playMusic(levelTrack(i));
 }
 function updateHUD(){
@@ -769,8 +771,26 @@ $('albumCloseBtn').onclick=()=>{ $('album').style.display='none'; };
 
 /* ================= LOOP ================= */
 const clock=new THREE.Clock();
-function animate(){
-  requestAnimationFrame(animate);
+const MAZE_FRAME_MS=1000/30;
+let mazeRaf=0,mazeFrameAt=0;
+function stopMazeLoop(){
+  if(mazeRaf) cancelAnimationFrame(mazeRaf);
+  mazeRaf=0;mazeFrameAt=0;
+}
+function startMazeLoop(){
+  if(mazeRaf||$('hud').style.display==='none') return;
+  clock.getDelta();mazeFrameAt=0;
+  mazeRaf=requestAnimationFrame(animate);
+}
+function animate(ts){
+  mazeRaf=0;
+  /* Il canvas del labirinto sta dietro a tutti gli altri giochi: prima veniva
+     comunque renderizzato a 60 fps. Se l'HUD non è visibile il livello non è
+     attivo e il ciclo deve restare completamente spento. */
+  if($('hud').style.display==='none'||document.hidden) return;
+  mazeRaf=requestAnimationFrame(animate);
+  if(Number.isFinite(ts)&&mazeFrameAt&&ts-mazeFrameAt<MAZE_FRAME_MS-1) return;
+  if(Number.isFinite(ts)) mazeFrameAt=ts;
   const dt=Math.min(clock.getDelta(),0.05);
   const et=clock.elapsedTime;
   if(!scene){ return; }
@@ -878,6 +898,9 @@ function animate(){
   if(MAPON && (++mapTick%4===0)) drawMiniMap();
   renderer.render(scene,camera);
 }
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&$('hud').style.display!=='none') startMazeLoop();
+});
 
 /* ================= AVVIO ================= */
 initGL();
@@ -898,4 +921,4 @@ function confirmName(){
 }
 $('nameGo').onclick=confirmName;
 $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') confirmName(); });
-animate();
+/* Il ciclo parte soltanto entrando davvero in un livello. */

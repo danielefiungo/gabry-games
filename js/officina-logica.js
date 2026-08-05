@@ -237,11 +237,12 @@ function olPicker(){
 function olEnter(){
  paused=true;stopSpeak();['modeSel','menu','oc'].forEach(id=>{const e=$(id);if(e)e.style.display='none';});$('hud').style.display='none';$('joy').style.display='none';$('ol').style.display='block';ol.on=true;
  const i=LI();$('olHome').querySelector('span').textContent=OL_TEXT.home[i];$('olBench').querySelector('span').textContent=OL_TEXT.back[i];$('olPick').querySelector('span').textContent=OL_TEXT.levels[i];$('olReset').querySelector('span').textContent=OL_TEXT.reset[i];olGoto(Math.min(ol.prog.unl,OL_LEVELS.length-1),true);olPicker();
+ olLast=0;if(!olRaf)olRaf=requestAnimationFrame(olFrame);
 }
-function olExit(toBench){ol.on=false;$('ol').style.display='none';stopSpeak();if(toBench&&window.__OC){window.__OC.enter();}else showModeSel();}
+function olExit(toBench){ol.on=false;if(olRaf)cancelAnimationFrame(olRaf);olRaf=0;$('ol').style.display='none';stopSpeak();if(toBench&&window.__OC){window.__OC.enter();}else showModeSel();}
 $('olIntroGo').onclick=()=>{$('olIntro').style.display='none';};$('olSpeak').onclick=()=>speak(ol.L.goal[LI()]);$('olReset').onclick=()=>olGoto(ol.lvl,true);$('olPick').onclick=olPicker;$('olPickClose').onclick=()=>{$('olPicker').style.display='none';};$('olHome').onclick=()=>olExit(false);$('olBench').onclick=()=>olExit(true);
 $('olWinGo').onclick=()=>{$('olWinBar').style.display='none';$('olWonTitle').textContent=OL_TEXT.done[LI()];$('olWonStars').textContent='⭐'.repeat(ol.wonStars);$('olFact').textContent=ol.L.fact[LI()];$('olNext').textContent=OL_TEXT.next[LI()];$('olWon').style.display='flex';};
 $('olNext').onclick=()=>{if(ol.lvl+1<OL_LEVELS.length)olGoto(ol.lvl+1);else olPicker();};
-let olLast=0;function olFrame(t){if(ol.on){olStep(Math.min(.05,(t-olLast)/1000||.016));olLast=t;}requestAnimationFrame(olFrame);}requestAnimationFrame(olFrame);
+let olLast=0,olRaf=0;function olFrame(t){if(!ol.on){olRaf=0;return;}olStep(Math.min(.05,(t-olLast)/1000||.016));olLast=t;olRaf=requestAnimationFrame(olFrame);}
 
 window.__OL={ol,levels:OL_LEVELS,gate:olGate,outputs:olOutputs,circuitValues:olCircuitValues,goto:olGoto,step:olStep,draw:olDraw,enter:olEnter,exit:olExit};
