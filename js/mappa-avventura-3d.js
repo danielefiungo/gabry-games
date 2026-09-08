@@ -19,8 +19,12 @@ function avTextSprite(txt,bg){
 }
 function avRoad(a,b){
   const A=AV_POS[a],B=AV_POS[b],dx=B[0]-A[0],dz=B[1]-A[1],len=Math.hypot(dx,dz);
-  const r=avBox(5.4,.07,len,0x65707d,(A[0]+B[0])/2,.04,(A[1]+B[1])/2);r.rotation.y=Math.atan2(dx,dz);
-  const line=avBox(.14,.03,len-.8,0xffed75,r.position.x,.09,r.position.z);line.rotation.y=r.rotation.y;
+  const r=avBox(5.4,.07,len,0xc7b58b,(A[0]+B[0])/2,.04,(A[1]+B[1])/2);r.rotation.y=Math.atan2(dx,dz);
+  /* Bordi chiari: il percorso si distingue dall'erba anche in lontananza. */
+  [-1,1].forEach(s=>{
+    const edge=avBox(.18,.12,len,0xf2deaf,r.position.x+s*dz/len*2.65,.1,r.position.z-s*dx/len*2.65);
+    edge.rotation.y=r.rotation.y;
+  });
 }
 function avSound(kind){
   if(!MUSICON)return;
@@ -28,7 +32,8 @@ function avSound(kind){
 }
 function avTree(x,z,s){
   avBox(.34*s,2.4*s,.34*s,0x80542f,x,1.2*s,z);
-  const c=new THREE.Mesh(new THREE.ConeGeometry(1.35*s,3.8*s,7),avMat(0x26743d));c.position.set(x,3.2*s,z);avScene.add(c);
+  const c=new THREE.Mesh(new THREE.ConeGeometry(1.5*s,3.1*s,8),avMat(0x397b64));c.position.set(x,2.7*s,z);avScene.add(c);
+  const crown=new THREE.Mesh(new THREE.ConeGeometry(1.12*s,2.8*s,8),avMat(0x58977a));crown.position.set(x,4*s,z);avScene.add(crown);
 }
 function avHouse(x,z,col){
   avBox(4,2.5,3.5,col,x,1.25,z);const roof=new THREE.Mesh(new THREE.ConeGeometry(3.05,1.8,4),avMat(0x9b3f32));roof.position.set(x,3.35,z);roof.rotation.y=Math.PI/4;avScene.add(roof);
@@ -36,13 +41,36 @@ function avHouse(x,z,col){
 }
 function avLamp(x,z){
   avBox(.12,2.7,.12,0x343b45,x,1.35,z);const l=new THREE.Mesh(new THREE.SphereGeometry(.28,8,6),new THREE.MeshBasicMaterial({color:0xffe88a}));l.position.set(x,2.82,z);avScene.add(l);
-  const p=new THREE.PointLight(0xffd86a,.55,8);p.position.copy(l.position);avScene.add(p);
+  const p=new THREE.PointLight(0xffd86a,.18,5);p.position.copy(l.position);avScene.add(p);
+}
+/* Il bagliore è una sola texture, senza luci aggiuntive o postproduzione. */
+function avPortalTexture(unlocked){
+  const cv=document.createElement('canvas');cv.width=cv.height=256;
+  const c=cv.getContext('2d'),g=c.createRadialGradient(128,128,10,128,128,128);
+  g.addColorStop(0,unlocked?'#f4fff4':'#65707b');
+  g.addColorStop(.48,unlocked?'#9de5d6':'#4d5a68');
+  g.addColorStop(.84,unlocked?'#4e9ca6':'#394654');
+  g.addColorStop(1,unlocked?'#305d89':'#2a3445');
+  c.fillStyle=g;c.fillRect(0,0,256,256);
+  c.strokeStyle=unlocked?'rgba(239,255,231,.55)':'rgba(200,213,225,.2)';c.lineWidth=2;
+  [72,97,118].forEach(r=>{c.beginPath();c.arc(128,128,r,0,Math.PI*2);c.stroke();});
+  if(unlocked){
+    c.fillStyle='#fffde0';
+    for(let i=0;i<18;i++){
+      const a=i*2.4,r=35+(i%5)*16,x=128+Math.cos(a)*r,y=128+Math.sin(a)*r;
+      c.fillRect(x-1,y-3,2,6);c.fillRect(x-3,y-1,6,2);
+    }
+  }
+  return new THREE.CanvasTexture(cv);
 }
 function avMakeWorld(){
-  avScene=new THREE.Scene();avScene.background=new THREE.Color(0x88c9ff);avScene.fog=new THREE.Fog(0x88c9ff,28,115);
-  avScene.add(new THREE.HemisphereLight(0xe8f6ff,0x52753b,1.15));
-  const sun=new THREE.DirectionalLight(0xfff2cf,.8);sun.position.set(-20,35,15);avScene.add(sun);
-  avBox(150,.3,135,0x65a84f,0,-.22,-44);
+  avScene=new THREE.Scene();avScene.background=new THREE.Color(0xb9e2ed);avScene.fog=new THREE.Fog(0xb9e2ed,28,115);
+  avScene.add(new THREE.HemisphereLight(0xe8f6ff,0x52753b,.78));
+  const sun=new THREE.DirectionalLight(0xfff2cf,.65);sun.position.set(-20,35,15);avScene.add(sun);
+  avBox(150,.3,135,0x80ab78,0,-.22,-44);
+  /* L'accesso al primo portale prosegue il sentiero fino alla partenza. */
+  avBox(5.4,.07,14,0xc7b58b,0,.04,7);
+  [-1,1].forEach(s=>avBox(.18,.12,14,0xf2deaf,s*2.65,.1,7));
   /* rilievi e punti di riferimento: il mondo deve essere leggibile anche da lontano */
   [[-55,-45,13],[55,-55,17],[-48,-98,11],[48,-100,14]].forEach(h=>{const m=new THREE.Mesh(new THREE.ConeGeometry(h[2],12,9),avMat(0x4f8b48));m.position.set(h[0],5.7,h[1]);avScene.add(m);});
   AV_ROADS.forEach(e=>avRoad(e[0],e[1]));
@@ -59,8 +87,10 @@ function avMakeWorld(){
   avPortals=[];
   AV_POS.forEach((p,k)=>{
     const un=unlockedSet.has(k),col=un?0x7653e8:0x59606c;
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(2.05,.3,10,28),avMat(col));ring.position.set(p[0],2.25,p[1]);avScene.add(ring);
-    const glow=new THREE.Mesh(new THREE.CircleGeometry(1.72,24),new THREE.MeshBasicMaterial({color:un?0x9d84ff:0x333945,transparent:true,opacity:.7,side:THREE.DoubleSide}));glow.position.copy(ring.position);glow.position.z+=.05;avScene.add(glow);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(2.7,2.9,.22,32),avMat(0xe0d4b7));base.position.set(p[0],.12,p[1]);avScene.add(base);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(2.05,.24,12,40),new THREE.MeshPhongMaterial({color:un?0xe9cc88:col,shininess:65}));ring.position.set(p[0],2.25,p[1]);avScene.add(ring);
+    const inner=new THREE.Mesh(new THREE.TorusGeometry(1.8,.055,8,40),new THREE.MeshBasicMaterial({color:un?0xd6fff3:0x818c98}));inner.position.copy(ring.position);avScene.add(inner);
+    const glow=new THREE.Mesh(new THREE.CircleGeometry(1.72,32),new THREE.MeshBasicMaterial({map:avPortalTexture(un),transparent:true,side:THREE.DoubleSide,depthWrite:false}));glow.position.copy(ring.position);glow.position.z+=.05;avScene.add(glow);
     const sign=avTextSprite((k+1)+' · '+THEMES[k].emoji+' '+THEMES[k].name[LI()],un?'#284a88':'#4d535d');sign.position.set(p[0],5.7,p[1]);avScene.add(sign);
     avPortals.push({k,x:p[0],z:p[1],ring,un});
   });
@@ -88,6 +118,9 @@ function avDisposeWorld(){
 }
 function avBuildDom(){
   const w=$('mapWrap');$('menu').classList.add('avMode');w.innerHTML='<canvas id="mapCanvas"></canvas><div id="avHud"><div class="avHudInfo"><b>🧭 MAPPA DEI LIVELLI</b><span id="avNear">Segui i cartelli e raggiungi un portale</span></div><div id="avPad"><button data-a="l" aria-label="Gira a sinistra">↶</button><button data-a="b" aria-label="Indietro">▼</button><button data-a="f" aria-label="Avanti">▲</button><button data-a="r" aria-label="Gira a destra">↷</button></div><div class="avHudActions"><button id="avMusic" aria-label="Musica">'+(MUSICON?'🎵':'🔇')+'</button><button id="avExit" aria-label="Altri giochi">🎮</button></div></div><div class="overlay" id="avConfirm"><div class="avConfirmCard"><div id="avConfirmEm"></div><h2 id="avConfirmTitle"></h2><p id="avConfirmText"></p><div><button id="avConfirmYes">ENTRA 🚪</button><button id="avConfirmNo">CONTINUA A ESPLORARE</button></div></div></div>';
+  const heading=document.createElement('header');heading.id='avHeading';
+  heading.innerHTML=LI()===0?'<span>IL LABIRINTO DELLE PAROLE</span><h1>Una porta, una scoperta.</h1><p>Segui il sentiero. Leggi i cartelli.<br>La tua avventura comincia qui.</p>':'<span>THE WORD MAZE</span><h1>A door to discovery.</h1><p>Follow the path. Read the signs.<br>Your adventure starts here.</p>';
+  w.appendChild(heading);
   avCv=$('mapCanvas');avRen=new THREE.WebGLRenderer({canvas:avCv,antialias:true});avRen.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
   avResize=()=>{
     if(!avCv||!avCv.isConnected||!avRen||!avCam)return;

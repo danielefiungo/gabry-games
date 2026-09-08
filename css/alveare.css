@@ -1,0 +1,92 @@
+/* L'Alveare: carta chiara, miele e verde salvia. */
+#paIntro.overlay, #paQ.overlay, #paPause.overlay, #paEnd.overlay {
+  background:#203c35a8; backdrop-filter:blur(9px); touch-action:pan-y;
+}
+#paIntro.overlay > .card, #paQ.overlay > .card, #paPause.overlay > .card, #paEnd.overlay > .card {
+  background:linear-gradient(140deg,#fffdf5,#faf3df); color:#423a27;
+  border:1px solid #fffdf3; border-radius:30px;
+  box-shadow:0 25px 80px #162d3560,inset 0 0 0 7px #eee5c9;
+  padding:28px; scrollbar-width:thin; scrollbar-color:#d0bf8b transparent;
+}
+#paIntro.overlay > .card { max-width:760px; }
+#paIntro .paIntroArt { height:110px; background:url('../assets/ui/alveare.svg') center/contain no-repeat; margin:0 auto 8px; }
+#paIntro .paIntroEyebrow { color:#697659; font-size:11px; font-weight:700; letter-spacing:.2em; margin-bottom:5px; }
+#paIntro h2 { color:#4c4a2d; letter-spacing:-.04em; font-size:clamp(28px,4vw,38px); line-height:1.2; }
+#paIntro p { max-width:620px; margin:14px auto; color:#6c654b; font-size:16px; text-align:center; }
+#paIntro .paLegend { gap:10px; margin:18px 0 22px; font-size:14px; line-height:1.55; }
+#paIntro .paLegend span { border:1px solid #dedec5; background:#fffdf8; padding:12px 14px; border-radius:16px; }
+#paIntro .paLegend b { color:#3a6856; }
+#paIntro .bigBtn, #paPause .bigBtn, #paEnd .bigBtn {
+  background:#376f57; box-shadow:0 5px 0 #254d3f; border:1px solid #609579;
+  padding:14px 28px; border-radius:18px; font-size:21px;
+}
+#pa #paHud { inset:14px 18px auto; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)) auto; gap:8px; align-items:stretch; }
+#pa #paHud .paMeter { border:1px solid #fffdf1; border-radius:17px; background:#fffdf2f2; padding:8px 12px; box-shadow:0 4px 16px #345d3520; white-space:normal; min-width:0; font-size:13px; line-height:1.35; color:#554727; }
+#pa #paHud .paMeter strong { font-size:19px; color:#42371f; }
+#pa #paHud .paResourceName { display:block; font-size:11px; color:#677259; margin-top:2px; }
+#pa #paHiveHealth { grid-column:1/3; grid-row:2; width:100%; max-width:340px; }
+#pa #paHud #paHiveHealth .paHealthTop strong { font-size:13px; }
+#pa #paHud #paHiveHealth .paHealthTop span { font-size:12px; white-space:nowrap; }
+#pa #paWave { grid-column:3; grid-row:2; align-self:start; background:#365a49; color:#fff3cb; border-color:#567961; }
+#pa #paHudBtns { grid-column:6; grid-row:1; align-items:center; margin:0; }
+#pa #paHudBtns .hudBtn { background:#fffdf3; border:1px solid #e1d8b8; border-radius:14px; min-width:44px; min-height:44px; padding:6px 10px; box-shadow:0 3px 0 #b4bd9b; font-size:22px; }
+#pa #paTask { top:154px; left:18px; max-width:285px; background:#fcf9e9e6; border:1px solid #e4d8ad; border-left:4px solid #bd9946; border-radius:0 16px 16px 0; padding:10px 14px; font-size:13px; font-weight:400; box-shadow:0 6px 20px #36573210; }
+#pa #paTask b { color:#4e6850; letter-spacing:.1em; font-size:11px; display:block; margin-bottom:5px; }
+#pa #paAsk { background:linear-gradient(145deg,#ffe9a2,#edbb50); border:2px solid #fff0bc; color:#4c3b1c; box-shadow:0 5px 0 #98732f,0 10px 24px #38533130; border-radius:20px; animation:none; transform:none; }
+#pa #paAsk .paAskIcon { border:1px solid #d4b261; background:#fff8da; }
+#pa #paAsk:active { transform:translateY(3px); box-shadow:0 2px 0 #98732f; }
+#pa #paMsg { bottom:20px; left:auto; right:145px; transform:none; max-width:min(570px,calc(100% - 355px)); background:#244c3eea; border:1px solid #ffffff50; border-radius:16px; font-size:15px; line-height:1.4; padding:12px 18px; }
+#pa #paMsg:empty { display:none; }
+#paQ #paQTitle { color:#655020; font-size:clamp(19px,3vw,25px); line-height:1.4; }
+#paQ #paQText { color:#3c432f; }
+#paQ #paQSpeak { color:#655020; background:#f8edc8; border:1px solid #d8c286; box-shadow:0 3px 0 #d8c286; margin:0 0 18px; min-height:44px; }
+#paQ .paBirthRole { border-width:1px; border-radius:20px; padding:15px; background:#fffdf8; box-shadow:0 4px 0 #ded6b933; }
+#paQ .paBirthRole.worker { background:#eef5e9; border-color:#afc8a4; }
+#paQ .paBirthRole.builder { background:#fff1d9; border-color:#dfc392; }
+#paQ .paBirthRole.warrior { background:#fbede6; border-color:#d8b6a8; }
+#paQ .paBirthHead { column-gap:10px; }
+#paQ .paBirthHead strong { font-size:15px; }
+#paQ .paLevelBtn { min-height:52px; border:1px solid #ffffff70; border-radius:13px; transition:transform .15s; }
+#paQ .worker .paLevelBtn { background:#39765f; }
+#paQ .builder .paLevelBtn { background:#95621c; }
+#paQ .warrior .paLevelBtn { background:#a34f3c; }
+#paQ .paLevelBtn:disabled { cursor:not-allowed; box-shadow:none; }
+#paQ #paQAnswers .ansBtn { background:#fffdf7; color:#4b4c32; border:2px solid #d6ccb0; box-shadow:0 5px 0 #d6ccb0; border-radius:18px; line-height:1.35; }
+#paQ #paQAnswers .ansBtn.right { background:#e1f0d7; color:#255e37; border-color:#74a267; box-shadow:0 5px 0 #74a267; }
+#paQ #paQAnswers .ansBtn.wrong { background:#fbe5dd; color:#8f392d; border-color:#c68472; box-shadow:0 5px 0 #c68472; opacity:.8; }
+#paQ #paQBack, #paEnd #paEndHome { color:#655f48!important; font:15px Andika,sans-serif; padding:12px; min-height:44px; cursor:pointer; }
+#paQ #paQMsg { color:#65724e; font-size:17px; }
+#pa button:focus-visible, #paIntro button:focus-visible, #paQ button:focus-visible, #paPause button:focus-visible, #paEnd button:focus-visible { outline:4px solid #417461; outline-offset:4px; }
+@media(hover:hover) {
+  #paQ #paQAnswers .ansBtn:not(:disabled):hover { background:#f3eddb; transform:translateY(-2px); }
+  #paQ .paLevelBtn:not(:disabled):hover { filter:brightness(1.12); transform:translateY(-2px); }
+}
+@media(max-width:820px) {
+  #pa #paHud { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; inset:8px 10px auto; }
+  #pa #paHud .paMeter { padding:6px 8px; border-radius:13px; font-size:11px; }
+  #pa #paHud .paMeter strong { font-size:17px; }
+  #pa #paHiveHealth { grid-column:1/3; grid-row:3; max-width:none; }
+  #pa #paWave { grid-column:3; grid-row:2; align-self:stretch; display:grid; align-items:center; }
+  #pa #paHudBtns { grid-column:3; grid-row:3; flex-wrap:wrap; justify-content:center; gap:4px; }
+  #pa #paHudBtns .hudBtn { min-width:30px; min-height:44px; padding:3px 5px; font-size:18px; }
+  #pa #paTask { top:205px; left:10px; font-size:12px; max-width:255px; padding:8px 12px; }
+  #pa #paMsg { bottom:88px; right:10px; max-width:calc(100% - 20px); padding:9px 12px; font-size:13px; }
+  #paQ .paBirthRole { padding:10px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; }
+  #paQ .paBirthHead { grid-template-columns:1fr; }
+  #paQ .paBirthHead > span { display:none; }
+  #paQ .paBirthHead strong { font-size:12px; }
+  #paQ .paBirthHead small { font-size:11px; }
+  #paQ .paLevelBtn { font-size:17px; }
+  #paQ .paCountChoices { gap:5px; }
+  #paIntro.overlay > .card, #paQ.overlay > .card { padding:22px 16px; border-radius:24px; }
+  #paIntro .paIntroArt { height:85px; }
+  #paIntro .paLegend { gap:7px; font-size:13px; margin:14px 0 18px; }
+  #paIntro .paLegend span { padding:8px 11px; }
+  #paIntro p { font-size:15px; }
+}
+@media(max-width:380px) { #pa #paTask { display:none; } }
+@media(max-height:600px) {
+  #pa #paTask { display:none; }
+  #paIntro .paIntroArt { height:65px; }
+}
+@media(prefers-reduced-motion:reduce) { #paQ button { animation:none; transition:none; } }

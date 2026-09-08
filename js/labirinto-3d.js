@@ -166,7 +166,7 @@ function showComboBig(mult){
 function g2w(gx,gz){ return new THREE.Vector3((gx-(W-1)/2)*CELL, 0, (gz-(H-1)/2)*CELL); }
 
 /* ================= TEXTURE ================= */
-/* Pavimento a piastrelle consumate: fughe scure, macchie, qualche crepa. */
+/* Piastrelle satinate: giunti sottili e riflessi dipinti, leggibili dall'alto. */
 function groundTexture(t){
   const cv=document.createElement('canvas'); cv.width=cv.height=256;
   const c=cv.getContext('2d');
@@ -177,21 +177,16 @@ function groundTexture(t){
   /* quattro piastrelle con la fuga in mezzo */
   c.fillStyle='#'+lite.getHexString();
   [[0,0],[128,128]].forEach(p=>c.fillRect(p[0],p[1],128,128));
-  c.strokeStyle='#'+dark.getHexString(); c.lineWidth=6;
+  c.strokeStyle='#'+dark.getHexString(); c.lineWidth=2;
   c.beginPath(); c.moveTo(128,0); c.lineTo(128,256); c.moveTo(0,128); c.lineTo(256,128); c.stroke();
   c.strokeRect(3,3,250,250);
-  /* usura: chiazze chiare e scure */
-  for(let i=0;i<160;i++){
-    c.fillStyle='rgba('+(Math.random()>.5?'255,255,255':'0,0,0')+','+(0.02+Math.random()*0.06).toFixed(3)+')';
-    c.beginPath(); c.arc(Math.random()*256,Math.random()*256,3+Math.random()*16,0,7); c.fill();
+  /* Una superficie discreta lascia risaltare porte e oggetti. */
+  for(let i=0;i<180;i++){
+    c.fillStyle='rgba('+(Math.random()>.5?'255,255,255':'0,0,0')+','+(0.008+Math.random()*0.015).toFixed(3)+')';
+    c.beginPath(); c.arc(Math.random()*256,Math.random()*256,.4+Math.random()*.8,0,7); c.fill();
   }
-  /* crepe */
-  c.strokeStyle='rgba(0,0,0,.22)'; c.lineWidth=2;
-  for(let i=0;i<6;i++){
-    let x=Math.random()*256,y=Math.random()*256; c.beginPath(); c.moveTo(x,y);
-    for(let k=0;k<5;k++){ x+=(Math.random()-.5)*46; y+=(Math.random()-.5)*46; c.lineTo(x,y); }
-    c.stroke();
-  }
+  c.strokeStyle='rgba(255,255,255,.12)';c.lineWidth=2;
+  [[7,7],[135,7],[7,135],[135,135]].forEach(p=>c.strokeRect(p[0],p[1],114,114));
   const tex=new THREE.CanvasTexture(cv);
   tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
   return tex;
@@ -203,7 +198,7 @@ function wallTexture(t){
   const base=new THREE.Color(t.wall);
   const mortar=base.clone().lerp(new THREE.Color(0x000000),0.42);
   c.fillStyle='#'+mortar.getHexString(); c.fillRect(0,0,256,256);
-  const rows=5, bh=256/rows;
+  const rows=4, bh=256/rows;
   for(let r=0;r<rows;r++){
     const off=(r%2)?-64:0, bw=128;
     for(let x=off;x<256;x+=bw){
@@ -217,7 +212,7 @@ function wallTexture(t){
     }
   }
   /* granulosità della pietra */
-  for(let i=0;i<300;i++){
+  for(let i=0;i<90;i++){
     c.fillStyle='rgba('+(Math.random()>.5?'255,255,255':'0,0,0')+','+(0.02+Math.random()*0.05).toFixed(3)+')';
     c.beginPath(); c.arc(Math.random()*256,Math.random()*256,1+Math.random()*5,0,7); c.fill();
   }
@@ -522,17 +517,20 @@ function makePlayer(){
 }
 
 function makeDoor(gx,gz,q,theme,rotationY){
-  const cv=document.createElement('canvas'); cv.width=cv.height=128;
+  const cv=document.createElement('canvas'); cv.width=cv.height=256;
   const c=cv.getContext('2d');
-  const grad=c.createLinearGradient(0,0,128,128); grad.addColorStop(0,theme.accent); grad.addColorStop(1,'#27375f');
-  c.fillStyle=grad; c.fillRect(0,0,128,128);
-  c.strokeStyle='rgba(255,255,255,.38)'; c.lineWidth=5; c.strokeRect(8,8,112,112);
+  const grad=c.createLinearGradient(0,0,256,256); grad.addColorStop(0,'#264b62'); grad.addColorStop(1,'#102838');
+  c.fillStyle=grad; c.fillRect(0,0,256,256);
+  c.strokeStyle=theme.accent;c.lineWidth=5;c.strokeRect(10,10,236,236);
+  c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=2;c.strokeRect(20,20,216,216);
+  c.fillStyle='#fff2d0';c.beginPath();c.arc(128,93,52,0,Math.PI*2);c.fill();
+  c.fillStyle='#294554';c.textAlign='center';c.textBaseline='middle';
+  c.font='bold 80px sans-serif';c.fillText('?',128,96);
   c.fillStyle='#fff'; c.textAlign='center'; c.textBaseline='middle';
-  c.font='bold 64px sans-serif'; c.fillText('?',64,44);
-  c.font='44px sans-serif'; c.fillText(theme.emoji,64,98);
+  c.font='56px sans-serif'; c.fillText(theme.emoji,128,192);
   const tex=new THREE.CanvasTexture(cv);
   const mesh=new THREE.Group();
-  const metal=new THREE.MeshPhongMaterial({color:0x384761,shininess:75});
+  const metal=new THREE.MeshPhongMaterial({color:0xd5c9a2,shininess:75});
   /* Il corridoio occupa una cella libera fra due celle-muro: la porta deve
      quindi coprire quasi due CELL, fino al bordo interno delle pareti. */
   const doorWidth=2*CELL-CELL*.28+.08;
@@ -671,7 +669,7 @@ function buildLevel(idx){
   seenCells=Array.from({length:H},()=>new Uint8Array(W));
 
   const planeSize=Math.max(W,H)*CELL+50;
-  const gtex=groundTexture(t); gtex.repeat.set(planeSize/CELL,planeSize/CELL);
+  const gtex=groundTexture(t); gtex.repeat.set(planeSize/(CELL*2),planeSize/(CELL*2));
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(planeSize,planeSize), new THREE.MeshLambertMaterial({map:gtex}));
   floor.rotation.x=-Math.PI/2; scene.add(floor);
 

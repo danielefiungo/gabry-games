@@ -1,0 +1,107 @@
+/* Il Labirinto: pannelli da esploratore. Selettori locali a questa modalità. */
+#menu #avHud, #hud .hudBox, #startHint {
+  background:linear-gradient(145deg,rgba(19,43,56,.95),rgba(12,29,43,.92));
+  border:1px solid #ffffff40;
+  box-shadow:0 8px 24px #061c3030,inset 0 1px #ffffff18;
+  backdrop-filter:blur(12px);
+}
+#menu #avHud { width:min(940px,calc(100% - 32px)); padding:14px 18px; border-radius:24px; gap:20px; bottom:20px; }
+#menu .avHudInfo { gap:4px; white-space:normal; }
+#menu .avHudInfo b { letter-spacing:.1em; font-size:12px; color:#b9e8db; }
+#menu #avNear { font-size:15px; color:#fff3d0; }
+#menu #avPad button, #menu .avHudActions button {
+  border:1px solid #ffffff45; border-radius:15px; background:#ffffff12;
+  box-shadow:0 4px 0 #071622; min-height:48px; cursor:pointer;
+  transition:background .15s,transform .15s;
+}
+#menu #avPad button[data-a="f"] { background:#f6ce78; color:#273d45; border-color:#ffe6ab; }
+#menu #avPad button:active, #menu .avHudActions button:active { transform:translateY(3px); box-shadow:none; }
+#avHeading { position:absolute; top:max(24px,env(safe-area-inset-top)); left:28px; z-index:3; pointer-events:none; text-align:left; color:#163f40; }
+#avHeading span { font-size:12px; font-weight:bold; letter-spacing:.18em; }
+#avHeading h1 { font-size:clamp(26px,4vw,42px); line-height:1.2; letter-spacing:-.035em; margin:5px 0; text-shadow:0 2px 12px #ffffff90; }
+#avHeading p { font-size:15px; max-width:320px; line-height:1.5; }
+#menu #avConfirm, #question, #win { background:rgba(8,25,38,.65); backdrop-filter:blur(9px); }
+#menu .avConfirmCard, #question > .card, #win > .card {
+  border:1px solid #fff; border-radius:32px; background:linear-gradient(155deg,#fffdf5,#f5f8f3);
+  box-shadow:0 24px 90px #061c3060,inset 0 0 0 7px #e7eddf;
+  padding:32px; color:#203f43;
+}
+#menu .avConfirmCard h2 { color:#244e4c; }
+#menu .avConfirmCard p { color:#516662; margin:10px 0 20px; line-height:1.5; }
+#menu .avConfirmCard button { font-family:inherit; cursor:pointer; }
+#menu #avConfirmYes, #win .bigBtn { background:#24756a; box-shadow:0 5px 0 #164b46; }
+#menu #avConfirmNo { background:#e6ede4; color:#344f4d; box-shadow:0 4px 0 #c4d2c9; }
+#question > .card { max-width:1000px; }
+#question #qEmoji { display:inline-grid; place-items:center; width:78px; height:78px; border-radius:24px; background:#e8efe3; border:1px solid #d3dfd0; font-size:44px; margin-bottom:12px; }
+#question #qTheme { color:#55726a; font-size:13px; font-weight:bold; letter-spacing:.14em; }
+#question #qLives { margin:8px 0; }
+#question #qText { color:#213e43; margin:16px auto 22px; max-width:850px; font-size:clamp(28px,4vw,38px); }
+#question #jollyBar { margin-bottom:22px; }
+#question #qSpeak { background:#e6efe9; color:#245e54; border-color:#bbd2c5; margin-bottom:0; }
+#question #answers { gap:16px; }
+#question #answers .ansBtn {
+  background:#fff; color:#284e50; border:2px solid #c7d7ce; border-radius:20px;
+  box-shadow:0 5px 0 #c7d7ce; padding:22px 16px; font-size:clamp(28px,4vw,36px);
+  transition:transform .15s,background .15s,border-color .15s;
+}
+#question #answers .ansBtn.right { background:#d8f3d9; border-color:#358150; color:#1c5a31; box-shadow:0 5px 0 #358150; }
+#question #answers .ansBtn.wrong { background:#fff0e9; border-color:#c16a4c; color:#8c3f2d; box-shadow:0 5px 0 #c16a4c; opacity:.8; }
+#question #qBack { color:#526d67; padding:12px; min-height:44px; }
+#question #readAloneHint { color:#806020; }
+#question #readAloneHint:empty { display:none; }
+#question #qMsg:empty { min-height:12px; }
+#question #qExplain { background:#eef5e6; border-color:#c4d8b8; border-radius:20px; }
+#win #winTitle { color:#886016; }
+#win #winText { color:#526762; }
+#hud { gap:8px; padding:14px 18px; justify-content:flex-start; flex-wrap:wrap; }
+#hud .hudBox { border-radius:15px; padding:9px 13px; font-size:17px; }
+#hud #hudLevel { color:#ffe2a5; }
+#hud #hudBtns { margin-left:auto; }
+#hud .hudBtn { min-width:44px; min-height:44px; padding:6px 10px; border:1px solid #ffffff85; background:#f6faf0; border-radius:14px; }
+#miniMap { border:3px solid #e8e7c7; box-shadow:0 8px 30px #071b3a60; border-radius:22px; }
+#signBanner { background:linear-gradient(135deg,#fff5d8,#f7e3ae); border:2px solid #d6b165; color:#4b422b; }
+#signText { text-shadow:none; line-height:1.4; }
+#signSpeak { background:#6a5733; border-color:#e5ca90; min-height:44px; }
+#joy { border-color:#fff8; background:radial-gradient(circle,#ffffff08 42%,#ffffff20 43%,#15384650 70%); box-shadow:inset 0 0 0 8px #ffffff0a; }
+#joyKnob { background:radial-gradient(circle at 35% 25%,#fffdf2,#b6d3c7); border:2px solid #fff9; }
+#menu button:focus-visible, #question button:focus-visible, #win button:focus-visible, #hud button:focus-visible, #signSpeak:focus-visible { outline:4px solid #e5a82f; outline-offset:4px; }
+@media(hover:hover) {
+  #menu #avPad button:hover, #menu .avHudActions button:hover { background:#ffffff30; }
+  #question #answers .ansBtn:not(:disabled):not(.right):not(.wrong):hover { background:#edf5ec; border-color:#699988; transform:translateY(-3px); }
+}
+@media(max-width:700px) {
+  #avHeading { top:18px; left:18px; }
+  #avHeading p { font-size:13px; max-width:240px; }
+  #menu #avHud { bottom:12px; padding:12px; gap:12px; width:calc(100% - 24px); grid-template-columns:1fr auto; }
+  #menu .avHudInfo { grid-column:1/-1; }
+  #menu .avHudActions { position:static; }
+  #menu #avPad { gap:6px; }
+  #menu #avPad button { width:46px; }
+  #menu .avHudActions button { width:42px; }
+  #question > .card, #win > .card, #menu .avConfirmCard { padding:24px 18px; border-radius:25px; }
+  #question #qEmoji { width:60px; height:60px; font-size:36px; margin-bottom:8px; }
+  #question #qText { margin:12px auto 18px; }
+  #question #answers { gap:12px; }
+  #question #answers .ansBtn { padding:16px 12px; }
+  #hud { gap:5px; padding:8px; }
+  #hud .hudBox { font-size:13px; padding:7px 9px; }
+  #hud #hudBtns { gap:5px; }
+  #hud .hudBtn { font-size:20px; }
+  #signBanner { top:112px; }
+  #startHint { bottom:175px; max-width:calc(100vw - 32px); white-space:normal; text-align:center; font-size:14px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #menu button, #question button { transition:none; }
+  #win #winEmoji, #question .ansBtn { animation:none; }
+}
+@media(min-width:760px) and (max-height:800px) {
+  #question > .card { padding:24px; }
+  #question #qEmoji { width:54px; height:54px; font-size:32px; border-radius:18px; margin-bottom:6px; }
+  #question #qText { margin:12px auto 16px; }
+  #question #jollyBar { margin-bottom:12px; }
+}
+@media(max-width:380px) {
+  #menu #avHud { grid-template-columns:1fr; }
+  #menu #avPad { justify-content:center; }
+  #menu .avHudActions { position:absolute; top:-60px; right:0; }
+}
