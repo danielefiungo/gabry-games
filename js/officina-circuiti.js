@@ -120,6 +120,8 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '@media(max-width:760px){#ocBtns .bl{display:none}#ocBtns .hudBtn{min-width:42px;padding:4px}#ocGoal{top:58px;width:84vw}#ocGibiDesk{opacity:.75;left:-8px}.ocTool{min-width:57px;padding:7px 6px}#ocInfo{top:58px;right:8px;width:calc(100vw - 16px);max-height:205px}#ocPick .card{padding:16px 10px 18px}#ocPickGibi{position:relative;display:block;width:100%;height:110px;bottom:auto;left:auto;background-position:center 10%;background-size:145px auto}#ocPickGrid{grid-template-columns:repeat(2,minmax(120px,1fr))}.ocLvBtn{min-height:96px}#ocIntro .card{padding:18px 14px 20px;min-height:0}#ocIntroGibi{position:relative;left:auto;bottom:auto;width:100%;height:110px;background-position:center 7%;background-size:145px auto}#ocWin .card{padding:18px 12px}#ocWinGibi{display:none}}'
   ].join('\n');
   document.head.appendChild(css);
+  const skin=document.createElement('link'); skin.rel='stylesheet'; skin.href='css/officina.css?v=2'; document.head.appendChild(skin);
+  skin.onload=()=>{ if(window.__OC&&window.__OC.oc.on) ocResize(); };
 
   document.body.insertAdjacentHTML('beforeend',
   '<div id="oc">'+
@@ -127,10 +129,11 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
     '<div id="ocGibiDesk" aria-hidden="true"></div>'+
     '<div id="ocHud">'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-        '<div class="hudBox" id="ocLvl">⚡ 1/10</div>'+
+        '<div class="hudBox" id="ocLvl">⚡</div>'+
         '<div class="hudBox" id="ocStar">⭐⭐⭐</div>'+
       '</div>'+
       '<div id="ocBtns">'+
+        '<button class="hudBtn" id="ocUndoBtn" title="Annulla ultima azione" disabled>↶<span class="bl">ANNULLA</span></button>'+
         '<button class="hudBtn" id="ocHintBtn" title="Aiutino">💡<span class="bl">AIUTO</span></button>'+
         '<button class="hudBtn" id="ocResetBtn" title="Ricomincia">🔄<span class="bl">RIFAI</span></button>'+
         '<button class="hudBtn" id="ocPickBtn" title="Livelli">📋<span class="bl">LIVELLI</span></button>'+
@@ -138,9 +141,10 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
         '<button class="hudBtn" id="ocHomeBtn" title="Menu">🏠</button>'+
       '</div>'+
     '</div>'+
-    '<div id="ocGoal"><span id="ocGoalTxt"></span> <button id="ocGoalSpk">🔊</button></div>'+
+    '<div id="ocGoal"><span id="ocGoalTxt"></span> <button id="ocGoalSpk">🔊</button><div id="ocChecks" aria-live="polite"></div></div>'+
     '<button id="ocSun" class="day">☀️</button>'+
     '<div id="ocPalBar"></div>'+
+    '<div id="ocCoach" aria-live="polite"></div>'+
     '<div id="ocInfo" role="dialog" aria-live="polite">'+
       '<button id="ocInfoClose" aria-label="Chiudi">×</button>'+
       '<div id="ocInfoTitle"></div>'+
@@ -149,7 +153,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
       '<div id="ocInfoReal" class="ocInfoPart real"></div>'+
       '<button id="ocInfoSpeak">🔊</button>'+
     '</div>'+
-    '<div id="ocMsg"></div>'+
+    '<div id="ocMsg" role="status"></div>'+
     '<div id="ocWinBar"><span id="ocWinBarTxt"></span><button id="ocWinBarGo"></button><span id="ocWinBarSub"></span></div>'+
   '</div>'+
   '<div class="overlay" id="ocIntro" style="z-index:16">'+
@@ -179,9 +183,15 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '</div>'+
   '<div class="overlay" id="ocPick" style="z-index:16">'+
     '<div class="card">'+
+      '<div class="ocWorkshopTop"><span id="ocWorkshopName"></span><span id="ocTotalStars"></span></div>'+
+      '<div class="ocHero">'+
       '<div id="ocPickGibi" aria-hidden="true"></div>'+
+      '<div class="ocHeroCopy"><div id="ocEyebrow"></div>'+
       '<div id="ocPickTit"></div>'+
       '<div id="ocPickSub"></div>'+
+      '<div id="ocProgressText"></div><div class="ocProgressTrack"><div id="ocProgressFill"></div></div>'+
+      '<button id="ocContinue"></button></div></div>'+
+      '<div id="ocPathTitle"></div>'+
       '<div id="ocPickGrid"></div>'+
       '<button id="ocPickBack"></button>'+
     '</div>'+
@@ -244,7 +254,7 @@ const OC_INFO={
     metaphor:['È l’occhio del circuito: al sole apre una strada facile, al buio la rende molto stretta.','It is the circuit’s eye: in sunlight it opens an easy road, in darkness it makes the road very narrow.'],
     real:['La fotoresistenza cambia resistenza con la luce: in questo modello ha bassa resistenza quando è illuminata e resistenza molto alta al buio. Il circuito misura il cambiamento per reagire.','A photoresistor changes resistance with light: in this model it has low resistance when lit and very high resistance in darkness. The circuit uses that change to react.']}
 };
-const OC_LEVEL_ICONS=['🔌','🔘','🧰','🚦','🛡️','🚂','🛤️','⚡','🚰','🌙'];
+const OC_LEVEL_ICONS=['🔌','🔘','🧰','🚦','🛡️','🚂','🛤️','⚡','🚰','🌙','🔔','🔑','🎛️','🚘','🎒'];
 
 /* ---------- livelli ----------
    comps: {t,x,y,r,lock,id,closed} — wires: [x,y,'H'|'V',lock]
@@ -368,6 +378,72 @@ const OC_LEVELS=[
   win(a){ return a.flag('dayOK') && a.flag('nightOK'); },
   know:['👁️ IMMAGINALO COSÌ: il sensore è un occhio che avvisa il transistor quando arriva la notte.\n\n🔬 COME FUNZIONA DAVVERO: il sensore cambia la propria resistenza in base alla luce che riceve. Il circuito usa questo cambiamento per comandare il transistor e accendere il LED. Sistemi simili accendono automaticamente molti lampioni.','👁️ IMAGINE IT LIKE THIS: the sensor is an eye that tells the transistor when night arrives.\n\n🔬 HOW IT REALLY WORKS: the sensor changes its resistance according to the light it receives. The circuit uses this change to control the transistor and switch on the LED. Similar systems automatically turn on many street lights.']
 }
+,
+{ /* 11 — percorso diagonale e cicalino */
+  t:['Il campanello di Gibi','Gibi’s doorbell'],
+  g:['Metti il CICALINO nella presa. Ripara i due angoli con fili diagonali, poi chiudi l’interruttore!','Put the BUZZER in the socket. Repair the two corners with diagonal wires, then close the switch!'],
+  nx:5, ny:4,
+  comps:[{t:'batt',x:1,y:1,lock:1},{t:'sw',x:2,y:1,id:'S',lock:1}],
+  wires:[[0,1,'H',1],[1,1,'H',1],[2,1,'H',1],[3,1,'H',1],[1,2,'H',1],[2,2,'H',1]],
+  pal:{buz:1,wire:2},
+  sol:{comps:[{t:'buz',x:3,y:1}],wires:[[3,1,'U'],[0,1,'D']],tap:['S']},
+  win(a){ return a.sw('S')&&a.powered('buz',OC_BUZ_ON); },
+  know:['🔔 IMMAGINALO COSÌ: Gibi ha un campanello che vibra quando riceve energia. La strada può avere anche angoli obliqui!\n\n🔬 COME FUNZIONA DAVVERO: il cicalino trasforma energia elettrica in vibrazioni. La forma del percorso non impedisce alla corrente di circolare: servono collegamenti continui e un circuito chiuso.','🔔 IMAGINE IT LIKE THIS: Gibi has a doorbell that vibrates when powered. Its road can have diagonal corners too!\n\n🔬 HOW IT REALLY WORKS: a buzzer turns electrical energy into vibrations. The shape of the route does not stop current flowing: it needs continuous connections and a closed circuit.']
+},
+{ /* 12 — due comandi in serie */
+  t:['Le due chiavi','The two keys'],
+  g:['Ripara i due fili mancanti. Per accendere la luce devi chiudere ENTRAMBI gli interruttori!','Repair the two missing wires. To light the bulb you must close BOTH switches!'],
+  nx:6, ny:4,
+  comps:[{t:'batt',x:1,y:1,lock:1},{t:'sw',x:2,y:1,id:'A',lock:1},{t:'sw',x:3,y:1,id:'B',lock:1},{t:'lamp',x:4,y:1,id:'L',lock:1}],
+  wires:[[0,1,'H',1],[1,1,'H',1],[4,1,'H',1],[5,1,'V',1],[4,2,'H',1],[3,2,'H',1],[2,2,'H',1],[1,2,'H',1],[0,2,'H',1],[0,1,'V',1]],
+  pal:{wire:2},
+  sol:{wires:[[2,1,'H'],[3,1,'H']],tap:['A','B']},
+  win(a){ return a.sw('A')&&a.sw('B')&&a.P('L')>OC_LAMP_BRIGHT; },
+  know:['🔑 IMMAGINALO COSÌ: ci sono due ponti sulla stessa strada. Per passare devono essere abbassati tutti e due.\n\n🔬 COME FUNZIONA DAVVERO: due interruttori in serie lasciano passare corrente soltanto quando sono entrambi chiusi. È un esempio della regola AND: serve una condizione E l’altra.','🔑 IMAGINE IT LIKE THIS: there are two bridges on the same road. Both must be lowered to get through.\n\n🔬 HOW IT REALLY WORKS: two switches in series pass current only when both are closed. This illustrates the AND rule: one condition AND the other are required.']
+},
+{ /* 13 — rami indipendenti, tre esperimenti in ordine */
+  t:['La cabina di comando','The control room'],
+  g:['Ripara i fili. Poi prova: solo MOTORE, solo LUCE, infine TUTTI E DUE. Ogni interruttore comanda la sua strada.','Repair the wires. Then try: MOTOR only, LIGHT only, finally BOTH. Each switch controls its own road.'],
+  nx:6, ny:5,
+  comps:[{t:'batt',x:1,y:3,lock:1},{t:'sw',x:3,y:1,id:'SL',lock:1},{t:'sw',x:3,y:2,id:'SM',lock:1},{t:'lamp',x:4,y:1,id:'L',lock:1},{t:'mot',x:4,y:2,id:'M',lock:1}],
+  wires:[[0,3,'H',1],[1,3,'H',1],[2,2,'V',1],[2,1,'V',1],[2,1,'H',1],[4,1,'H',1],[2,2,'H',1],[4,2,'H',1],[5,1,'V',1],[5,2,'V',1],[5,3,'V',1],[4,4,'H',1],[3,4,'H',1],[2,4,'H',1],[1,4,'H',1],[0,4,'H',1],[0,3,'V',1]],
+  pal:{wire:2},
+  sol:{wires:[[3,1,'H'],[3,2,'H']],tap:['SL','SM']},
+  checks:[
+    {text:['Solo motore','Motor only'],test:a=>a.P('M')>OC_MOT_ON&&a.P('L')<0.01},
+    {text:['Solo luce','Light only'],test:a=>a.P('L')>OC_LAMP_BRIGHT&&a.P('M')<0.01},
+    {text:['Tutti e due','Both on'],test:a=>a.P('L')>OC_LAMP_BRIGHT&&a.P('M')>OC_MOT_ON}
+  ],
+  win(a){ return a.flag('checksDone'); },
+  know:['🎛️ IMMAGINALO COSÌ: la cabina ha due strade con due cancelli. Aprire un cancello non blocca l’altra strada.\n\n🔬 COME FUNZIONA DAVVERO: nei rami in parallelo ogni interruttore può comandare il proprio utilizzatore. Luce e motore ricevono energia dalla stessa pila ma si possono accendere separatamente.','🎛️ IMAGINE IT LIKE THIS: the control room has two roads with two gates. Opening one gate does not block the other road.\n\n🔬 HOW IT REALLY WORKS: in parallel branches each switch can control its own load. The light and motor get energy from the same battery but can be turned on separately.']
+},
+{ /* 14 — una resistenza per ogni LED, più controllo del verso */
+  t:['I due fari protetti','Two protected headlights'],
+  g:['Metti una RESISTENZA per ogni faro. Gira il LED al contrario, poi chiudi l’interruttore: devono brillare entrambi!','Place one RESISTOR for each headlight. Flip the backwards LED, then close the switch: both must shine!'],
+  nx:7, ny:5,
+  comps:[{t:'batt',x:1,y:3,lock:1},{t:'sw',x:2,y:3,id:'S',lock:1},{t:'led',x:5,y:1,id:'A',lock:1},{t:'led',x:5,y:2,r:2,id:'B',lock:1}],
+  wires:[[0,3,'H',1],[1,3,'H',1],[2,3,'H',1],[3,2,'V',1],[3,1,'V',1],[3,1,'H',1],[4,1,'H',1],[5,1,'H',1],[3,2,'H',1],[4,2,'H',1],[5,2,'H',1],[6,1,'V',1],[6,2,'V',1],[6,3,'V',1],[5,4,'H',1],[4,4,'H',1],[3,4,'H',1],[2,4,'H',1],[1,4,'H',1],[0,4,'H',1],[0,3,'V',1]],
+  pal:{res:2},
+  sol:{comps:[{t:'res',x:4,y:1},{t:'res',x:4,y:2}],tap:['B','S']},
+  win(a){ return a.placed('res')===2&&a.I('A')>OC_LED_LIT&&a.I('B')>OC_LED_LIT&&!a.burnt('A')&&!a.burnt('B'); },
+  know:['🚘 IMMAGINALO COSÌ: ogni faro ha la sua strada e la sua strettoia. Così nessuno riceve troppo traffico.\n\n🔬 COME FUNZIONA DAVVERO: ogni ramo con un LED ha una resistenza che limita la sua corrente. Inoltre ogni LED deve avere il verso giusto: una resistenza protegge dalla corrente eccessiva, ma non corregge un LED girato al contrario.','🚘 IMAGINE IT LIKE THIS: each headlight has its own road and its own narrow passage. That keeps either one from getting too much traffic.\n\n🔬 HOW IT REALLY WORKS: each LED branch has a resistor to limit its current. Each LED must also face the right way: a resistor protects against excessive current but cannot fix a backwards LED.']
+},
+{ /* 15 — riserva di energia, carica e prova senza pila */
+  t:['La riserva di Gibi','Gibi’s energy reserve'],
+  g:['Metti il CONDENSATORE nella presa. Chiudi l’interruttore e aspetta la spunta su CARICA. Poi aprilo: la riserva tiene acceso il motore!','Put the CAPACITOR in the socket. Close the switch and wait for the CHARGE tick. Then open it: the reserve keeps the motor running!'],
+  nx:6, ny:4,
+  comps:[{t:'batt',x:1,y:2,lock:1},{t:'sw',x:2,y:2,id:'S',lock:1},{t:'mot',x:4,y:2,id:'M',lock:1}],
+  wires:[[0,2,'H',1],[1,2,'H',1],[2,2,'H',1],[3,2,'H',1],[4,2,'H',1],[5,2,'V',1],[4,3,'H',1],[3,3,'H',1],[2,3,'H',1],[1,3,'H',1],[0,3,'H',1],[0,2,'V',1],[3,1,'V',1],[3,1,'H',1],[4,1,'H',1],[5,1,'V',1]],
+  pal:{cap:1},
+  sol:{comps:[{t:'cap',x:4,y:1}],tap:['S']},
+  checks:[
+    {text:['Carica','Charge'],hold:1,test:a=>a.sw('S')&&a.placed('cap')===1&&a.P('M')>0.8},
+    {text:['Stacca la pila','Disconnect battery'],hold:0.9,test:a=>!a.sw('S')&&a.P('M')>OC_MOT_ON}
+  ],
+  win(a){ return a.flag('checksDone'); },
+  know:['🎒 IMMAGINALO COSÌ: Gibi mette un po’ di energia nello zaino. Quando la pila è scollegata, usa la scorta per far andare ancora il motore.\n\n🔬 COME FUNZIONA DAVVERO: il condensatore carico può fornire corrente al motore per poco tempo. La tensione scende mentre restituisce energia e il motore rallenta. Qui la riserva è volutamente grande per rendere visibile l’esperimento.','🎒 IMAGINE IT LIKE THIS: Gibi stores some energy in a backpack. When the battery is disconnected, that reserve keeps the motor going.\n\n🔬 HOW IT REALLY WORKS: a charged capacitor can supply current to the motor for a short time. Its voltage drops as it releases energy and the motor slows down. The reserve is deliberately large here to make the experiment visible.']
+}
+
 ];
 
 /* palette del banco libero */
@@ -378,10 +454,18 @@ const OC_SANDBOX={ nx:12, ny:8, sun:1, comps:[], wires:[],
 const oc={ on:false, raf:0, frameAt:0, lvl:0, sandbox:false, board:null, pal:{}, tool:'hand',
   time:0, last:0, winT:0, mish:0, hint:0, hintT:0, freeBurnLeft:0,
   flow:{}, nets:null, smoke:[], flags:{}, dayT:0, nightT:0, sun:true,
-  drag:null, wireGhost:null, preview:null, placing:false, won:false, cs:64, ox:0, oy:0, infoType:null };
+  drag:null, wireGhost:null, preview:null, placing:false, won:false, cs:64, ox:0, oy:0, infoType:null, history:[], gesture:null, wireAnchor:null };
 
 function ocSave(){ try{ localStorage.setItem('gabri_off_c', JSON.stringify(oc.prog)); }catch(e){} }
-function ocLoad(){ try{ oc.prog=JSON.parse(localStorage.getItem('gabri_off_c'))||{unl:0,stars:[]}; }catch(e){ oc.prog={unl:0,stars:[]}; } }
+function ocLoad(){
+  let saved;
+  try{ saved=JSON.parse(localStorage.getItem('gabri_off_c')); }catch(e){}
+  const stars=Array.isArray(saved&&saved.stars)?saved.stars.slice(0,OC_LEVELS.length).map(n=>Number.isInteger(n)?Math.max(0,Math.min(3,n)):0):[];
+  // Chi ha completato il vecchio ultimo livello può subito proseguire nell'11.
+  const earned=stars.reduce((next,st,n)=>st?Math.max(next,n+1):next,0);
+  const unlocked=Number.isInteger(saved&&saved.unl)?saved.unl:0;
+  oc.prog={stars,unl:Math.min(OC_LEVELS.length-1,Math.max(0,unlocked,earned))};
+}
 ocLoad();
 
 /* ---------- modello del banco ---------- */
@@ -400,8 +484,8 @@ function ocWireSideAt(p,q,comp){
   const c=comp||oc.board.comps.get(ocNK(p.x,p.y));
   if(!c) return horizontal;
   const pins=ocPins(c);
-  if(pins[horizontal]!==undefined) return horizontal;
-  if(pins[vertical]!==undefined) return vertical;
+  if(q.x!==p.x&&pins[horizontal]!==undefined) return horizontal;
+  if(q.y!==p.y&&pins[vertical]!==undefined) return vertical;
   return null;
 }
 const OC_PIN2=[['W','E'],['N','S'],['E','W'],['S','N']]; /* [primo,secondo] per rotazione */
@@ -561,6 +645,7 @@ const ocApi={
   burnt:id=>{ const c=ocComp(id); return !!(c&&c.state.burnt); },
   sw:id=>{ const c=ocComp(id); return !!(c&&c.state.closed); },
   sun:()=>oc.sun,
+  powered:(t,p)=>[...oc.board.comps.values()].some(c=>c.t===t&&c.res.P>p),
   placed:t=>{ let n=0; oc.board.comps.forEach(c=>{ if(c.t===t&&!c.lock) n++; }); return n; },
   flag:k=>!!oc.flags[k]
 };
@@ -592,6 +677,15 @@ function ocStep(dt){
     if(d&&oc.sun&&d.res.I<0.001){ oc.dayT+=dt; if(oc.dayT>0.6) oc.flags.dayOK=true; } else oc.dayT=0;
     if(d&&!oc.sun&&d.res.I>OC_LED_LIT){ oc.nightT+=dt; if(oc.nightT>0.6) oc.flags.nightOK=true; } else oc.nightT=0;
   }
+  if(L&&L.checks&&!oc.flags.checksDone){
+    const check=L.checks[oc.checkIndex];
+    oc.checkT=check.test(ocApi)?oc.checkT+dt:0;
+    if(oc.checkT>=(check.hold||0.5)){
+      oc.checkIndex++; oc.checkT=0;
+      if(oc.checkIndex===L.checks.length) oc.flags.checksDone=true;
+      ocChecksDraw();
+    }
+  }
   /* vittoria */
   if(!oc.sandbox&&!oc.won&&L&&L.win){
     if(L.win(ocApi)) oc.winT+=dt; else oc.winT=0;
@@ -602,32 +696,41 @@ function ocStep(dt){
 /* ---------- disegno ---------- */
 function ocXY(x,y){ return [oc.ox+x*oc.cs, oc.oy+y*oc.cs]; }
 function ocResize(){
-  const cv=$('ocCv'); cv.width=innerWidth; cv.height=innerHeight;
+  const cv=$('ocCv'); oc.dpr=Math.min(devicePixelRatio||1,2);
+  cv.width=Math.round(innerWidth*oc.dpr); cv.height=Math.round(innerHeight*oc.dpr);
+  cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
   const b=oc.board; if(!b) return;
-  const infoSpace=oc.sandbox&&innerWidth>=1000?350:0;
-  const boardW=innerWidth-infoSpace;
-  const availW=boardW-40, availH=innerHeight-210;
-  const minCell=oc.sandbox?26:44;
-  oc.cs=Math.max(minCell, Math.min(110, Math.min(availW/(b.nx-1||1), availH/(b.ny-1||1))));
+  const goal=$('ocGoal').getBoundingClientRect();
+  let top=Math.max($('ocHud').getBoundingClientRect().bottom+18, goal.bottom+24, 100);
+  if(innerWidth<=760&&$('ocSun').style.display!=='none'){ $('ocSun').style.top=(top-14)+'px'; top+=42; } else $('ocSun').style.top='';
+  const palHeight=$('ocPalBar').getBoundingClientRect().height||94;
+  const bottom=innerHeight-palHeight-68;
+  const boardW=innerWidth-(oc.sandbox&&innerWidth>=1100?350:0);
+  oc.cs=Math.max(12,Math.min(100,(boardW-32)/b.nx,(bottom-top)/b.ny));
   oc.ox=(boardW-(b.nx-1)*oc.cs)/2;
-  oc.oy=120+(availH-(b.ny-1)*oc.cs)/2;
+  oc.oy=top+(bottom-top-(b.ny-1)*oc.cs)/2;
 }
 function ocDraw(){
   const cv=$('ocCv'), g=cv.getContext('2d'); if(!g) return;
-  g.clearRect(0,0,cv.width,cv.height);
+  g.setTransform(oc.dpr||1,0,0,oc.dpr||1,0,0);
+  g.clearRect(0,0,innerWidth,innerHeight);
   const b=oc.board; if(!b) return;
   const cs=oc.cs;
   /* piano forato del banco */
-  g.fillStyle='rgba(255,255,255,.05)';
+  const surface=g.createLinearGradient(0,oc.oy,0,oc.oy+oc.cs*b.ny);
+  surface.addColorStop(0,'#244955'); surface.addColorStop(1,'#142f3c');
+  g.fillStyle=surface; g.strokeStyle='#47717a'; g.lineWidth=2;
+  g.shadowColor='#0006'; g.shadowBlur=24; g.shadowOffsetY=12;
   g.beginPath();
   const [x0,y0]=ocXY(0,0), [x1,y1]=ocXY(b.nx-1,b.ny-1);
   g.roundRect ? g.roundRect(x0-cs*0.5,y0-cs*0.5,(x1-x0)+cs,(y1-y0)+cs,24) : g.rect(x0-cs*0.5,y0-cs*0.5,(x1-x0)+cs,(y1-y0)+cs);
   g.fill();
+  g.stroke(); g.shadowBlur=0; g.shadowOffsetY=0;
   /* nodi */
   for(let x=0;x<b.nx;x++) for(let y=0;y<b.ny;y++){
     const [px,py]=ocXY(x,y);
-    g.fillStyle='rgba(255,255,255,.22)';
-    g.beginPath(); g.arc(px,py,3.2,0,7); g.fill();
+    g.fillStyle='#091e2b'; g.strokeStyle='#547c85'; g.lineWidth=1.5;
+    g.beginPath(); g.arc(px,py,Math.max(2.5,cs*.055),0,7); g.fill(); g.stroke();
   }
   /* etichette della plancia */
   if(oc.L&&oc.L.labels){
@@ -695,6 +798,7 @@ function ocDraw(){
       g.beginPath(); g.arc(ax+(bx-ax)*t, ay+(by-ay)*t, r, 0, 7); g.fill();
     }
   });
+  if(oc.wireAnchor){ const [px,py]=ocXY(oc.wireAnchor.x,oc.wireAnchor.y); g.strokeStyle='#7aeadb'; g.lineWidth=3; g.beginPath(); g.arc(px,py,cs*.16,0,7); g.stroke(); }
   /* filo fantasma dal foro di partenza al puntatore */
   if(oc.wireGhost){
     const [ax,ay]=ocXY(oc.wireGhost.from.x,oc.wireGhost.from.y);
@@ -731,7 +835,7 @@ function ocSmoke(x,y){
 }
 function ocCap(g,c,px,py,cs,label){
   g.fillStyle='#fff'; g.font='bold '+Math.max(10,cs*0.15)+'px Andika, sans-serif'; g.textAlign='center';
-  g.fillText(label, px, py+cs*0.52);
+  g.fillText(label, px, py+cs*0.52, cs*0.94);
 }
 function ocDrawComp(g,c){
   const cs=oc.cs, [px,py]=ocXY(c.x,c.y);
@@ -907,6 +1011,7 @@ function ocSmartRot(t,x,y){
 }
 function ocPlace(t,x,y,r){
   const b=oc.board, k=ocNK(x,y);
+  if(x<0||y<0||x>=b.nx||y>=b.ny) return false;
   if(b.comps.has(k)) return false;
   if(!ocHasPiece(t)){ ocToast(OC_T.noPiece[LI()]); return false; }
   b.comps.set(k, ocNewComp(t,x,y,(r===undefined)?ocSmartRot(t,x,y):r));
@@ -930,90 +1035,114 @@ function ocPreviewAt(mx,my,radius){
   oc.preview={t:oc.tool,x:nd.x,y:nd.y,r:ocSmartRot(oc.tool,nd.x,nd.y),valid:!occupied&&ocHasPiece(oc.tool),rotate:!!(c&&c.t===oc.tool&&!c.lock)};
   return oc.preview;
 }
+/* Ogni gesto è una sola azione: anche un filo lungo si annulla in un tocco. */
+function ocSnapshot(){
+  return {comps:JSON.parse(JSON.stringify([...oc.board.comps])),wires:JSON.parse(JSON.stringify([...oc.board.wires])),pal:{...oc.pal},sun:oc.sun};
+}
+function ocCommit(before){
+  if(!before) return;
+  const after=ocSnapshot();
+  // Il tempo della simulazione non deve creare azioni da annullare.
+  const editKey=s=>JSON.stringify({comps:s.comps.map(([key,c])=>[key,c.t,c.r,c.state.closed,c.state.burnt]),wires:s.wires,pal:s.pal,sun:s.sun});
+  if(editKey(before)===editKey(after)) return;
+  oc.history.push(before); if(oc.history.length>40) oc.history.shift();
+  $('ocUndoBtn').disabled=false;
+}
+function ocUndo(){
+  const prev=oc.history.pop(); if(!prev) return;
+  oc.board.comps=new Map(prev.comps); oc.board.wires=new Map(prev.wires); oc.pal=prev.pal; oc.sun=prev.sun;
+  oc.drag=null; oc.wireAnchor=null; oc.wireGhost=null; oc.preview=null; oc.placing=false; oc.gesture=null;
+  oc.winT=0; oc.dayT=0; oc.nightT=0; oc.flags={}; oc.checkIndex=0; oc.checkT=0; ocChecksDraw(); oc.flow={}; oc.smoke=[];
+  ocSolve(0.02); ocSunDraw(); ocPalDraw(); $('ocUndoBtn').disabled=!oc.history.length;
+  ocToast(LI()===0?'Ultima azione annullata. Riprova!':'Last action undone. Try again!');
+}
+function ocBlocked(){ return ['ocIntro','ocWin','ocPick'].some(id=>$(id).style.display==='flex'); }
+function ocConnect(from,to){
+  let at={...from};
+  // Interpola i fori saltati dai movimenti rapidi del dito o del mouse.
+  const count=Math.max(Math.abs(to.x-from.x),Math.abs(to.y-from.y));
+  for(let step=1;step<=count;step++){
+    const next={x:Math.round(from.x+(to.x-from.x)*step/count),y:Math.round(from.y+(to.y-from.y)*step/count)};
+    const dx=next.x-at.x,dy=next.y-at.y;
+    const o=dy===0?'H':dx===0?'V':dx===dy?'D':'U';
+    const x=Math.min(at.x,next.x), y=Math.min(at.y,next.y), key=ocEK(x,y,o);
+    if(!oc.board.wires.has(key)&&!ocAddWire(x,y,o)) break;
+    at=next;
+  }
+  return at;
+}
 function ocPointer(e){
-  if($('oc').style.display!=='block') return;
-  if(e.target.closest&&e.target.closest('#ocInfo,#ocHud,#ocPalBar,#ocSun')) return;
-  const mx=e.clientX, my=e.clientY;
-  const palTop=$('ocPalBar').getBoundingClientRect().top||innerHeight-92;
-  if(my>palTop||my<110) return; /* palette e hud */
-  const nd=ocHitNode(mx,my,0.48);
+  if($('oc').style.display!=='block'||ocBlocked()||e.target!==$('ocCv')||e.isPrimary===false||e.button>0) return;
+  const mx=e.clientX,my=e.clientY, nd=ocHitNode(mx,my,0.55);
+  const before=ocSnapshot();
   if(oc.tool==='hand'){
-    if(nd){ const c=oc.board.comps.get(ocNK(nd.x,nd.y)); if(c){ if(oc.sandbox) ocInfoShow(c.t); ocInteract(c); } }
+    if(nd){ const c=oc.board.comps.get(ocNK(nd.x,nd.y)); if(c){ if(oc.sandbox) ocInfoShow(c.t); ocInteract(c); ocCommit(before); } }
     return;
   }
   if(oc.tool==='erase'){
-    if(nd){ const k=ocNK(nd.x,nd.y), c=oc.board.comps.get(k);
-      if(c){ if(c.lock){ ocToast(OC_T.locked[LI()]); } else { oc.board.comps.delete(k); ocGiveBack(c.t); ocPalDraw(); } return; } }
-    const ek=ocHitEdge(mx,my);
-    if(ek){ const w=oc.board.wires.get(ek);
-      if(w.lock){ ocToast(OC_T.locked[LI()]); } else { oc.board.wires.delete(ek); ocGiveBack('wire'); ocPalDraw(); } }
-    return;
+    const k=nd&&ocNK(nd.x,nd.y),c=k&&oc.board.comps.get(k);
+    if(c){ if(c.lock) ocToast(OC_T.locked[LI()]); else { oc.board.comps.delete(k); ocGiveBack(c.t); } }
+    else { const ek=ocHitEdge(mx,my); if(ek){ const wire=oc.board.wires.get(ek); if(wire.lock) ocToast(OC_T.locked[LI()]); else { oc.board.wires.delete(ek); ocGiveBack('wire'); } } }
+    ocCommit(before); ocPalDraw(); return;
   }
   if(oc.tool==='wire'){
-    if(nd){ oc.drag={last:nd}; oc.wireGhost={from:nd,mx,my}; }
-    return;
+    if(!nd) return;
+    oc.gesture=before;
+    const last=oc.wireAnchor?ocConnect(oc.wireAnchor,nd):nd;
+    oc.drag={last,pointerId:e.pointerId}; oc.wireAnchor=last; oc.wireGhost={from:last,mx,my};
+  }else if(ocIsComponentTool(oc.tool)){
+    if(!ocPreviewAt(mx,my,0.72)) return;
+    oc.gesture=before; oc.placing=true; oc.activePointer=e.pointerId;
   }
-  /* il componente si vede prima e viene posato al rilascio */
-  if(ocIsComponentTool(oc.tool)){
-    const p=ocPreviewAt(mx,my,0.72);
-    if(!p) return;
-    /* Sul PC il clic deve essere immediato: il ghost ha già scelto il foro. */
-    if(!e.pointerType||e.pointerType==='mouse'){
-      const c=oc.board.comps.get(ocNK(p.x,p.y));
-      if(p.valid) ocPlace(p.t,p.x,p.y,p.r);
-      else if(p.rotate&&c) c.r=((c.r||0)+1)%4;
-      else if(c) ocToast(OC_T.occupied[LI()]);
-      oc.preview=null; oc.placing=false;
-      return;
-    }
-    oc.placing=true;
-    if(oc.placing){
-      e.preventDefault();
-      try{ $('ocCv').setPointerCapture(e.pointerId); }catch(err){}
-    }
-  }
+  e.preventDefault(); try{ $('ocCv').setPointerCapture(e.pointerId); }catch(err){}
 }
 function ocPointerMove(e){
-  if($('oc').style.display!=='block') return;
+  if($('oc').style.display!=='block'||ocBlocked()||e.isPrimary===false) return;
   if(ocIsComponentTool(oc.tool)){
-    if(oc.placing||e.target===$('ocCv')) ocPreviewAt(e.clientX,e.clientY,oc.placing?0.9:0.68);
-    else oc.preview=null;
+    if(oc.placing&&e.pointerId!==oc.activePointer) return;
+    if(oc.placing||e.target===$('ocCv')) ocPreviewAt(e.clientX,e.clientY,oc.placing?0.9:0.68); else oc.preview=null;
     return;
   }
-  if(oc.drag){
+  if(oc.drag&&e.pointerId===oc.drag.pointerId){
+    const nd=ocHitNode(e.clientX,e.clientY,0.6);
+    if(nd) oc.drag.last=ocConnect(oc.drag.last,nd);
+    oc.wireAnchor=oc.drag.last;
     oc.wireGhost={from:oc.drag.last,mx:e.clientX,my:e.clientY};
-    const nd=ocHitNode(e.clientX,e.clientY,0.48); if(!nd) return;
-    const L2=oc.drag.last;
-    const dx=nd.x-L2.x, dy=nd.y-L2.y;
-    if(!dx&&!dy) return;
-    if(Math.abs(dx)>1||Math.abs(dy)>1){ oc.drag.last=nd; oc.wireGhost.from=nd; return; }
-    if(dx===1&&dy===0) ocAddWire(L2.x,L2.y,'H');
-    else if(dx===-1&&dy===0) ocAddWire(nd.x,nd.y,'H');
-    else if(dx===0&&dy===1) ocAddWire(L2.x,L2.y,'V');
-    else if(dx===0&&dy===-1) ocAddWire(nd.x,nd.y,'V');
-    else if(dx===1&&dy===1) ocAddWire(L2.x,L2.y,'D');
-    else if(dx===-1&&dy===-1) ocAddWire(nd.x,nd.y,'D');
-    else if(dx===1&&dy===-1) ocAddWire(L2.x,nd.y,'U');
-    else if(dx===-1&&dy===1) ocAddWire(nd.x,L2.y,'U');
-    oc.drag.last=nd;
-    oc.wireGhost.from=nd;
   }
 }
 function ocPointerUp(e){
-  if(oc.placing&&oc.preview){
-    const p=oc.preview, c=oc.board.comps.get(ocNK(p.x,p.y));
+  if(e&&e.isPrimary===false) return;
+  const cancelled=e&&e.type==='pointercancel';
+  if(!cancelled&&oc.placing&&oc.preview){
+    const p=oc.preview,c=oc.board.comps.get(ocNK(p.x,p.y));
     if(p.valid) ocPlace(p.t,p.x,p.y,p.r);
     else if(c&&c.t===p.t&&!c.lock) c.r=((c.r||0)+1)%4;
     else if(c) ocToast(OC_T.occupied[LI()]);
   }
+  if(oc.gesture&&oc.board.wires.size!==oc.gesture.wires.length) oc.wireAnchor=null;
+  ocCommit(oc.gesture); oc.gesture=null;
   if(e){ try{ if($('ocCv').hasPointerCapture(e.pointerId)) $('ocCv').releasePointerCapture(e.pointerId); }catch(err){} }
+  if(cancelled) oc.wireAnchor=null;
   oc.drag=null; oc.wireGhost=null; oc.placing=false; oc.preview=null;
 }
 addEventListener('pointerdown',ocPointer);
 addEventListener('pointermove',ocPointerMove);
 addEventListener('pointerup',ocPointerUp);
 addEventListener('pointercancel',ocPointerUp);
+addEventListener('keydown',e=>{
+  if(!oc.on||ocBlocked()||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); ocUndo(); }
+  if(e.key==='Escape'){ oc.wireAnchor=null; oc.wireGhost=null; $('ocInfo').style.display='none'; }
+});
 addEventListener('resize',()=>{ if(oc.on) ocResize(); });
+function ocCoachDraw(){
+  const i=LI(), messages={
+    wire:['Tocca due fori per unirli. Puoi anche trascinare!','Tap two holes to connect them. You can also drag!'],
+    hand:['Tocca un interruttore per accenderlo. Tocca un pezzo per girarlo.','Tap a switch to turn it on. Tap a part to rotate it.'],
+    erase:['Tocca il filo o il pezzo da togliere. Puoi sempre annullare.','Tap a wire or part to remove it. You can always undo.']
+  };
+  $('ocCoach').textContent=(messages[oc.tool]||['Tocca un foro per mettere il pezzo. Toccalo ancora per girarlo.','Tap a hole to place the part. Tap again to rotate it.'])[i];
+}
 
 /* miniatura identica al simbolo disegnato sul circuito */
 function ocToolIconMarkup(t,extraClass){
@@ -1056,7 +1185,7 @@ function ocPalDraw(){
     if(cnt===0) btn.classList.add('zero');
     btn.innerHTML=ocToolIconMarkup(t)+'<span class="tn">'+OC_T.names[t][i]+'</span>'+(cnt!==''?'<span class="tc'+(cnt==='∞'?' inf':'')+'">'+cnt+'</span>':'');
     btn.title=oc.sandbox&&OC_INFO[t]?((i===0?'Scegli e scopri: ':'Choose and discover: ')+OC_T.names[t][i]):OC_T.names[t][i];
-    btn.onclick=()=>{ oc.tool=t; oc.preview=null; oc.placing=false; oc.drag=null; oc.wireGhost=null; if(oc.sandbox&&OC_INFO[t]) ocInfoShow(t); ocPalDraw(); };
+    btn.onclick=()=>{ oc.tool=t; oc.wireAnchor=null; oc.preview=null; oc.placing=false; oc.drag=null; oc.wireGhost=null; if(oc.sandbox&&OC_INFO[t]) ocInfoShow(t); ocPalDraw(); };
     bar.appendChild(btn);
     ocPaintToolSymbol(btn.querySelector('canvas'),t);
   });
@@ -1064,7 +1193,7 @@ function ocPalDraw(){
   const kids=[...bar.children];
   if(oc.pal.wire===undefined&&kids.length){ /* nothing */ }
   $('ocCv').style.cursor=ocIsComponentTool(oc.tool)?'crosshair':(oc.tool==='erase'?'not-allowed':'default');
-  bar.style.display='flex';
+  bar.style.display='flex'; ocCoachDraw(); ocResize();
 }
 
 function ocHasPiece(t){ return oc.pal[t]===Infinity||(oc.pal[t]||0)>0; }
@@ -1081,7 +1210,7 @@ function ocInfoShow(t){
   const help=$('ocInfoHelp');
   help.style.display='block';
   help.textContent=t==='wire'
-    ?(i===0?'〰️ Trascina da un foro a quello vicino: ora puoi andare anche in diagonale.':'〰️ Drag from one hole to a nearby one: diagonal wires are now supported too.')
+    ?(i===0?'〰️ Tocca due fori o trascina per unirli, anche in diagonale. ANNULLA cancella l’ultimo gesto.':'〰️ Drag from one hole to a nearby one: diagonal wires are now supported too.')
     :(i===0?'👻 PC: muovi il ghost e clicca per fissarlo. Touch: trascina e rilascia. Verde inserisce, giallo ruota, rosso è occupato.':'👻 PC: move the ghost and click to attach it. Touch: drag and release. Green places, yellow rotates, red is occupied.');
   $('ocInfoMetaphor').innerHTML='<strong>'+(i===0?'🧰 NEL GIOCO':'🧰 IN THE GAME')+'</strong>';
   $('ocInfoMetaphor').appendChild(document.createTextNode(info.metaphor[i]));
@@ -1107,10 +1236,12 @@ function ocGoto(n){
   oc.L=oc.sandbox?null:L;
   oc.board=ocBuildBoard(L);
   oc.pal=Object.assign({},L.pal);
-  oc.tool=(L.pal&&L.pal.wire)?'wire':'hand';
+  oc.tool=(L.pal&&L.pal.wire)?'wire':(Object.keys(L.pal||{})[0]||'hand');
   oc.mish=0; oc.hint=0; oc.hintT=0; oc.winT=0; oc.won=false;
-  oc.flags={}; oc.dayT=0; oc.nightT=0; oc.sun=true; oc.smoke=[];
+  oc.flags={}; oc.checkIndex=0; oc.checkT=0; oc.dayT=0; oc.nightT=0; oc.sun=true; oc.smoke=[];
   oc.freeBurnLeft=(L.freeBurn||0);
+  oc.history=[]; oc.gesture=null; oc.wireAnchor=null; $('ocUndoBtn').disabled=true;
+  clearTimeout(ocMsgTimer); $('ocMsg').style.display='none';
   oc.infoType=null; oc.preview=null; oc.placing=false; oc.drag=null; oc.wireGhost=null; $('ocInfo').style.display='none';
   const i=LI();
   $('ocLvl').textContent=oc.sandbox?(i===0?'🧪 BANCO 12×8 · PEZZI ∞':'🧪 BENCH 12×8 · PARTS ∞'):'⚡ '+(oc.lvl+1)+'/'+OC_LEVELS.length;
@@ -1119,7 +1250,7 @@ function ocGoto(n){
   $('ocHintBtn').style.display=oc.sandbox?'none':'';
   $('ocGoal').style.display=oc.sandbox?'none':'block';
   if(!oc.sandbox) $('ocGoalTxt').textContent=L.g[i];
-  ocResize(); ocPalDraw();
+  ocChecksDraw(); ocResize(); ocPalDraw();
   $('ocWinBar').style.display='none';
   ['ocIntro','ocWin','ocPick'].forEach(id=>$(id).style.display='none');
   $('ocGibiDesk').style.display='block';
@@ -1138,6 +1269,19 @@ function ocGoto(n){
     $('ocIntro').style.display='flex';
     $('ocGibiDesk').style.display='none';
   }
+}
+function ocChecksDraw(){
+  const box=$('ocChecks'); box.innerHTML='';
+  const checks=oc.L&&oc.L.checks;
+  box.hidden=!checks;
+  if(!checks) return;
+  checks.forEach((check,n)=>{
+    const chip=document.createElement('span');
+    chip.className=n<oc.checkIndex?'done':n===oc.checkIndex?'current':'';
+    chip.textContent=(n<oc.checkIndex?'✓ ':n+1+'. ')+check.text[LI()];
+    if(n===oc.checkIndex) chip.setAttribute('aria-current','step');
+    box.appendChild(chip);
+  });
 }
 function ocStarHud(){
   const st=Math.max(1,3-Math.min(2,oc.mish+(oc.hint?1:0)));
@@ -1187,15 +1331,16 @@ function ocFactDraw(text){
 }
 function ocPickShow(){
   const i=LI();
-  $('ocPickTit').textContent='⚡ '+OC_T.bench[i];
+  $('ocPickTit').textContent=i===0?'Diamo energia a Gibi!':'Let’s power up Gibi!';
   $('ocPickSub').textContent=OC_T.story[i];
   const grid=$('ocPickGrid'); grid.innerHTML='';
   OC_LEVELS.forEach((L,n)=>{
     const btn=document.createElement('button');
     const locked=n>oc.prog.unl;
+    btn.disabled=locked;
     btn.className='ocLvBtn'+(locked?' lock':'')+(!locked&&n===oc.prog.unl?' next':'');
     const st=oc.prog.stars[n]||0;
-    btn.innerHTML='<span class="ln">'+(locked?'🔒':OC_LEVEL_ICONS[n])+'</span><span class="lt">'+(n+1)+'. '+L.t[i]+'</span><span class="ls">'+(st?'⭐'.repeat(st):(locked?'':'NUOVO'))+'</span>';
+    btn.innerHTML='<span class="ln">'+(locked?'🔒':OC_LEVEL_ICONS[n])+'</span><span class="lt">'+(n+1)+'. '+L.t[i]+'</span><span class="ls">'+(st?'⭐'.repeat(st):(locked?(i===0?'DA SBLOCCARE':'LOCKED'):(i===0?'GIOCA':'PLAY')))+'</span>';
     if(!locked) btn.onclick=()=>{ ocGoto(n); };
     grid.appendChild(btn);
   });
@@ -1213,6 +1358,17 @@ function ocPickShow(){
   }
   $('ocPickBack').textContent=OC_T.back[i];
   const repaired=oc.prog.stars.filter(Boolean).length;
+  $('ocWorkshopName').textContent=i===0?'L’OFFICINA DI GABRI':'GABRI’S WORKSHOP';
+  $('ocTotalStars').textContent='★ '+oc.prog.stars.reduce((a,b)=>a+(b||0),0)+' / '+OC_LEVELS.length*3;
+  $('ocEyebrow').textContent=i===0?'BANCO 01 / IL CUORE':'BENCH 01 / THE HEART';
+  $('ocProgressText').textContent=i===0?repaired+' di '+OC_LEVELS.length+' missioni completate':repaired+' of '+OC_LEVELS.length+' missions completed';
+  $('ocProgressFill').style.width=(repaired/OC_LEVELS.length*100)+'%';
+  const next=Math.min(oc.prog.unl,OC_LEVELS.length-1);
+  $('ocContinue').textContent=(i===0?(repaired?'CONTINUA':'INIZIAMO'):(repaired?'CONTINUE':'LET’S START'))+' →';
+  $('ocContinue').onclick=()=>ocGoto(next);
+  $('ocPathTitle').textContent=i===0?'LE TUE MISSIONI':'YOUR MISSIONS';
+  oc.wireAnchor=null; oc.drag=null; oc.wireGhost=null;
+
   $('ocPickGibi').style.filter='drop-shadow(0 10px 12px rgba(55,35,105,.22)) '+(repaired?'saturate(1)':'grayscale(.72) brightness(.72)');
   $('ocGibiDesk').style.display='none';
   $('ocPick').style.display='flex';
@@ -1224,7 +1380,8 @@ function ocSunDraw(){
 }
 
 /* ---------- pulsanti ---------- */
-$('ocSun').onclick=()=>{ oc.sun=!oc.sun; ocSunDraw(); };
+$('ocSun').onclick=()=>{ const before=ocSnapshot(); oc.sun=!oc.sun; ocSunDraw(); ocCommit(before); };
+$('ocUndoBtn').onclick=ocUndo;
 $('ocInfoClose').onclick=()=>{ $('ocInfo').style.display='none'; oc.infoType=null; stopSpeak(); };
 $('ocInfoSpeak').onclick=()=>{ if(oc.infoType&&OC_INFO[oc.infoType]){ const i=LI(),d=OC_INFO[oc.infoType]; speak(OC_T.names[oc.infoType][i]+'. '+d.metaphor[i]+' '+d.real[i]); } };
 $('ocIntroGo').onclick=()=>{ $('ocIntro').style.display='none'; $('ocGibiDesk').style.display='block'; stopSpeak(); };
@@ -1254,7 +1411,7 @@ function ocFrame(ts){
   if(Number.isFinite(ts)&&oc.frameAt&&ts-oc.frameAt<1000/30-1){oc.raf=requestAnimationFrame(ocFrame);return;}
   if(Number.isFinite(ts)) oc.frameAt=ts;
   const dt=Math.min(0.05, (ts-oc.last)/1000||0.016); oc.last=ts;
-  ocStep(dt);
+  if(!ocBlocked()&&!document.hidden) ocStep(dt);
   ocDraw();
   oc.raf=requestAnimationFrame(ocFrame);
 }
@@ -1265,6 +1422,8 @@ function ocEnter(){
   $('hud').style.display='none'; $('joy').style.display='none';
   $('oc').style.display='block';
   const bi=LI();
+  $('ocUndoBtn').innerHTML='↶<span class="bl">'+(bi===0?'ANNULLA':'UNDO')+'</span>';
+  $('ocGoalSpk').setAttribute('aria-label',bi===0?'Ascolta la missione':'Listen to the mission');
   $('ocHintBtn').innerHTML='💡<span class="bl">'+(bi===0?'AIUTO':'HELP')+'</span>';
   $('ocResetBtn').innerHTML='🔄<span class="bl">'+(bi===0?'RIFAI':'RESET')+'</span>';
   $('ocPickBtn').innerHTML='📋<span class="bl">'+(bi===0?'LIVELLI':'LEVELS')+'</span>';
@@ -1299,4 +1458,4 @@ registerGame({
 /* ---------- aggancio per i test ---------- */
 window.__OC={ oc, levels:OC_LEVELS, goto:ocGoto, step:ocStep, solve:ocSolve,
   place:ocPlace, wire:ocAddWire, comp:ocComp, api:ocApi, preview:ocPreviewAt,
-  pointerUp:ocPointerUp, enter:ocEnter, exit:ocExit };
+  pointerUp:ocPointerUp, connect:ocConnect, undo:ocUndo, snapshot:ocSnapshot, commit:ocCommit, load:ocLoad, resize:ocResize, enter:ocEnter, exit:ocExit };

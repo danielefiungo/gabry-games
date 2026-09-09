@@ -5,7 +5,8 @@
    7 fasi vere di una missione: checklist, decollo, separazione
    del primo stadio, orbita, attracco alla ISS, esperimenti,
    rientro con scudo termico e ammaraggio.
-   Il carburante si consuma con errori e lettura automatica 🔊;
+   In allenamento: tempo libero e ascolto gratuito. In sfida,
+   il carburante si consuma anche con la lettura automatica 🔊;
    ordini giusti al primo colpo lo ricaricano.
    Tra le fasi: il Quiz dell'Astronauta (domande di THEMES,
    premio dimezzato con 🔊 o errori, come nella Palla di Api).
@@ -23,8 +24,8 @@ const MS_REW_SEQ    = 3;    /* ⭐ per sequenza giusta al 1° colpo */
 const MS_REW_EMG    = 8;    /* ⭐ per imprevisto risolto senza errori */
 const MS_REW_EASY   = 10;   /* ⭐ quiz facile (come palla-api) */
 const MS_REW_HARD   = 25;   /* ⭐ quiz difficile */
-const MS_T_LIFTOFF  = 12;   /* secondi per l'ordine del decollo */
-const MS_T_REENTRY  = 25;   /* secondi per gli ordini del rientro */
+const MS_T_LIFTOFF  = 20;   /* secondi per l'ordine del decollo */
+const MS_T_REENTRY  = 40;   /* secondi per gli ordini del rientro */
 const MS_T_EMG      = 40;   /* secondi per risolvere un imprevisto */
 const MS_ANIM_MS    = 900;  /* pausa (ms) tra un ordine e l'altro */
 const MS_COUNT_FROM = 5;    /* il conto alla rovescia parte da qui */
@@ -87,30 +88,146 @@ const MS_EMG_MIN=2, MS_EMG_MAX=3; /* imprevisti per partita */
   '#msCardRead { background:#eef2ff; border:2px solid #c5cffb; border-radius:12px; font-size:16px; padding:8px 16px; cursor:pointer; margin-top:12px; font-family:inherit; color:#2b3a8f; }',
   '#msEnd .starRowMs { font-size:22px; line-height:1.7; }'
   ].join('\n');
+  css.textContent+=`
+  /* Cabina: monitor e finestra di volo separati, comandi sempre raggiungibili. */
+  #ms { position:fixed; padding:18px max(16px,calc((100vw - 1440px)/2)); overflow:auto; touch-action:pan-y; color:#ecf3ff; background:radial-gradient(ellipse at 70% 0%,#253369,transparent 65%),#080f23; }
+  #msShell { min-height:100%; display:flex; flex-direction:column; gap:16px; }
+  #msHud { position:static; padding:0; gap:10px; flex-wrap:wrap; }
+  #msBrand { margin-right:auto; font-size:19px; letter-spacing:.06em; font-weight:bold; }
+  #msBrand small { display:block; margin-top:3px; color:#9caccc; font-size:11px; letter-spacing:.15em; }
+  #msHud .hudBox { background:#17223e; border:1px solid #354365; box-shadow:none; font-size:15px; padding:9px 12px; }
+  #msFuelValue { margin-left:6px; font-size:13px; }
+  #msBtns .hudBtn { width:42px; height:42px; font-size:21px; }
+  #msRoute { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; list-style:none; }
+  #msRoute li { padding:9px 5px; text-align:center; border-top:3px solid #34415f; color:#8f9bb5; font-size:12px; }
+  #msRoute li b { display:block; font-size:20px; margin-bottom:3px; }
+  #msRoute li.current { color:#fff; border-color:#a4a1ff; background:linear-gradient(#6965b42b,transparent); }
+  #msRoute li.done { color:#8ce5bd; border-color:#64dba8; }
+  #msMain { flex:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:16px; min-height:330px; }
+  #msMon { position:relative; inset:auto; transform:none; width:auto; min-width:0; padding:22px; border:1px solid #49547e; border-radius:24px; background:linear-gradient(145deg,#1b2745,#10192e); display:flex; flex-direction:column; box-shadow:inset 0 1px #ffffff12,0 12px 32px #0003; }
+  #msMonTop { flex-wrap:wrap; }
+  #msMonLab { font-size:11px; letter-spacing:.1em; color:#b5c6ea; }
+  #msHear { min-height:44px; color:#e2eaff; border:1px solid #5a6e9a; font-size:13px; padding:8px 12px; }
+  #msOrder { margin:auto 0; padding:24px 0; text-align:left; min-height:0; color:#f6f8ff; font-size:clamp(24px,2.65vw,38px); letter-spacing:.045em; word-spacing:.1em; line-height:1.5; }
+  #msOrder .msClause { display:block; padding:9px 12px; margin:6px 0; border-left:3px solid #9d9aff; border-radius:0 10px 10px 0; background:#9b9aff12; }
+  #msOrder .msClause.done { color:#95e8b9; border-color:#65d59e; }
+  #msOrder .msClause.waiting { color:#b5c3db; border-color:#465373; background:transparent; }
+  #msOrder .msClause.done:after { content:' ✓'; }
+  #msStep { color:#bdcbe6; font-size:14px; line-height:1.5; }
+  #msOrderCount { color:#c6baff; font-size:12px; font-weight:bold; margin-top:16px; letter-spacing:.06em; }
+  #msProgress { height:5px; margin-top:8px; background:#303c5a; border-radius:4px; overflow:hidden; }
+  #msProgressFill { display:block; height:100%; width:0; background:linear-gradient(90deg,#a6a0ff,#76dfc6); transition:width .4s; }
+  #msTimerText:empty { display:none; }
+  #msTimerText { color:#ffdca0; font-size:13px; margin-top:8px; }
+  #msScene { position:relative; overflow:hidden; border:1px solid #54638a; border-radius:24px; min-height:320px; background:#11213b; }
+  #msCv { width:100%; height:100%; }
+  #msSceneLabel { position:absolute; top:16px; left:16px; background:#07142bc9; border:1px solid #ffffff30; padding:8px 12px; border-radius:12px; font-size:12px; color:#eff7ff; }
+  #msBig { top:35%; width:94%; font-size:clamp(23px,3vw,40px); }
+  #msMsg { position:static; transform:none; max-width:none; min-height:44px; display:block; padding:10px 14px; background:#16253e; border:1px solid #34496b; border-radius:14px; font-size:15px; text-align:left; }
+  #msDeck { padding:18px; border:1px solid #465374; border-radius:24px; background:linear-gradient(160deg,#202c49,#121c32); box-shadow:inset 0 1px #ffffff12; }
+  #msDeckTitle { display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:13px; color:#adbedb; margin-bottom:14px; }
+  #msDeckTitle strong { color:#e2eaff; letter-spacing:.1em; }
+  #msPlancia { position:static; transform:none; width:100%; grid-template-columns:repeat(4,minmax(0,1fr)); padding:0; border:0; background:none; gap:12px; }
+  .msPan { display:flex; align-items:center; justify-content:flex-start; gap:12px; min-width:0; min-height:76px; padding:12px 16px; border:1px solid #64749c; border-radius:16px; background:linear-gradient(145deg,#3a496c,#253452); box-shadow:0 4px 0 #080e20,inset 0 1px #ffffff18; color:#fff; }
+  .msPan:hover:not(:disabled) { border-color:#c4c4ff; background:linear-gradient(145deg,#485980,#304164); }
+  .msPan .pe { font-size:28px; flex:0 0 34px; }
+  .msPan .pl { margin:0; text-align:left; font-size:clamp(14px,1.35vw,18px); letter-spacing:.06em; overflow-wrap:anywhere; }
+  .msPan:disabled { cursor:default; opacity:.55; }
+  .msPan.msOk { border-color:#8df0b6; background:#27694e; opacity:1; }
+  .msPan.msNo { border-color:#ffb091; background:#864432; }
+  #ms button:focus-visible,#msStart button:focus-visible { outline:3px solid #ffe291; outline-offset:4px; }
+  #msProc .ansBtn { font-size:clamp(17px,1.7vw,23px); text-align:left; }
+  #msStart .card { max-width:670px; padding:32px; color:#e8efff; background:radial-gradient(ellipse at top,#344279,#131e39 75%); border:1px solid #7283b3; }
+  #msStart h1 { font-size:clamp(30px,5vw,44px); line-height:1.2; margin:12px 0; }
+  #msStart p { color:#c6d3ec; line-height:1.6; font-size:18px; }
+  .msStartIcon { font-size:68px; }
+  #msStartChoices { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:24px 0 16px; }
+  #msStartChoices button { text-align:left; padding:20px; border:1px solid #7186b9; border-radius:18px; background:#263858; color:#fff; font-family:inherit; cursor:pointer; }
+  #msStartChoices button:first-child { background:linear-gradient(145deg,#7167c5,#4b49a0); border-color:#b1a5ff; }
+  #msStartChoices strong { display:block; font-size:21px; margin-bottom:8px; }
+  #msStartChoices span { display:block; font-size:15px; line-height:1.5; color:#e0e7ff; }
+  #msStartHome { background:none; border:0; padding:10px; color:#c8d6f0; text-decoration:underline; cursor:pointer; font:inherit; }
+  #msQOff,#msQ,#msCard,#msEnd,#msStart { touch-action:pan-y; }
+  @media(min-width:761px) and (max-height:820px) {
+    #ms { padding-top:10px; padding-bottom:10px; }
+    #msShell { gap:10px; }
+    #msMain,#msScene { min-height:240px; }
+    #msMon { padding:16px 20px; }
+    #msOrder { padding:14px 0; font-size:29px; }
+    #msRoute li { padding:5px; }
+    #msDeck { padding:12px; }
+    #msDeckTitle { margin-bottom:10px; }
+    #msPlancia { gap:10px; }
+    .msPan { min-height:62px; padding:10px 14px; }
+  }
+  @media(max-width:760px) {
+    #ms { padding:12px 10px max(55px,env(safe-area-inset-bottom)); }
+    #msShell { gap:12px; }
+    #msBrand { font-size:16px; width:100%; }
+    #msBrand small { display:none; }
+    #msHud { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; gap:8px 6px; }
+    #msBrand { grid-column:1/3; grid-row:1; font-size:14px; }
+    #msBtns { grid-column:3; grid-row:1; }
+    #msFase { grid-column:1; grid-row:2; }
+    #msFuelBox { grid-column:2; grid-row:2; }
+    #msScore { grid-column:3; grid-row:2; justify-self:end; }
+    #msFuelBar { width:40px; }
+    #msHud .hudBox { padding:7px 9px; font-size:12px; }
+    #msBtns { margin-left:auto; gap:5px; }
+    #msRoute { gap:3px; }
+    #msRoute li { font-size:10px; padding:6px 0; }
+    #msRoute li b { font-size:17px; }
+    #msMain { display:contents; }
+    #msMon { position:sticky; top:0; z-index:10; padding:14px; border-radius:18px; }
+    #msOrder { font-size:24px; padding:12px 0; }
+    #msScene { flex-shrink:0; min-height:200px; height:200px; border-radius:18px; }
+    #msPlancia { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    #msDeck { padding:13px; border-radius:18px; }
+    .msPan { flex-direction:column; justify-content:center; min-height:82px; padding:9px 6px; gap:4px; }
+    .msPan .pl { font-size:clamp(12px,3.6vw,14px); letter-spacing:.04em; text-align:center; overflow-wrap:normal; }
+    .msPan .pe { font-size:25px; flex-basis:auto; line-height:1.1; }
+    #msStart .card { padding:24px 18px; }
+    #msStartChoices { grid-template-columns:1fr; }
+  }
+  @media(prefers-reduced-motion:reduce) { #ms *,#ms *:before,#ms *:after { animation:none!important; transition:none!important; } }
+  `;
   document.head.appendChild(css);
 
   document.body.insertAdjacentHTML('beforeend',
   '<div id="ms">'+
-    '<canvas id="msCv"></canvas>'+
+    '<div id="msShell">'+
     '<div id="msHud">'+
+      '<div id="msBrand">🚀 MISSIONE SPAZIALE<small>ACCADEMIA DEI PICCOLI ASTRONAUTI</small></div>'+
       '<div class="hudBox" id="msFase">🚀 FASE 1/7</div>'+
-      '<div class="hudBox" id="msFuelBox">⛽<span id="msFuelBar"><span id="msFuelFill"></span></span></div>'+
+      '<div class="hudBox" id="msFuelBox">⛽<span id="msFuelBar" role="meter" aria-label="Carburante" aria-valuemin="0" aria-valuemax="100"><span id="msFuelFill"></span></span><span id="msFuelValue"></span></div>'+
       '<div class="hudBox" id="msScore">⭐ 0</div>'+
       '<div id="msBtns">'+
         '<button class="hudBtn" id="msMusicBtn" title="Musica">🎵</button>'+
         '<button class="hudBtn" id="msHomeBtn" title="Menu">🏠</button>'+
       '</div>'+
     '</div>'+
-    '<div id="msMon">'+
+    '<ol id="msRoute" aria-label="Percorso della missione"></ol>'+
+    '<div id="msMain"><div id="msMon">'+
       '<div id="msMonTop"><span id="msMonLab">📡 ORDINI DALLA BASE</span><button id="msHear">🔊</button></div>'+
       '<div id="msOrder"></div>'+
+      '<div id="msStep"></div>'+
+      '<div id="msOrderCount"></div><div id="msProgress"><span id="msProgressFill"></span></div>'+
+      '<div id="msTimerText"></div>'+
       '<div id="msTimerBar"><span id="msTimerFill"></span></div>'+
       '<div id="msProc"></div>'+
     '</div>'+
-    '<div id="msBig"></div>'+
-    '<div id="msMsg"></div>'+
-    '<div id="msPlancia"></div>'+
+    '<div id="msScene"><canvas id="msCv" aria-label="Il volo della tua navicella"></canvas><div id="msSceneLabel"></div><div id="msBig"></div></div></div>'+
+    '<div id="msMsg" role="status" aria-live="polite"></div>'+
+    '<div id="msDeck"><div id="msDeckTitle"><strong>LA TUA PLANCIA</strong><span>Leggi tutto, poi scegli il comando.</span></div><div id="msPlancia"></div></div>'+
+    '</div>'+
   '</div>'+
+  '<div class="overlay" id="msStart"><div class="card">'+
+    '<div class="msStartIcon">🚀</div><p>LA TUA PRIMA AVVENTURA IN ORBITA</p>'+
+    '<h1>Comandante, si parte!</h1><p>Leggi gli ordini della base e guida la navicella.<br>Raggiungi la stazione spaziale e torna sulla Terra!</p>'+
+    '<div id="msStartChoices"><button id="msStartCalm"><strong>🌱 Senza fretta</strong><span>Leggi con calma.<br>Niente timer per gli ordini.<br>Ascoltali gratis.</span></button>'+
+    '<button id="msStartChallenge"><strong>⚡ Sfida spaziale</strong><span>Ordini a tempo.<br>Ascoltare usa carburante.</span></button></div>'+
+    '<p>I messaggi buffi? Premi IGNORA!</p><button id="msStartHome">Torna ai giochi</button>'+
+  '</div></div>'+
   '<div class="overlay" id="msQOff">'+
     '<div class="card">'+
       '<div style="font-size:50px">🧑‍🚀</div>'+
@@ -283,6 +400,8 @@ let msS={on:false, raf:0, last:0, frameAt:0, paused:true, state:'idle',
   emgPhases:[], emgAt:-1, emgTriggered:false, emg:null, emgErr:0,
   scene:'pad', prog:0, alt:0, sky:0, issD:1, shake:0,
   flags:{}, fx:[], t:0};
+let msTraining=true; /* allenamento: tempo libero e ascolto gratuito */
+let msReading=0; /* invalida le letture asincrone quando cambia schermata */
 let msQ={diff:'easy', q:null, theme:0, voiced:false, mult:1, done:false};
 const msQUsed=new Set(), msEmgUsed=new Set();
 let msCardNext='resume', msMsgTid=0, msAnimTid=0;
@@ -293,13 +412,40 @@ for(let i=0;i<90;i++) MS_STARS.push([Math.random(),Math.random(),0.6+Math.random
 
 function msResize(){
   const dpr=Math.min(window.devicePixelRatio||1,1.5);
-  msW=window.innerWidth; msH=window.innerHeight;
+  msW=Math.max(1,$('msScene').clientWidth); msH=Math.max(1,$('msScene').clientHeight);
   msCv.width=Math.round(msW*dpr); msCv.height=Math.round(msH*dpr);
   msCv.style.width=msW+'px'; msCv.style.height=msH+'px';
   msC.setTransform(dpr,0,0,dpr,0,0);
 }
 addEventListener('resize',()=>{ if($('ms').style.display!=='none') msResize(); });
 
+if(typeof ResizeObserver!=='undefined') new ResizeObserver(()=>{ if(msS.on) msResize(); }).observe($('msScene'));
+const MS_ROUTE=[['📋','Controlli'],['🚀','Decollo'],['🧩','Distacco'],['🌍','Orbita'],['🛰️','Stazione'],['🧪','Scoperte'],['🪂','A casa']];
+$('msRoute').innerHTML=MS_ROUTE.map(([em,label])=>'<li><b>'+em+'</b>'+label+'</li>').join('');
+function msControls(){
+  const active=msS.state==='order';
+  document.querySelectorAll('#msPlancia .msPan').forEach(b=>{ b.disabled=!active; });
+  $('msHear').disabled=!['order','emg'].includes(msS.state)||!!msReading;
+}
+function msRenderOrder(){
+  const o=msCurOrder();
+  const el=$('msOrder'); el.textContent='';
+  if(o.seq){
+    const parts=o.t.split(/, POI /);
+    parts.forEach((part,i)=>{
+      const line=document.createElement('span');
+      line.className='msClause'+(i<msS.seqIdx?' done':i>msS.seqIdx?' waiting':'');
+      if(i) el.appendChild(document.createTextNode(' '));
+      line.textContent=(i?'POI ':'')+part;
+      el.appendChild(line);
+    });
+    $('msStep').textContent=msS.seqIdx?'✓ Prima azione completata. Ora leggi POI.':'Due azioni: leggi PRIMA, poi leggi POI.';
+  } else {
+    el.textContent=o.t;
+    $('msStep').textContent='Leggi l’ordine e premi il pannello giusto.';
+  }
+}
+function msStopReading(){ msReading=0; stopSpeak(); }
 /* ---------- HUD e messaggi ---------- */
 function msHud(){
   $('msFase').textContent='🚀 FASE '+msS.fase+'/7';
@@ -307,12 +453,23 @@ function msHud(){
   $('msFuelFill').style.width=Math.max(0,Math.min(100,msS.fuel))+'%';
   $('msFuelFill').style.background=msS.fuel>35?'linear-gradient(90deg,#ffb300,#3cba54)':'#e05555';
   $('msMusicBtn').textContent=MUSICON?'🎵':'🔇';
-  $('msHear').textContent='🔊 −'+MS_FUEL_HEAR+'⛽';
+  $('msHear').textContent=msTraining?'🔊 Ascolta':'🔊 Ascolta −'+MS_FUEL_HEAR+'⛽';
+  $('msFuelValue').textContent=Math.round(msS.fuel)+'%';
+  $('msFuelBar').setAttribute('aria-valuenow',Math.round(msS.fuel));
+  $('msSceneLabel').textContent=MS_ROUTE[msS.fase-1][0]+' '+MS_FASI[msS.fase-1].nm;
+  $('msOrderCount').textContent='ORDINE '+Math.min(msS.idx+1,msS.orders.length)+' DI '+msS.orders.length+' · '+(msTraining?'SENZA FRETTA':'SFIDA SPAZIALE');
+  $('msProgressFill').style.width=(msS.orders.length?msS.idx/msS.orders.length*100:0)+'%';
+  [...$('msRoute').children].forEach((el,i)=>{
+    el.className=i+1<msS.fase?'done':i+1===msS.fase?'current':'';
+    if(i+1===msS.fase) el.setAttribute('aria-current','step'); else el.removeAttribute('aria-current');
+  });
+  $('msTimerText').textContent=msS.timerMax?'⏱ '+Math.ceil(msS.timer)+' secondi per leggere':'';
+  msControls();
   $('msHear').style.display=VOICEON?'':'none';
 }
 function msMsgShow(t,ms){
   const el=$('msMsg'); el.textContent=t; el.style.display='block';
-  clearTimeout(msMsgTid); msMsgTid=setTimeout(()=>{ el.style.display='none'; },ms||2600);
+  clearTimeout(msMsgTid); msMsgTid=setTimeout(()=>{ el.textContent='📡 La base è con te. Leggi con calma e continua!'; },ms||2600);
 }
 function msBig(t){
   const el=$('msBig'); el.textContent=t;
@@ -350,13 +507,14 @@ function msCurOrder(){ return msS.orders[msS.idx]; }
 function msShowOrder(){
   const o=msCurOrder();
   msS.state='order'; msS.seqIdx=0; msS.tries=0;
-  stopSpeak();
+  msStopReading();
   $('msMon').classList.remove('alarm');
   $('msMonLab').textContent='📡 ORDINI DALLA BASE';
   $('msProc').style.display='none';
-  $('msOrder').textContent=o.t;
-  msS.timerMax=o.timer||0; msS.timer=msS.timerMax;
-  $('msTimerBar').style.display=o.timer?'block':'none';
+  msRenderOrder();
+  msS.timerMax=msTraining?0:(o.timer||0); msS.timer=msS.timerMax;
+  $('msTimerBar').style.display=msS.timerMax?'block':'none';
+  $('msTimerFill').style.width='100%';
   msHud();
 }
 function msLaunchCurrent(){
@@ -366,6 +524,7 @@ function msLaunchCurrent(){
     $('msOrder').textContent='… PRONTI AL LANCIO …';
     $('msTimerBar').style.display='none';
   } else msShowOrder();
+  msHud();
 }
 function msNextOrder(){
   msS.idx++;
@@ -380,7 +539,8 @@ function msPanelTap(id,btn){
   const want=o.seq?o.seq[msS.seqIdx]:o.ok;
   if(id===want){
     if(o.seq&&msS.seqIdx===0){
-      msS.seqIdx=1; msS.tries+=0;
+      msStopReading();
+      msS.seqIdx=1; msRenderOrder(); msControls();
       if(btn) btn.classList.add('msOk');
       sToken();
       msMsgShow('✅ Prima azione fatta! Adesso la seconda…',1800);
@@ -391,7 +551,7 @@ function msPanelTap(id,btn){
 }
 function msOrderDone(o,btn){
   msS.state='anim';
-  stopSpeak();
+  msStopReading();
   if(btn) btn.classList.add('msOk');
   document.querySelectorAll('#msPlancia .msPan.msOk').forEach(b=>setTimeout(()=>b.classList.remove('msOk'),700));
   sCorrect();
@@ -411,6 +571,8 @@ function msOrderDone(o,btn){
     msMsgShow((o.silly?'😂 Ben letto! Era uno scherzo: da ignorare!':'✅ Perfetto al primo colpo!')+' +'+g+'⭐ +'+MS_FUEL_BONUS+'⛽',2200);
   } else msMsgShow(o.silly?'😂 Era uno scherzo: giusto ignorarlo!':'✅ Ordine eseguito!',1800);
   msHud();
+  $('msProgressFill').style.width=((msS.idx+1)/msS.orders.length*100)+'%';
+  $('msStep').textContent='✓ Ordine completato!';
   $('msTimerBar').style.display='none';
   clearTimeout(msAnimTid);
   msAnimTid=setTimeout(msNextOrder,MS_ANIM_MS);
@@ -425,18 +587,18 @@ function msOrderWrong(o,btn,id){
   else msMsgShow(UI.wrong[LI()]+' −'+MS_FUEL_ERR+'⛽',2400);
   msFuel(-MS_FUEL_ERR);
 }
-$('msHear').onclick=()=>{
-  if(!VOICEON) return;
-  if(msS.state==='order'){
+$('msHear').onclick=async()=>{
+  if(!VOICEON||msReading||!['order','emg'].includes(msS.state)) return;
+  if(!msTraining){
     msS.phSpk++;
     if(msFuel(-MS_FUEL_HEAR)) return;
-    msMsgShow('🔊 −'+MS_FUEL_HEAR+'⛽ (leggere da solo conviene!)',2000);
-    speak([{t:$('msOrder').textContent, el:$('msOrder')}]);
-  } else if(msS.state==='emg'&&msS.emg){
-    msS.phSpk++;
-    if(msFuel(-MS_FUEL_HEAR)) return;
-    const btns=[...document.querySelectorAll('#msProc .ansBtn')];
-    speak([{t:msS.emg.alarm, el:$('msOrder')},'Le procedure sono:',...btns.map(b=>({t:b.textContent, el:b, block:true}))]);
+  }
+  const ticket={}; msReading=ticket; msControls();
+  const parts=[{t:msS.state==='order'?msCurOrder().t:msS.emg.alarm,el:$('msOrder')}];
+  if(msS.state==='emg') parts.push('Le procedure sono:',...[...$('msProc').children].filter(b=>!b.disabled).map(b=>({t:b.textContent,el:b,block:true})));
+  try { await speak(parts); }
+  finally {
+    if(msReading===ticket){ msReading=0; if(msS.state==='order') msRenderOrder(); msControls(); }
   }
 };
 
@@ -459,8 +621,9 @@ function msEmgStart(forced){
   M.classList.add('alarm');
   $('msMonLab').textContent='🚨 IMPREVISTO! LEGGI E SCEGLI LA PROCEDURA GIUSTA';
   $('msOrder').textContent=msS.emg.alarm;
-  msS.timerMax=MS_T_EMG; msS.timer=MS_T_EMG;
-  $('msTimerBar').style.display='block';
+  msS.timerMax=msTraining?0:MS_T_EMG; msS.timer=msS.timerMax;
+  $('msStep').textContent='Scegli una delle procedure qui sotto.';
+  $('msTimerBar').style.display=msS.timerMax?'block':'none';
   const P=$('msProc'); P.innerHTML=''; P.style.display='flex';
   shuffle([[msS.emg.right,true],[msS.emg.wrong[0],false],[msS.emg.wrong[1],false]]).forEach(pr=>{
     const b=document.createElement('button');
@@ -490,9 +653,11 @@ function msEmgPickProc(btn,right){
   }
 }
 function msEmgClose(solved){
+  msStopReading();
   msS.state='anim';
+  msHud();
   $('msMon').classList.remove('alarm');
-  $('msProc').style.display='none';
+  if(solved) $('msProc').style.display='none';
   $('msTimerBar').style.display='none';
   const card=msS.emg.card;
   clearTimeout(msAnimTid);
@@ -513,6 +678,7 @@ function msEmgTimeout(){
 
 /* ---------- Scheda curiosità ---------- */
 function msShowCard(card,next){
+  msStopReading();
   msCardNext=next;
   msS.state='card';
   $('msCardEm').textContent=card.em;
@@ -538,7 +704,23 @@ $('msCardOk').onclick=()=>{
 
 /* ---------- Fasi ---------- */
 function msPhaseStart(n){
+  msStopReading();
   msS.fase=n;
+  // Ricostruisce la navicella anche quando il carburante fa ripetere una fase.
+  msS.flags={};
+  MS_FASI.slice(0,n-1).forEach(f=>f.orders.forEach(o=>{
+    if(o.set) Object.assign(msS.flags,o.set);
+    if(o.liftoff) msS.flags.liftoff=1;
+    if(o.sep){ msS.flags.sep=1; msS.flags.sepT=10; }
+    if(o.dock) msS.flags.dock=1;
+  }));
+  msS.alt=n>2?1:0;
+  msS.timer=0; msS.timerMax=0;
+  $('msMon').classList.remove('alarm');
+  $('msProc').style.display='none';
+  $('msTimerBar').style.display='none';
+  $('msOrder').textContent=MS_FASI[n-1].intro;
+  $('msStep').textContent='📡 In arrivo un nuovo ordine…';
   const F=MS_FASI[n-1];
   msS.orders=F.orders.map(o=>Object.assign({},o));
   /* ogni tanto la base manda un messaggio sciocco da IGNORARE */
@@ -563,11 +745,11 @@ function msPhaseStart(n){
 function msPhaseEnd(){
   msS.state='anim';
   const st=(msS.phErr===0&&msS.phSpk===0)?3:((msS.phErr+msS.phSpk<=2)?2:1);
-  msS.stars[msS.fase]=st;
+  msS.stars[msS.fase]=st; msHud();
   sStar();
   msBig('⭐'.repeat(st)+'☆'.repeat(3-st));
-  msMsgShow(st===3?'🌟 Fase perfetta: niente errori e tutto letto da solo!'
-    :(st===2?'⭐ Ottimo lavoro! Prova senza aiuti per 3 stelle.':'⭐ Fase completata! Leggi con calma per più stelle.'),3000);
+  msMsgShow(st===3?(msTraining?'🌟 Fase perfetta: tutti gli ordini eseguiti senza errori!':'🌟 Fase perfetta: niente errori e tutto letto da solo!')
+    :(st===2?'⭐ Ottimo lavoro! Ogni ordine ti porta più lontano.':'⭐ Fase completata! La base è fiera di te.'),3000);
   clearTimeout(msAnimTid);
   msAnimTid=setTimeout(()=>{
     msShowCard(MS_FASI[msS.fase-1].card, msS.fase<7?'quiz':'win');
@@ -575,7 +757,7 @@ function msPhaseEnd(){
 }
 function msFuelOut(){
   msS.state='end';
-  stopSpeak();
+  msStopReading();
   clearTimeout(msAnimTid);
   $('msMon').classList.remove('alarm');
   $('msProc').style.display='none';
@@ -596,6 +778,7 @@ function msFuelOut(){
 }
 function msVictory(){
   msS.state='end';
+  clearTimeout(msAnimTid); msStopReading(); msControls();
   stopMusic(); fanfare(); confetti();
   msS.flags.splash=1;
   let rows='';
@@ -654,7 +837,7 @@ function msQPick(diff){
 }
 function msQReward(){
   const base=(msQ.diff==='easy')?MS_REW_EASY:MS_REW_HARD;
-  return Math.max(2,Math.round(base*msQ.mult*(msQ.voiced?0.5:1)));
+  return Math.max(2,Math.round(base*((msQ.mult<1||msQ.voiced)?0.5:1)));
 }
 function msQRewardTxt(){
   const half=msQ.voiced||msQ.mult<1;
@@ -696,13 +879,14 @@ function msQAnswer(btn,right){
     $('msQMsg').textContent=praise+'  +'+g+' ⭐'; $('msQMsg').style.color='#3cba54';
     speak(praise);
     msHud();
-    setTimeout(()=>{
+    clearTimeout(msAnimTid);
+    msAnimTid=setTimeout(()=>{
       $('msQ').style.display='none';
       msPhaseStart(msS.fase+1);
     },1500);
   } else {
     btn.classList.add('wrong'); btn.disabled=true; sWrong();
-    msQ.mult*=0.5; msQRewardTxt();
+    msQ.mult=0.5; msQRewardTxt();
     $('msQMsg').textContent=UI.wrong[i]; $('msQMsg').style.color='#e05555';
   }
 }
@@ -719,10 +903,11 @@ $('msQSpeak').onclick=async()=>{
   ]);
   $('msQSpeak').textContent='🔊 Leggimela (premio dimezzato)';
 };
-$('msQBack').onclick=()=>{ stopSpeak(); $('msQ').style.display='none'; msPhaseStart(msS.fase+1); };
+$('msQBack').onclick=()=>{ clearTimeout(msAnimTid); stopSpeak(); $('msQ').style.display='none'; msPhaseStart(msS.fase+1); };
 
 /* ---------- Aggiornamento ---------- */
 function msUpdate(dt){
+  if(document.hidden||msS.paused||!msS.on) return;
   msS.t+=dt;
   /* cielo: 0 = giorno sulla rampa, 1 = spazio */
   let skyT=0;
@@ -741,15 +926,16 @@ function msUpdate(dt){
     msS.issD+=(tgt-msS.issD)*Math.min(1,dt*1.2);
   }
   /* timer degli ordini e degli imprevisti */
-  if((msS.state==='order'||msS.state==='emg')&&msS.timerMax>0){
+  if((msS.state==='order'||msS.state==='emg')&&msS.timerMax>0&&!msReading){
     msS.timer-=dt;
+    $('msTimerText').textContent='⏱ '+Math.ceil(Math.max(0,msS.timer))+' secondi per leggere';
     const fr=Math.max(0,msS.timer/msS.timerMax);
     $('msTimerFill').style.width=(fr*100)+'%';
     $('msTimerFill').style.background=fr>0.4?'#3cba54':'#e05555';
     if(msS.timer<=0){
       if(msS.state==='emg') msEmgTimeout();
       else {
-        msS.phErr++;
+        msS.phErr++; msS.tries++;
         if(!msFuel(-MS_FUEL_TIME)){
           msMsgShow('⏰ Il tempo è volato! Riprova, con calma. −'+MS_FUEL_TIME+'⛽',2600);
           msS.timer=msS.timerMax;
@@ -1379,7 +1565,7 @@ function msDraw(t){
       }
     }
     msDrawGround(c,alt*msH*1.2,t);
-    const ry=msH*0.62-alt*msH*0.28;
+    const ry=msH-82-70*sc*1.1-alt*msH*0.28; /* motori appoggiati al supporto a ogni dimensione */
     msDrawRocket(c,cx,ry,sc*1.1,{},t);
     /* nuvole di vapore che si allargano ai lati della rampa */
     if(F.motori&&alt<0.45){
@@ -1499,6 +1685,7 @@ function msDraw(t){
   c.restore();
 }
 function msFrame(ts){
+  if(!msS.on) return;
   msS.raf=requestAnimationFrame(msFrame);
   /* Durante quiz e pannelli basta un aggiornamento leggero; durante il volo
      30 fps dimezzano il lavoro del canvas senza cambiare la simulazione. */
@@ -1513,6 +1700,8 @@ function msFrame(ts){
 
 /* ---------- Entra / esci ---------- */
 function msReset(){
+  msStopReading();
+  clearTimeout(msMsgTid);
   msS.fase=1; msS.fuel=MS_FUEL_MAX;
   msS.stars=[0,0,0,0,0,0,0,0];
   msS.ordersDone=0; msS.emgSolved=0;
@@ -1530,17 +1719,29 @@ function msEnter(){
   paused=true; stopSpeak();
   ['modeSel','menu'].forEach(id=>$(id).style.display='none');
   $('hud').style.display='none'; $('joy').style.display='none';
-  msReset(); msResize(); msHud();
+  msReset(); msS.on=true;
   $('ms').style.display='block';
+  msResize(); msHud();
   msS.paused=false; msS.last=0; msS.frameAt=0;
   if(MUSICON){ mCtx(); playMusic(TRK_ROCKET); }
   if(!msS.raf) msS.raf=requestAnimationFrame(msFrame);
+  msS.state='briefing';
+  $('msStart').style.display='flex';
+  $('msStartCalm').focus();
+}
+function msBegin(training){
+  msTraining=training;
+  $('msStart').style.display='none';
   msPhaseStart(1);
 }
+$('msStartCalm').onclick=()=>msBegin(true);
+$('msStartChallenge').onclick=()=>msBegin(false);
+$('msStartHome').onclick=()=>msExit();
 function msExit(){
+  msS.on=false; msStopReading(); clearTimeout(msMsgTid);
   cancelAnimationFrame(msS.raf); msS.raf=0; msS.paused=true; msS.state='idle';
   clearTimeout(msAnimTid);
-  ['ms','msQ','msQOff','msCard','msEnd'].forEach(id=>$(id).style.display='none');
+  ['ms','msQ','msQOff','msCard','msEnd','msStart'].forEach(id=>$(id).style.display='none');
   stopSpeak();
   showModeSel();
 }
@@ -1567,7 +1768,7 @@ if(typeof window!=='undefined'){
     get S(){ return msS; },
     get Q(){ return msQ; },
     FASI:MS_FASI, IMPREVISTI:MS_IMPREVISTI, PANNELLI:MS_PANNELLI,
-    enter:msEnter, exit:msExit, reset:msReset,
+    enter:msEnter, begin:msBegin, exit:msExit, reset:msReset,
     phaseStart:msPhaseStart, panelTap:msPanelTap, showOrder:msShowOrder,
     launch:msLaunchCurrent, next:msNextOrder,
     emgStart:msEmgStart, emgTimeout:msEmgTimeout,

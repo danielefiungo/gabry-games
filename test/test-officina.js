@@ -157,6 +157,72 @@ steps(1.2);
 T('di notte LED acceso da solo', OC.api.flag('nightOK'), 'I='+(OC.api.I('D')*1000).toFixed(2)+'mA');
 T('vittoria', until(1.5,()=>oc.won));
 
+console.log('Cinque nuove missioni del banco 1');
+T('quindici livelli disponibili', OC.levels.length===15);
+function applySolution(n){
+  const sol=OC.levels[n].sol;
+  (sol.comps||[]).forEach(c=>T('L'+(n+1)+' inserisce '+c.t,OC.place(c.t,c.x,c.y,c.r)));
+  (sol.wires||[]).forEach(v=>T('L'+(n+1)+' collega '+v.join(','),OC.wire(...v)));
+}
+OC.goto(10);steps(1.2);T('L11 non vince senza circuito',!oc.won);
+applySolution(10);steps(.5);T('L11 attende l’interruttore',!oc.won);
+OC.comp('S').state.closed=true;
+T('L11 cicalino alimentato e vittoria',until(2,()=>oc.won));
+T('L11 pezzi sufficienti senza aiuto',oc.pal.wire===0&&oc.pal.buz===0&&oc.mish===0&&!oc.hint);
+
+OC.goto(11);applySolution(11);
+for(const bits of [[false,false],[true,false],[false,true]]){
+  OC.comp('A').state.closed=bits[0];OC.comp('B').state.closed=bits[1];steps(1.2);
+  T('L12 non basta '+bits.join(','),!oc.won&&OC.api.P('L')<.01);
+}
+OC.comp('A').state.closed=true;OC.comp('B').state.closed=true;
+T('L12 entrambi chiusi accendono la luce',until(2,()=>oc.won));
+
+OC.goto(12);applySolution(12);
+OC.comp('SL').state.closed=true;OC.comp('SM').state.closed=true;steps(1.5);
+T('L13 accendere tutto non salta le prove',!oc.won&&oc.checkIndex===0);
+OC.comp('SL').state.closed=false;steps(.7);
+T('L13 prima prova solo motore',oc.checkIndex===1&&OC.api.P('L')<.01);
+OC.comp('SL').state.closed=true;OC.comp('SM').state.closed=false;steps(.7);
+T('L13 seconda prova solo luce',oc.checkIndex===2&&OC.api.P('M')<.01);
+OC.comp('SM').state.closed=true;
+T('L13 terza prova e vittoria',until(2,()=>oc.won));
+T('L13 tre spunte visibili',doc.querySelectorAll('#ocChecks .done').length===3);
+OC.goto(12);T('L13 reset cancella le prove',oc.checkIndex===0&&!OC.api.flag('checksDone'));
+applySolution(12);OC.comp('SM').state.closed=true;steps(.7);
+const beforeSwitch=OC.snapshot();OC.comp('SL').state.closed=true;OC.commit(beforeSwitch);OC.undo();
+T('L13 annulla azzera la verifica della sequenza',oc.checkIndex===0&&!OC.api.flag('checksDone'));
+
+OC.goto(13);applySolution(13);OC.comp('S').state.closed=true;steps(1.5);
+T('L14 LED invertito impedisce vittoria',!oc.won&&OC.api.I('A')>.004&&OC.api.I('B')<.001);
+OC.comp('B').r=0;
+T('L14 due LED protetti e accesi',until(2,()=>oc.won));
+T('L14 tre stelle senza bruciare LED',oc.mish===0&&!OC.api.burnt('A')&&!OC.api.burnt('B'));
+
+OC.goto(14);steps(1.5);T('L15 nessuna vittoria a motore spento',!oc.won&&oc.checkIndex===0);
+applySolution(14);OC.comp('S').state.closed=true;steps(.25);OC.comp('S').state.closed=false;steps(1.5);
+T('L15 carica troppo breve non supera la prova',!oc.won&&oc.checkIndex===0);
+OC.comp('S').state.closed=true;steps(1.5);
+T('L15 conferma la carica',oc.checkIndex===1);
+T('L15 non vince lasciando la pila collegata',!oc.won);
+OC.comp('S').state.closed=false;
+T('L15 riserva alimenta il motore e vince',until(3,()=>oc.won));
+T('L15 completamento persistente',JSON.parse(w.localStorage.getItem('gabri_off_c')).stars[14]===3);
+steps(8);T('L15 la riserva si esaurisce',OC.api.P('M')<.01);
+
+w.localStorage.setItem('gabri_off_c',JSON.stringify({unl:9,stars:Array(10).fill(3)}));OC.load();
+T('vecchio salvataggio completo sblocca L11',oc.prog.unl===10&&oc.prog.stars.length===10);
+OC.enter();
+T('menu mostra tutte le 15 missioni',doc.querySelectorAll('#ocPickGrid .ocLvBtn:not(.sand)').length===15);
+T('menu sblocca solo la prossima missione',!doc.querySelectorAll('#ocPickGrid .ocLvBtn')[10].disabled&&doc.querySelectorAll('#ocPickGrid .ocLvBtn')[11].disabled);
+T('stelle totali aggiornate a 45',doc.getElementById('ocTotalStars').textContent.includes('/ 45'));
+OC.goto(10);applySolution(10);OC.comp('S').state.closed=true;steps(2);
+T('completare L11 sblocca L12',oc.prog.unl===11);
+OC.goto(14);applySolution(14);OC.comp('S').state.closed=true;steps(1.5);OC.comp('S').state.closed=false;steps(3);
+doc.getElementById('ocWinBarGo').click();doc.getElementById('ocWinNext').click();
+T('ultima missione torna al menu',doc.getElementById('ocPick').style.display==='flex');
+OC.exit();
+
 console.log('extra: parallelo, una lampadina tolta → l’altra resta accesa');
 OC.goto(6);
 [[2,1,'H'],[2,1,'V'],[2,2,'H'],[3,2,'H'],[4,2,'H']].forEach(wd=>OC.wire(wd[0],wd[1],wd[2]));
@@ -165,6 +231,44 @@ oc.board.comps.delete('3,2'); /* tolgo B e la sua strada */
 oc.board.wires.delete('3,2,H');
 steps(0.5);
 T('A ancora brillante', OC.api.P('A')>0.8, OC.api.P('A').toFixed(2)+'W');
+
+console.log('Gesti, annulla e limiti della plancia');
+OC.goto(-1);
+let before=OC.snapshot();
+OC.connect({x:0,y:0},{x:5,y:0}); OC.commit(before);
+T('trascinamento veloce senza buchi', [0,1,2,3,4].every(x=>oc.board.wires.has(x+',0,H')));
+OC.undo();
+T('annulla tutto il gesto', oc.board.wires.size===0);
+T('annulla conserva pezzi infiniti', oc.pal.wire===Infinity);
+T('non piazza pezzi fuori dal banco', !OC.place('lamp',-1,0)&&!OC.place('lamp',12,0));
+OC.goto(0);
+before=OC.snapshot();const stock=oc.pal.wire;
+OC.connect({x:1,y:1},{x:4,y:1});OC.commit(before);OC.undo();
+T('annulla restituisce i fili disponibili', oc.pal.wire===stock&&oc.board.wires.size===0);
+OC.goto(-1); OC.place('batt',2,2,0);
+T('un filo verticale non si aggancia a morsetti orizzontali', !OC.wire(2,1,'V'));
+const stopped=OC.connect({x:2,y:0},{x:2,y:4});
+T('il percorso si ferma prima del morsetto incompatibile', stopped.y===1&&!oc.board.wires.has('2,2,V'));
+OC.goto(-1);doc.getElementById('oc').style.display='block';
+function pointer(type,x,y,extra={}){
+  doc.getElementById('ocCv').dispatchEvent(new w.MouseEvent(type,{bubbles:true,clientX:oc.ox+x*oc.cs,clientY:oc.oy+y*oc.cs,...extra}));
+}
+pointer('pointerdown',0,0);pointer('pointerup',0,0);
+pointer('pointerdown',3,0);pointer('pointerup',3,0);
+T('due tocchi collegano i fori', [0,1,2].every(x=>oc.board.wires.has(x+',0,H')));
+OC.undo();T('il gesto con due tocchi si annulla', oc.board.wires.size===0);
+oc.tool='lamp';pointer('pointerdown',1,1);pointer('pointercancel',1,1);
+T('pointercancel non piazza il componente', !oc.board.comps.has('1,1'));
+pointer('pointerdown',1,1);pointer('pointerup',1,1);
+T('il rilascio piazza il componente', oc.board.comps.has('1,1'));
+OC.undo();T('annulla rimuove il pezzo appena inserito', !oc.board.comps.has('1,1'));
+OC.goto(0);oc.tool='wire';const initial=oc.board.wires.size;
+pointer('pointerdown',0,0);pointer('pointermove',3,0);pointer('pointerup',3,0);
+T('le istruzioni aperte bloccano i gesti sul banco', oc.board.wires.size===initial);
+for(const size of [[390,844],[844,390]]){
+  w.innerWidth=size[0];w.innerHeight=size[1];OC.goto(-1);OC.resize();
+  T('banco libero dentro lo schermo '+size.join('x'), oc.ox-oc.cs/2>=0&&oc.ox+(oc.board.nx-.5)*oc.cs<=w.innerWidth);
+}
 
 console.log('\n'+pass+' ok, '+fail+' fail');
 process.exit(fail?1:0);

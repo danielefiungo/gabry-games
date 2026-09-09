@@ -76,3 +76,17 @@ che pensa un computer.
   stato Gibi, stelle). registerGame('officina') in scelta-gioco.js via index.html.
 - Salvataggi localStorage `gabri_off_*`. Test hook `window.__OF`.
 - Costanti di tuning in cima a ogni file (stile PA_*/MS_*).
+
+## Banco 1 — missioni aggiunte 11–15 (settembre 2026)
+
+11. **Il campanello di Gibi**: inserire il cicalino, riparare due fili diagonali e chiudere l’interruttore.
+12. **Le due chiavi**: riparare due collegamenti e chiudere due interruttori in serie; uno solo non basta.
+13. **La cabina di comando**: riparare due rami in parallelo e dimostrare, in ordine, motore solo, luce sola e entrambi accesi.
+14. **I due fari protetti**: una resistenza per ciascun LED in parallelo, correzione del verso di un LED e accensione senza bruciature.
+15. **La riserva di Gibi**: caricare un condensatore e scollegare la pila; la riserva deve alimentare il motore per almeno 0,9 secondi.
+
+Le missioni 13 e 15 mostrano le prove da completare sotto la consegna. Una prova
+vale solo dopo aver mantenuto il risultato per il tempo richiesto. RIFAI e ANNULLA
+azzerano la sequenza di verifica. Tutti i livelli hanno consegne e spiegazioni in
+italiano e inglese e una soluzione fantasma per l’aiuto. Il totale è 45 stelle;
+i vecchi salvataggi che hanno completato il livello 10 sbloccano subito l’11.
