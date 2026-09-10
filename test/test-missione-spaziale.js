@@ -14,6 +14,8 @@ function boot(t){
   const inject=text=>{const s=w.document.createElement('script');s.textContent=text;w.document.body.appendChild(s);};
   inject(`const $=id=>document.getElementById(id); let score=0,paused=false,VOICEON=true,MUSICON=false; const LI=()=>0,NM=t=>t; const UI={wrong:['Rileggi con calma'],praise:[['Bravo!']],speakBravo:['Bravo!']}; const shuffle=a=>a; const save=()=>{}; const stopSpeak=()=>{}; let speak=()=>Promise.resolve(); const initTTS=()=>{}; const beep=()=>{},sCorrect=()=>{},sWrong=()=>{},sLose=()=>{},sStar=()=>{},sToken=()=>{},fanfare=()=>{},confetti=()=>{}; const stopMusic=()=>{},playMusic=()=>{},mCtx=()=>{},TRK_ROCKET={}; const showModeSel=()=>{$('modeSel').style.display='flex'}; const games=[]; const registerGame=g=>games.push(g); Math.random=()=>0.9; window.testScore=()=>score; window.setSpeech=fn=>{speak=fn};`);
   inject(fs.readFileSync(path.join(__dirname,'../js/domande.js'),'utf8'));
+  inject(fs.readFileSync(path.join(__dirname,'../js/apollo-launch-site.js'),'utf8'));
+  inject(fs.readFileSync(path.join(__dirname,'../js/saturn-v-3d.js'),'utf8'));
   inject(fs.readFileSync(path.join(__dirname,'../js/missione-spaziale.js'),'utf8'));
   const m=w.__MS, $=id=>w.document.getElementById(id);
   const flush=()=>{const batch=[...timers];timers.clear();batch.forEach(([,fn])=>fn());};
@@ -104,4 +106,34 @@ test('imprevisto scaduto: la procedura corretta rimane visibile prima della spie
   const {m,$,start,flush}=boot(t);start(false);m.emgStart(m.IMPREVISTI[0]);m.emgTimeout();
   assert.equal($('msProc').style.display,'flex');assert.equal($('msProc').querySelector('.right').textContent,m.IMPREVISTI[0].right);
   assert.ok([...$('msProc').children].every(b=>b.disabled));flush();assert.equal(m.S.state,'card');
+});
+
+test('Saturn V: disegno 3D, stadio separato, capsula e rilascio risorse',t=>{
+  const {w,m,start}=boot(t);start();
+  const calls=[];let disposed=0;
+  w.MSSaturnV={draw:(c,x,y,s,o,time,flags)=>{calls.push({o,flags});return true;},dispose:()=>disposed++};
+  m.draw(1);assert.equal(calls.length,1);assert.equal(calls[0].o.upperOnly,undefined);
+  calls.length=0;m.S.scene='sep';m.S.flags.sep=1;m.S.flags.sepT=.2;m.draw(2);
+  assert.equal(calls.length,2);assert.equal(calls[0].o.upperOnly,true);assert.equal(calls[1].o.booster,true);
+  calls.length=0;m.S.scene='rientro';m.draw(3);assert.equal(calls.length,1);assert.equal(calls[0].o.capsule,true);
+  m.exit();assert.equal(disposed,1);
+});
+
+test('complesso Apollo: rampa e razzo condividono la scena, distacco e fallback restano disponibili',t=>{
+  const {w,m,start}=boot(t);start();const launches=[],rockets=[];
+  w.MSSaturnV={drawLaunch:(c,width,height,alt,time,flags)=>{launches.push({alt,flags});return true;},draw:(...args)=>{rockets.push(args);return true;},dispose(){}};
+  m.draw(1);assert.equal(launches.length,1);assert.equal(rockets.length,0);
+  m.S.scene='liftoff';m.S.alt=.25;m.S.flags.liftoff=1;m.draw(2);
+  assert.equal(launches[1].alt,.25);assert.equal(launches[1].flags.liftoff,1);
+  m.S.scene='sep';m.draw(3);assert.equal(launches.length,2);assert.equal(rockets.length,1);
+  m.S.scene='pad';w.MSSaturnV.drawLaunch=()=>false;m.draw(4);assert.equal(rockets.length,2);
+});
+
+test('attracco: stazione e capsula usano due modelli 3D distinti',t=>{
+  const {w,m,start}=boot(t);start();const models=[];
+  w.MSSaturnV={draw:(c,x,y,s,options)=>{models.push(options);return true;},dispose(){}};
+  m.S.scene='iss';m.draw(1);
+  assert.equal(models.length,2);assert.equal(models[0].station,true);assert.equal(models[1].capsule,true);
+  models.length=0;m.S.scene='rientro';m.S.flags.para=1;m.draw(2);
+  assert.equal(models.length,1);assert.equal(models[0].capsule,true);
 });

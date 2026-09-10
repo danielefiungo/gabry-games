@@ -119,7 +119,7 @@ const MS_EMG_MIN=2, MS_EMG_MAX=3; /* imprevisti per partita */
   #msProgressFill { display:block; height:100%; width:0; background:linear-gradient(90deg,#a6a0ff,#76dfc6); transition:width .4s; }
   #msTimerText:empty { display:none; }
   #msTimerText { color:#ffdca0; font-size:13px; margin-top:8px; }
-  #msScene { position:relative; overflow:hidden; border:1px solid #54638a; border-radius:24px; min-height:320px; background:#11213b; }
+  #msScene { position:relative; overflow:hidden; border:1px solid #54638a; border-radius:24px; min-height:360px; background:#11213b; }
   #msCv { width:100%; height:100%; }
   #msSceneLabel { position:absolute; top:16px; left:16px; background:#07142bc9; border:1px solid #ffffff30; padding:8px 12px; border-radius:12px; font-size:12px; color:#eff7ff; }
   #msBig { top:35%; width:94%; font-size:clamp(23px,3vw,40px); }
@@ -151,7 +151,7 @@ const MS_EMG_MIN=2, MS_EMG_MAX=3; /* imprevisti per partita */
   @media(min-width:761px) and (max-height:820px) {
     #ms { padding-top:10px; padding-bottom:10px; }
     #msShell { gap:10px; }
-    #msMain,#msScene { min-height:240px; }
+    #msMain,#msScene { min-height:340px; }
     #msMon { padding:16px 20px; }
     #msOrder { padding:14px 0; font-size:29px; }
     #msRoute li { padding:5px; }
@@ -180,7 +180,8 @@ const MS_EMG_MIN=2, MS_EMG_MAX=3; /* imprevisti per partita */
     #msMain { display:contents; }
     #msMon { position:sticky; top:0; z-index:10; padding:14px; border-radius:18px; }
     #msOrder { font-size:24px; padding:12px 0; }
-    #msScene { flex-shrink:0; min-height:200px; height:200px; border-radius:18px; }
+    #msScene { flex-shrink:0; min-height:310px; height:310px; border-radius:18px; }
+    #msSceneLabel { left:auto; right:10px; top:10px; font-size:10px; padding:6px 8px; }
     #msPlancia { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     #msDeck { padding:13px; border-radius:18px; }
     .msPan { flex-direction:column; justify-content:center; min-height:82px; padding:9px 6px; gap:4px; }
@@ -216,7 +217,7 @@ const MS_EMG_MIN=2, MS_EMG_MAX=3; /* imprevisti per partita */
       '<div id="msTimerBar"><span id="msTimerFill"></span></div>'+
       '<div id="msProc"></div>'+
     '</div>'+
-    '<div id="msScene"><canvas id="msCv" aria-label="Il volo della tua navicella"></canvas><div id="msSceneLabel"></div><div id="msBig"></div></div></div>'+
+    '<div id="msScene"><canvas id="msCv" aria-label="Il volo della tua navicella, con razzo 3D ispirato al Saturn V"></canvas><div id="msSceneLabel"></div><div id="msBig"></div></div></div>'+
     '<div id="msMsg" role="status" aria-live="polite"></div>'+
     '<div id="msDeck"><div id="msDeckTitle"><strong>LA TUA PLANCIA</strong><span>Leggi tutto, poi scegli il comando.</span></div><div id="msPlancia"></div></div>'+
     '</div>'+
@@ -957,7 +958,7 @@ function msUpdate(dt){
   msS.shake=Math.max(0,msS.shake-dt*1.2);
 }
 
-/* ---------- Disegno (canvas 2D, stile realistico) ---------- */
+/* ---------- Scena 2D con razzo Saturn V renderizzato in 3D ---------- */
 function msLerp(a,b,f){ return a+(b-a)*f; }
 function msSkyColor(){
   const f=msS.sky;
@@ -1109,6 +1110,11 @@ function msDrawSolar(c,x,y,s,open){
 }
 function msDrawRocket(c,x,y,s,o,t){
   o=o||{};
+  if(window.MSSaturnV&&window.MSSaturnV.draw(c,x,y,s,o,t,msS.flags)){
+    c.save();c.translate(x,y);if(o.rot)c.rotate(o.rot);
+    msDrawSolar(c,0,-28*s,s,msS.flags.solari?1:0);
+    c.restore();return;
+  }
   c.save(); c.translate(x,y);
   if(o.rot) c.rotate(o.rot);
   const F=msS.flags;
@@ -1295,6 +1301,7 @@ function msDrawRocket(c,x,y,s,o,t){
   c.restore();
 }
 function msDrawBooster(c,x,y,s,fall,t){
+  if(window.MSSaturnV&&window.MSSaturnV.draw(c,x,y,s,{booster:true,rot:.35+fall*.5},t,msS.flags)) return;
   /* il primo stadio che ricade: griglie aperte e sbuffi di gas freddo */
   c.save(); c.translate(x,y); c.rotate(0.35+fall*0.5);
   const OUT='#39424f';
@@ -1332,6 +1339,7 @@ function msDrawBooster(c,x,y,s,fall,t){
   c.restore();
 }
 function msDrawISS(c,x,y,s,t){
+  if(window.MSSaturnV&&window.MSSaturnV.draw(c,x,y,s,{station:true},t,msS.flags))return;
   c.save(); c.translate(x,y);
   const OUT='#4a5570';
   /* traliccio reticolare orizzontale */
@@ -1397,7 +1405,7 @@ function msDrawISS(c,x,y,s,t){
 }
 function msDrawGround(c,off,t){
   t=t||0;
-  const gy=msH-70+off;
+  const gy=msH-40+off;
   const rx=msW/2;
   /* foschia e mare all'orizzonte (le basi di lancio sono in riva all'oceano) */
   const hz=c.createLinearGradient(0,gy-46,0,gy-16);
@@ -1554,6 +1562,13 @@ function msDraw(t){
 
   if(msS.scene==='pad'||msS.scene==='liftoff'){
     const alt=msS.alt;
+    if(alt>.18){
+      const er=msLerp(msH*1.5,msH*.65,alt);
+      c.save();c.globalAlpha=Math.min(1,(alt-.18)/.2);
+      msDrawEarthBall(c,cx,msH+er*.75,er,t);c.restore();
+    }
+    const launch3D=window.MSSaturnV&&window.MSSaturnV.drawLaunch&&window.MSSaturnV.drawLaunch(c,msW,msH,alt,t,F);
+    if(!launch3D){
     /* nuvole alte che scorrono (e sfrecciano via durante la salita) */
     if(msS.sky<0.6){
       for(let k=0;k<4;k++){
@@ -1565,15 +1580,16 @@ function msDraw(t){
       }
     }
     msDrawGround(c,alt*msH*1.2,t);
-    const ry=msH-82-70*sc*1.1-alt*msH*0.28; /* motori appoggiati al supporto a ogni dimensione */
-    msDrawRocket(c,cx,ry,sc*1.1,{},t);
+    const rocketScale=Math.min(msW/130,Math.max(.35,(msH-112)/161));
+    const ry=msH-52-70*rocketScale-alt*msH*0.28;
+    msDrawRocket(c,cx,ry,rocketScale,{},t);
     /* nuvole di vapore che si allargano ai lati della rampa */
     if(F.motori&&alt<0.45){
       const spread=Math.min(1,alt*6+0.25);
       for(let k=0;k<10;k++){
         const side=(k%2?1:-1);
         const px=cx+side*(30+k*16*spread)+Math.sin(t*3+k*2)*6;
-        const py=msH-84+alt*msH*1.2+Math.sin(t*2+k)*5-k*2;
+        const py=msH-54+alt*msH*1.2+Math.sin(t*2+k)*5-k*2;
         c.fillStyle='rgba(240,242,246,'+(0.65-k*0.05)+')';
         c.beginPath(); c.arc(px,py,14+k*3,0,6.29); c.fill();
       }
@@ -1591,20 +1607,21 @@ function msDraw(t){
         c.beginPath(); c.moveTo(lx,ly); c.lineTo(lx,ly+26+k*4); c.stroke();
       }
     }
+    }
   }
   else if(msS.scene==='sep'){
     /* la Terra rimpicciolisce sotto: si vede la curvatura e l'atmosfera */
     const er=msLerp(msH*1.4,msH*0.55,Math.min(1,msS.prog+0.15));
     msDrawEarthBall(c,cx,msH+er*0.82,er,t);
     if(F.sep){
-      msDrawRocket(c,cx,cy-30,sc,{upperOnly:true},t);
+      msDrawRocket(c,cx,cy-30,sc*1.55,{upperOnly:true},t);
       const st2=F.sepT||0;
-      msDrawBooster(c,cx+st2*44,cy-30+92*sc+st2*st2*150,sc,st2,t);
-    } else msDrawRocket(c,cx,cy-30,sc,{},t);
+      msDrawBooster(c,cx+st2*44,cy-30+92*sc+st2*st2*150,sc*1.55,st2,t);
+    } else msDrawRocket(c,cx,cy-30,sc*1.55,{},t);
   }
   else if(msS.scene==='orbit'){
     msDrawEarthBall(c,msW*0.2,msH*0.85,msH*0.34,t);
-    msDrawRocket(c,cx+Math.sin(t*0.7)*6,cy+Math.cos(t*0.9)*5,sc,{upperOnly:true},t);
+    msDrawRocket(c,cx+Math.sin(t*0.7)*6,cy+Math.cos(t*0.9)*5,sc*1.55,{upperOnly:true},t);
   }
   else if(msS.scene==='iss'||msS.scene==='exp'){
     msDrawEarthBall(c,msW*0.14,msH*0.9,msH*0.3,t);
@@ -1738,6 +1755,7 @@ $('msStartCalm').onclick=()=>msBegin(true);
 $('msStartChallenge').onclick=()=>msBegin(false);
 $('msStartHome').onclick=()=>msExit();
 function msExit(){
+  if(window.MSSaturnV) window.MSSaturnV.dispose();
   msS.on=false; msStopReading(); clearTimeout(msMsgTid);
   cancelAnimationFrame(msS.raf); msS.raf=0; msS.paused=true; msS.state='idle';
   clearTimeout(msAnimTid);
