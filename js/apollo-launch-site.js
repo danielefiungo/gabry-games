@@ -67,11 +67,8 @@
       }
       for(const x of [tx-7,tx+7])b.beam(red,[x,y,tz-6],[x,y+9,tz+6],.45);
     }
-    // Gru in cima alla torre e cavo di sollevamento.
-    b.box(red,tx,106,tz,4,5,4);b.box(red,tx+10,110,tz,40,2.2,3);
-    b.beam(red,[tx-10,111,tz],[tx,117,tz],.5);b.beam(red,[tx,117,tz],[tx+28,111,tz],.5);
-    b.beam(dark,[tx+27,110,tz],[tx+27,99,tz],.13);
-    b.box(deck,tx-8,108,tz,5,3,5);
+    // Versione del gioco senza gru, come richiesto; chiusura superiore della torre.
+    b.box(deck,tx,104,tz,16,.6,14);
     b.finish();
     // Nove passerelle orientabili, l’ultima porta alla White Room Apollo.
     const arms=[];

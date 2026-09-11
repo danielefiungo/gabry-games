@@ -15,6 +15,7 @@ function boot(t){
   inject(`const $=id=>document.getElementById(id); let score=0,paused=false,VOICEON=true,MUSICON=false; const LI=()=>0,NM=t=>t; const UI={wrong:['Rileggi con calma'],praise:[['Bravo!']],speakBravo:['Bravo!']}; const shuffle=a=>a; const save=()=>{}; const stopSpeak=()=>{}; let speak=()=>Promise.resolve(); const initTTS=()=>{}; const beep=()=>{},sCorrect=()=>{},sWrong=()=>{},sLose=()=>{},sStar=()=>{},sToken=()=>{},fanfare=()=>{},confetti=()=>{}; const stopMusic=()=>{},playMusic=()=>{},mCtx=()=>{},TRK_ROCKET={}; const showModeSel=()=>{$('modeSel').style.display='flex'}; const games=[]; const registerGame=g=>games.push(g); Math.random=()=>0.9; window.testScore=()=>score; window.setSpeech=fn=>{speak=fn};`);
   inject(fs.readFileSync(path.join(__dirname,'../js/domande.js'),'utf8'));
   inject(fs.readFileSync(path.join(__dirname,'../js/apollo-launch-site.js'),'utf8'));
+  inject(fs.readFileSync(path.join(__dirname,'../js/apollo-lunar.js'),'utf8'));
   inject(fs.readFileSync(path.join(__dirname,'../js/saturn-v-3d.js'),'utf8'));
   inject(fs.readFileSync(path.join(__dirname,'../js/missione-spaziale.js'),'utf8'));
   const m=w.__MS, $=id=>w.document.getElementById(id);
@@ -77,7 +78,7 @@ test('carburante finito: ripartire ricostruisce la navicella nella fase corretta
   assert.equal(m.S.state,'end'); $('msEndBtn').click(); flush();
   assert.equal(m.S.fase,6); assert.equal(m.S.fuel,100);
   assert.equal(m.S.flags.para,undefined); assert.equal(m.S.flags.scudo,undefined);
-  assert.equal(m.S.flags.dock,1);
+  assert.equal(m.S.flags.lemDetached,1);
 });
 test('missione completa: sette fasi, sequenze, imprevisti, curiosità e ammaraggio',t=>{
   const {m,$,start,flush,tap}=boot(t); start();
@@ -92,7 +93,7 @@ test('missione completa: sette fasi, sequenze, imprevisti, curiosità e ammaragg
     else flush();
     m.draw(1);
   }
-  assert.ok(guard<250); assert.equal(m.S.fase,7); assert.equal(m.S.ordersDone,25);
+  assert.ok(guard<250); assert.equal(m.S.fase,7); assert.equal(m.S.ordersDone,42);
   assert.ok(m.S.emgSolved>=2); assert.equal(m.S.stars.reduce((a,b)=>a+b,0),21);
   assert.match($('msEndTit').textContent,/AMMARAGGIO RIUSCITO/);
   assert.equal(m.S.flags.splash,1);
@@ -129,11 +130,72 @@ test('complesso Apollo: rampa e razzo condividono la scena, distacco e fallback 
   m.S.scene='pad';w.MSSaturnV.drawLaunch=()=>false;m.draw(4);assert.equal(rockets.length,2);
 });
 
-test('attracco: stazione e capsula usano due modelli 3D distinti',t=>{
+test('orbita lunare: LEM e Apollo usano due modelli 3D distinti',t=>{
   const {w,m,start}=boot(t);start();const models=[];
   w.MSSaturnV={draw:(c,x,y,s,options)=>{models.push(options);return true;},dispose(){}};
-  m.S.scene='iss';m.draw(1);
-  assert.equal(models.length,2);assert.equal(models[0].station,true);assert.equal(models[1].capsule,true);
+  m.S.scene='lunarOrbit';m.S.flags.lemDetached=1;m.draw(1);
+  assert.equal(models.length,2);assert.equal(models[0].capsule,true);assert.equal(models[1].lemOnly,true);
   models.length=0;m.S.scene='rientro';m.S.flags.para=1;m.draw(2);
   assert.equal(models.length,1);assert.equal(models[0].capsule,true);
+});
+
+test('Apollo usa celle a combustibile: nessun comando per pannelli solari',t=>{
+  const {m,start,tap,flush,$}=boot(t);start();m.phaseStart(4);flush();
+  assert.equal(m.PANNELLI.solari,undefined);assert.equal(m.PANNELLI.energia.lab,'ENERGIA');
+  assert.ok(m.FASI.every(f=>!f.pans.includes('solari')&&f.orders.every(o=>!o.t.includes('PANNELLI SOLARI'))));
+  m.S.idx=1;m.showOrder();tap('energia');assert.equal(m.S.flags.energia,1);
+  assert.equal(m.S.flags.solari,undefined);assert.match(m.IMPREVISTI[2].card.txt,/CELLE A COMBUSTIBILE/);
+});
+
+test('modulo di servizio: distacco solo su comando, prima di scudo e paracadute',t=>{
+  const {m,start,tap,flush}=boot(t);start();
+  for(let phase=3;phase<=7;phase++){m.phaseStart(phase);flush();assert.equal(m.S.flags.serviceSeparated,undefined);}
+  const detach=m.S.orders.findIndex(o=>o.set&&o.set.serviceSeparated);
+  assert.ok(detach>0);assert.ok(detach<m.S.orders.findIndex(o=>o.set&&o.set.scudo));
+  m.S.idx=detach;m.showOrder();tap('gancio');assert.equal(m.S.flags.serviceSeparated,undefined);
+  tap('motori');assert.equal(m.S.flags.serviceSeparated,undefined);tap('gancio');
+  assert.equal(m.S.flags.serviceSeparated,1);assert.equal(m.S.flags.motori,0);
+  m.update(.5);assert.equal(m.S.flags.serviceSepT,.5);
+  m.phaseStart(7);flush();assert.equal(m.S.flags.serviceSeparated,undefined);
+});
+
+test('LEM: allunaggio, risalita, riaggancio e trasferimento prima dello sgancio',t=>{
+  const {m,start,tap,flush}=boot(t);start();m.phaseStart(6);flush();
+  assert.equal(m.S.flags.lemDocked,1);assert.equal(m.S.flags.lemDetached,1);
+  const applyUntil=flag=>{
+    let guard=0;
+    while(!m.S.flags[flag]&&guard++<40){
+      const o=m.S.orders[m.S.idx];assert.ok(o);tap(o.seq?o.seq[m.S.seqIdx]:o.ok);
+      if(m.S.state==='anim')flush();
+    }
+    assert.equal(m.S.flags[flag],1);
+  };
+  applyUntil('landed');assert.equal(m.S.flags.serviceSeparated,undefined);
+  applyUntil('samples');applyUntil('lemAscent');assert.equal(m.S.flags.landed,1);
+  applyUntil('lemRedocked');assert.equal(m.S.flags.lemDetached,0);
+  applyUntil('samplesTransferred');assert.equal(m.S.flags.crewInLem,0);
+  applyUntil('lemJettisoned');assert.equal(m.S.flags.lemDocked,0);assert.equal(m.S.flags.serviceSeparated,undefined);
+  m.phaseStart(7);flush();assert.equal(m.S.flags.lemJettisoned,1);assert.equal(m.S.flags.serviceSeparated,undefined);
+});
+
+test('Saturn V: tre stadi, riaccensione, separazione e recupero del LEM nell’ordine corretto',t=>{
+  const {m,start,tap,flush}=boot(t);start();m.phaseStart(3);flush();
+  function completePhaseOrders(){let guard=0;while(m.S.state==='order'&&guard++<30){const o=m.S.orders[m.S.idx];tap(o.seq?o.seq[m.S.seqIdx]:o.ok);if(m.S.state==='anim')flush();}}
+  completePhaseOrders();assert.equal(m.S.flags.sep,1);assert.equal(m.S.flags.secondSeparated,1);assert.equal(m.S.flags.thirdSeparated,undefined);
+  m.phaseStart(4);flush();m.S.emgAt=-1;const orders=m.S.orders;
+  const separation=orders.findIndex(o=>o.set&&o.set.thirdSeparated),docking=orders.findIndex(o=>o.set&&o.set.lemDocked),extraction=orders.findIndex(o=>o.set&&o.set.lemExtracted);
+  assert.ok(orders.findIndex(o=>o.set&&o.set.tli)<separation);assert.ok(separation<docking&&docking<extraction);
+  assert.equal(m.S.flags.thirdSeparated,undefined);
+  m.S.idx=separation;m.showOrder();tap('radio');assert.equal(m.S.flags.thirdSeparated,undefined);tap('gancio');
+  assert.equal(m.S.flags.thirdSeparated,1);assert.equal(m.S.flags.lemExtracted,undefined);flush();
+  tap('motori');tap('gancio');assert.equal(m.S.flags.lemDocked,1);assert.equal(m.S.flags.thirdDiscarded,undefined);flush();
+  tap('gancio');assert.equal(m.S.flags.lemExtracted,1);assert.equal(m.S.flags.thirdDiscarded,1);
+  m.phaseStart(5);flush();assert.equal(m.S.flags.secondSeparated,1);assert.equal(m.S.flags.thirdSeparated,1);assert.equal(m.S.flags.lemExtracted,1);assert.equal(m.S.flags.serviceSeparated,undefined);
+  m.phaseStart(4);flush();assert.equal(m.S.flags.thirdSeparated,undefined);assert.equal(m.S.flags.lemDocked,undefined);
+});
+test('la separazione del terzo stadio disegna sia S-IVB sia Apollo',t=>{
+  const {w,m,start}=boot(t);start();const models=[];w.MSSaturnV={draw:(c,x,y,s,o)=>{models.push(o);return true;},dispose(){}};
+  m.S.scene='orbit';m.S.flags.secondSeparated=1;m.draw(0);assert.equal(models.length,1);assert.equal(models[0].upperOnly,true);
+  models.length=0;m.S.flags.thirdSeparated=1;m.S.flags.thirdSepT=2;m.draw(1);
+  assert.equal(models.length,2);assert.equal(models[0].thirdStage,true);assert.equal(models[1].capsule,true);
 });

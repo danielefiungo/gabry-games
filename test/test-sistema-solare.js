@@ -27,7 +27,7 @@ const THREE_STUB=`
     normalize(){const l=this.length()||1;return this.multiplyScalar(1/l)}
     length(){return Math.hypot(this.x,this.y,this.z)}
     distanceTo(v){return Math.hypot(this.x-v.x,this.y-v.y,this.z-v.z)}
-    project(){return this}
+    project(){this.x/=100;this.y/=100;this.z=0.5;return this}
     setHex(){return this}
   }
   class Attr{
@@ -66,6 +66,7 @@ const THREE_STUB=`
     computeLineDistances(){return this}
     lookAt(){return this}
     updateProjectionMatrix(){return this}
+    setViewOffset(){return this}
   }
   class Mesh extends Obj{
     constructor(g,m){super();this.geometry=g||new Geo();this.material=m||{color:new V3()};this.isMesh=true}
@@ -81,9 +82,9 @@ const THREE_STUB=`
     Scene:Obj, Vector2:V3, Vector3:V3, Group:Obj, Object3D:Obj, Mesh:Mesh, Line:Mesh, Points:Mesh,
     Sprite:Mesh, BufferGeometry:Geo, BufferAttribute:Attr, RingGeometry:Ring,
     SphereGeometry:Geo, BoxGeometry:Geo, CylinderGeometry:Geo, ConeGeometry:Geo,
-    MeshLambertMaterial:Mat, MeshBasicMaterial:Mat, LineBasicMaterial:Mat,
+    MeshLambertMaterial:Mat, MeshPhongMaterial:Mat, ShaderMaterial:Mat, MeshBasicMaterial:Mat, LineBasicMaterial:Mat,
     LineDashedMaterial:Mat, PointsMaterial:Mat, SpriteMaterial:Mat,
-    CanvasTexture:function(){return{repeat:{set:noop}}}, Color:function(){return new V3()},
+    CanvasTexture:function(cv){return{image:cv,repeat:{set:noop}}}, Color:function(){return new V3()},
     AmbientLight:Obj, PointLight:Obj, HemisphereLight:Obj, DirectionalLight:Obj,
     AdditiveBlending:1, DoubleSide:2,
     PerspectiveCamera:function(fov){ const o=new Obj(); o.fov=fov||50; o.aspect=1; return o },
@@ -108,6 +109,7 @@ const CANVAS_STUB=`
     getImageData(){return{data:[]}}, putImageData(){}
   };
   HTMLCanvasElement.prototype.getContext=function(){ const c=Object.create(ctx); c.canvas=this; return c; };
+  HTMLCanvasElement.prototype.toDataURL=function(){return 'data:image/png;base64,'};
 })();
 `;
 
@@ -294,7 +296,24 @@ ok(w.document.getElementById('ssCard').textContent.indexOf('al contrario')>=0,
 w.eval('ssCloseCard()');
 ok(!card.classList.contains('open'),'la scheda si chiude');
 
-console.log('\n14. MENU E CICLO DI VITA');
+console.log('\n14. ESPLORAZIONE: pausa, selezione, ritorno alla panoramica');
+ok(w.document.querySelectorAll('#ssDock button').length===13,'il selettore rende raggiungibili anche lune e stazioni');
+ok(card.hasAttribute('inert'),'la scheda chiusa non riceve focus');
+w.document.querySelector('#ssDock [data-i="2"]').click();
+ok(w.eval('ssCardLvl')===2,'il selettore apre il pianeta richiesto');
+ok(w.document.querySelector('#ssDock [data-i="2"]').getAttribute('aria-pressed')==='true','il pianeta selezionato è indicato anche alle tecnologie assistive');
+w.document.getElementById('ssPause').click();
+const frozen=w.eval('JSON.stringify(ssB.map(b=>[b.o.M,b.mesh.rotation.y,b.o.haloPhase,b.clouds&&b.clouds.rotation.y]))');
+w.eval('for(let i=0;i<10;i++) ssFrame();');
+ok(frozen===w.eval('JSON.stringify(ssB.map(b=>[b.o.M,b.mesh.rotation.y,b.o.haloPhase,b.clouds&&b.clouds.rotation.y]))'),'la pausa ferma orbite, rotazioni, nubi e moto di Webb');
+ok(w.eval('ssB[2].grp.visible && !ssB[5].grp.visible'),'il dettaglio isola il sistema del pianeta selezionato');
+w.document.getElementById('ssHome').click();
+w.eval('ssFrame()');
+ok(w.eval('ssCardLvl===-1 && ssCamAuto && ssB[5].grp.visible'),'panoramica ripristina tutti i pianeti e la camera automatica');
+w.document.getElementById('ssPause').click();
+ok(w.eval('!ssPaused'),'si può riprendere la simulazione');
+
+console.log('\n15. MENU E CICLO DI VITA');
 ok(w.eval('typeof ssEnter')==='function'&&w.eval('typeof ssExit')==='function','ha entrata e uscita per il menu');
 w.eval('ssExit()');
 ok(w.document.getElementById('ss').style.display==='none','uscendo l’overlay si chiude');

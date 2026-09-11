@@ -1,5 +1,7 @@
 # Prompt: costruisci la modalità "Missione Spaziale: ordini dalla base" 🚀
 
+> Documento storico del concept iniziale. La versione corrente segue Apollo, con LEM e tre stadi: vedere la sezione “Missione Spaziale — Apollo” nel README. I riferimenti qui sotto a ISS e pannelli solari non descrivono più questa modalità.
+
 Copia tutto quello che segue in una nuova sessione con accesso alla cartella `GabriGame`.
 
 ---

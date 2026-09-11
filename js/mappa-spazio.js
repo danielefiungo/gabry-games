@@ -156,20 +156,20 @@ const SS_BODIES=[
    fact:['L’orbita di Plutone è così schiacciata che a volte passa dentro quella di Nettuno. Non si scontrano perché Plutone viaggia 17° più in alto.',
          'Pluto’s orbit dips inside Neptune’s, but it travels 17° higher.'] },
 
- { nm:['ISS','ISS'], em:'🛰️', kind:'iss',
+ { nm:['ISS','ISS'], em:'🛰️', kind:'iss', col:'#a7c5eb',
    parent:2, aKm:6786, aScene:1.25, alignFan:-90, e:0.0003, inc:51.64, node:0, peri:0, days:0.06436, equator:true,
    rot:0.06436, sync:true, tilt:0, rKm:0, g:0, moons:0,
    temp:['da −157 °C a +121 °C','−157 °C to +121 °C'],
    fact:['La Stazione Spaziale corre a 7,7 km al secondo e fa un giro della Terra in 90 minuti: gli astronauti vedono 16 albe al giorno.',
          'The Station flies at 7.7 km/s and orbits Earth in 90 minutes.'] },
 
- { nm:['Telescopio Webb','Webb Telescope'], em:'🔭', kind:'jwst',
+ { nm:['Telescopio Webb','Webb Telescope'], em:'🔭', kind:'jwst', col:'#e1c579',
    parent:2, l2:true, days:182, rot:182, tilt:0, rKm:0, g:0, moons:0,
    temp:['−233 °C allo specchio','−233 °C at the mirror'],
    fact:['Il telescopio Webb sta in L2, a 1,5 milioni di km dalla Terra dalla parte opposta al Sole: il suo scudo grande come un campo da tennis lo tiene al freddo.',
          'Webb sits at L2, 1.5 million km from Earth, opposite the Sun.'] },
 
- { nm:['Base Lunare','Moon Base'], em:'🏠', kind:'base',
+ { nm:['Base Lunare','Moon Base'], em:'🏠', kind:'base', col:'#c2cedc',
    parent:3, surface:true, lat:-80, rot:0, tilt:0, rKm:0, g:1.62, moons:0,
    temp:['−230 °C nei crateri in ombra','−230 °C in the shadowed craters'],
    fact:['Le basi si costruiranno al polo sud della Luna: in fondo ai crateri sempre in ombra c’è ghiaccio d’acqua da 2 miliardi di anni.',
@@ -219,12 +219,13 @@ let ssB=[], ssEdges=[], ssBelt=null, ssMarker=null, ssRunning=false, ssOn=false,
 let ssCamTheta=SS_ORBIT_THETA, ssCamPhi=SS_ORBIT_PHI, ssCamR=SS_ZOOM_START;
 let ssClock=null, ssRay=null, ssHits=[];
 let ssSpeedF=1, ssPtrIn=false, ssLastTouch=0, ssLastW=0, ssLastH=0;
-let ssAligned=true, ssCamAuto=true, ssCenterX=SS_ALIGN_CX, ssCardLvl=-1;
-try{ ssAligned=(localStorage.getItem('gabri_mapview')!=='orbite'); }catch(e){}
+let ssAligned=false, ssCamAuto=true, ssCenterX=0, ssCardLvl=-1;
+let ssCenterY=0, ssCenterZ=0, ssPaused=false;
+try{ ssAligned=(localStorage.getItem('gabri_mapview')==='fila'); }catch(e){}
 
 /* ============================================================
    TEXTURE PROCEDURALI
-   Mappe equirettangolari 512×256: la x è la longitudine
+   Mappe equirettangolari 1024×512, disegnate in coordinate 512×256: la x è la longitudine
    (−180°→+180°), la y è la latitudine (+90° in alto).
    Ogni macchia che disegniamo sta dove sta davvero.
    ============================================================ */
@@ -232,8 +233,8 @@ const SS_TW=512, SS_TH=256;
 function ssX(lon){ return (lon+180)/360*SS_TW; }
 function ssY(lat){ return (90-lat)/180*SS_TH; }
 function ssCanvas(base){
-  const cv=document.createElement('canvas'); cv.width=SS_TW; cv.height=SS_TH;
-  const c=cv.getContext('2d'); c.fillStyle=base; c.fillRect(0,0,SS_TW,SS_TH);
+  const cv=document.createElement('canvas'); cv.width=SS_TW*2; cv.height=SS_TH*2;
+  const c=cv.getContext('2d'); c.scale(2,2); c.fillStyle=base; c.fillRect(0,0,SS_TW,SS_TH);
   return c;
 }
 function ssPoly(c,pts,fill){
@@ -260,7 +261,12 @@ function ssCraters(c,n,minR,maxR,dark,light){
 function ssBands(c,list){
   list.forEach(b=>{
     const y0=ssY(b[0]), y1=ssY(b[1]);
-    c.fillStyle=b[2]; c.fillRect(0,Math.min(y0,y1),SS_TW,Math.abs(y1-y0)+1);
+    c.beginPath();
+    for(let x=0;x<=SS_TW;x+=2){
+      const wave=Math.sin(x/SS_TW*Math.PI*12+y0)*2+Math.sin(x/SS_TW*Math.PI*26)*0.8;
+      x?c.lineTo(x,y0+wave):c.moveTo(x,y0+wave);
+    }
+    c.lineTo(SS_TW,y1+4); c.lineTo(0,y1+4); c.closePath(); c.fillStyle=b[2]; c.fill();
   });
   for(let i=0;i<260;i++){ /* turbolenza sui bordi */
     const y=Math.random()*SS_TH, w=12+Math.random()*70, h=1+Math.random()*3;
@@ -305,8 +311,7 @@ function ssTex(kind){
     ssBlob(c,45,22,22,12,'rgba(214,192,130,.7)');
     c.fillStyle=ice; c.fillRect(0,ssY(-63),SS_TW,SS_TH-ssY(-63)); /* Antartide */
     c.fillRect(0,0,SS_TW,ssY(80));                                 /* banchi polari */
-    for(let i=0;i<70;i++)
-      ssBlob(c,Math.random()*360-180,(Math.random()*2-1)*70,7+Math.random()*22,3+Math.random()*6,'rgba(255,255,255,.3)');
+    /* Le nubi sono sul guscio separato ssClouds, non dipinte sui continenti. */
   }
   else if(kind==='luna'){
     c=ssCanvas('#9c9a95');
@@ -394,25 +399,66 @@ function ssTex(kind){
     c.restore();
   }
   else c=ssCanvas('#999999');
+  ssTextureDetail(c,kind);
   const t=new THREE.CanvasTexture(c.canvas);
+  t.anisotropy=4;
   return t;
+}
+/* Grana delle superfici e filamenti delle nubi, generati una sola volta. */
+function ssTextureDetail(c,kind){
+  const w=c.canvas.width, h=c.canvas.height, pixels=c.getImageData(0,0,w,h);
+  const gas=['giove','saturno','venere','urano','nettuno'].includes(kind);
+  for(let p=0;p<pixels.data.length;p+=4){
+    const x=(p/4)%w, y=Math.floor(p/4/w), u=x/w*Math.PI*2;
+    const flow=Math.sin(u*7+Math.sin(y*0.026)*4)+Math.sin(u*19-y*0.043)*0.4;
+    const grain=Math.sin(x*127.1+y*311.7)*43758.5453;
+    const n=grain-Math.floor(grain)-0.5;
+    const detail=gas?Math.sin(y*0.55+flow*2)*5+flow*3+n*3:
+      Math.sin(u*23+Math.sin(y*0.06)*3)*Math.cos(y*0.14)*7+n*12;
+    const strength=kind==='urano'?0.22:1;
+    for(let j=0;j<3;j++) pixels.data[p+j]+=detail*strength;
+  }
+  c.putImageData(pixels,0,0);
+}
+function ssSoftDisc(){
+  const cv=document.createElement('canvas'); cv.width=cv.height=64;
+  const c=cv.getContext('2d'), g=c.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.16,'rgba(255,255,255,.9)');
+  g.addColorStop(0.45,'rgba(255,255,255,.18)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=g; c.fillRect(0,0,64,64);
+  return new THREE.CanvasTexture(cv);
+}
+function ssAtmosphere(r,color){
+  return new THREE.Mesh(new THREE.SphereGeometry(r*1.035,48,32),new THREE.ShaderMaterial({
+    uniforms:{tint:{value:new THREE.Color(color)}}, transparent:true, depthWrite:false,
+    blending:THREE.AdditiveBlending,
+    vertexShader:'varying vec3 n; varying vec3 v; varying vec3 lightDir; void main(){ vec4 p=modelViewMatrix*vec4(position,1.0); n=normalize(normalMatrix*normal); v=-p.xyz; lightDir=(viewMatrix*vec4(0.0,0.0,0.0,1.0)).xyz-p.xyz; gl_Position=projectionMatrix*p; }',
+    fragmentShader:'uniform vec3 tint; varying vec3 n; varying vec3 v; varying vec3 lightDir; void main(){ float rim=pow(1.0-max(dot(normalize(n),normalize(v)),0.0),3.0); float day=smoothstep(-0.3,0.7,dot(normalize(n),normalize(lightDir))); gl_FragColor=vec4(tint,rim*(0.12+day*0.65)); }'
+  }));
+}
+function ssClouds(r){
+  const c=ssCanvas('rgba(0,0,0,0)');
+  for(let i=0;i<180;i++){
+    const lon=Math.random()*360-180, lat=(Math.random()*2-1)*72;
+    for(let j=0;j<5;j++) ssBlob(c,lon+j*3,lat+Math.sin(j*0.7)*3,9-j,0.7+j*0.3,'rgba(255,255,255,.16)',lat*0.4);
+  }
+  return new THREE.Mesh(new THREE.SphereGeometry(r*1.014,64,40),new THREE.MeshLambertMaterial({
+    map:new THREE.CanvasTexture(c.canvas),transparent:true,depthWrite:false,opacity:0.85
+  }));
 }
 /* Sole: granulazione della fotosfera + macchie */
 function ssSunTex(){
-  const cv=document.createElement('canvas'); cv.width=cv.height=256;
-  const c=cv.getContext('2d');
-  const g=c.createRadialGradient(128,128,10,128,128,128);
-  g.addColorStop(0,'#fffbe0'); g.addColorStop(0.5,'#ffd93d'); g.addColorStop(1,'#ff8f12');
-  c.fillStyle=g; c.fillRect(0,0,256,256);
-  for(let i=0;i<600;i++){
-    c.fillStyle='rgba(255,'+(200+Math.random()*55|0)+',80,'+(0.05+Math.random()*0.1)+')';
-    c.beginPath(); c.arc(Math.random()*256,Math.random()*256,2+Math.random()*5,0,Math.PI*2); c.fill();
+  const c=ssCanvas('#ffc34c');
+  for(let i=0;i<12000;i++){
+    c.fillStyle=i%3?'rgba(255,242,166,.24)':'rgba(196,74,13,.12)';
+    c.beginPath(); c.arc(Math.random()*SS_TW,Math.random()*SS_TH,0.3+Math.random()*1.5,0,Math.PI*2); c.fill();
   }
-  for(let i=0;i<7;i++){ /* macchie solari, più fredde di 1500 °C */
-    c.fillStyle='rgba(150,70,10,.5)';
-    c.beginPath(); c.arc(Math.random()*256,60+Math.random()*140,3+Math.random()*7,0,Math.PI*2); c.fill();
+  for(let i=0;i<12;i++){
+    const x=Math.random()*SS_TW, y=SS_TH*(0.3+Math.random()*0.4);
+    c.fillStyle='rgba(158,71,16,.35)';
+    c.beginPath(); c.ellipse(x,y,1+Math.random()*2,0.8,0,0,Math.PI*2); c.fill();
   }
-  return new THREE.CanvasTexture(cv);
+  return new THREE.CanvasTexture(c.canvas);
 }
 /* ---- anelli: la texture è RADIALE (u = distanza dal pianeta) ----
    Saturno, distanze vere dal centro (R = 58.232 km):
@@ -448,6 +494,12 @@ function ssRingTex(spec){
   const cv=document.createElement('canvas'); cv.width=512; cv.height=8;
   const c=cv.getContext('2d');
   spec.tex.forEach(s=>{ c.fillStyle=s[2]; c.fillRect(s[0]*512,0,(s[1]-s[0])*512+1,8); });
+  c.save(); c.globalCompositeOperation='source-atop';
+  for(let i=0;i<280;i++){
+    c.fillStyle=i%3?'rgba(60,44,24,.18)':'rgba(255,245,217,.22)';
+    c.fillRect(Math.random()*512,0,0.35+Math.random()*0.65,8);
+  }
+  c.restore();
   for(let i=0;i<900;i++){ /* miliardi di frammenti: un po' di grana */
     c.fillStyle='rgba(255,250,235,'+(Math.random()*0.12)+')';
     c.fillRect(Math.random()*512,Math.random()*8,1,1);
@@ -466,6 +518,17 @@ function ssMakeRing(rS,spec){
   }
   uv.needsUpdate=true;
   const m=new THREE.MeshBasicMaterial({map:ssRingTex(spec),side:THREE.DoubleSide,transparent:true,depthWrite:false});
+  /* Ombra del globo sugli anelli: intersezione del raggio diretto al Sole.
+     La formula usa coordinate mondiali, quindi segue orbita e asse inclinato. */
+  m.onBeforeCompile=shader=>{
+    shader.uniforms.planetRadius={value:rS};
+    shader.vertexShader='varying vec3 ringWorld; varying vec3 ringCenter;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\n ringWorld=(modelMatrix*vec4(position,1.0)).xyz; ringCenter=(modelMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;');
+    shader.fragmentShader='uniform float planetRadius; varying vec3 ringWorld; varying vec3 ringCenter;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>',
+      'vec3 ray=normalize(-ringWorld); vec3 oc=ringWorld-ringCenter; float along=-dot(oc,ray); float miss=length(oc+ray*max(along,0.0)); float shade=along>0.0?smoothstep(planetRadius*0.97,planetRadius*1.025,miss):1.0; gl_FragColor.rgb*=0.19+0.81*shade;\n#include <dithering_fragment>');
+  };
   const mesh=new THREE.Mesh(geo,m);
   mesh.rotation.x=Math.PI/2;   /* l'anello sta nel piano equatoriale */
   return mesh;
@@ -606,18 +669,19 @@ function ssBuildScene(){
   ssScene=new THREE.Scene();
   /* nello spazio non c'è aria che diffonda la luce: la parte in ombra
      è quasi nera, un filo di ambiente solo per non perdere i dettagli */
-  ssScene.add(new THREE.AmbientLight(0x64789c,0.34));
-  ssScene.add(new THREE.PointLight(0xfff4d6,2.1,0));
+  ssScene.add(new THREE.AmbientLight(0x9cafd3,0.65));
+  ssScene.add(new THREE.PointLight(0xfff4e6,1.65,0));
 
   /* stelle: 1400 punti su una sfera lontana, con magnitudini diverse */
-  for(const layer of [[900,0.75,0.85],[380,1.25,0.95],[120,2.0,1]]){
+  const starMap=ssSoftDisc();
+  for(const layer of [[1400,0.6,0.65,0xbacfff],[400,1.1,0.8,0xffe5ba],[90,1.8,1,0xffffff]]){
     const n=layer[0], pos=new Float32Array(n*3);
     for(let i=0;i<n;i++){
       const th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1), r=210+Math.random()*70;
       pos[i*3]=r*Math.sin(ph)*Math.cos(th); pos[i*3+1]=r*Math.cos(ph); pos[i*3+2]=r*Math.sin(ph)*Math.sin(th);
     }
     const gg=new THREE.BufferGeometry(); gg.setAttribute('position',new THREE.BufferAttribute(pos,3));
-    ssScene.add(new THREE.Points(gg,new THREE.PointsMaterial({color:0xffffff,size:layer[1],transparent:true,opacity:layer[2]})));
+    ssScene.add(new THREE.Points(gg,new THREE.PointsMaterial({map:starMap,color:layer[3],size:layer[1],transparent:true,opacity:layer[2],depthWrite:false,blending:THREE.AdditiveBlending})));
   }
 
   /* Sole: raggio vero 696.000 km, cioè 109 Terre. Nella scena è compresso
@@ -625,8 +689,8 @@ function ssBuildScene(){
   const sunR=ssSizeScene(696000)*0.62;
   const sun=new THREE.Mesh(new THREE.SphereGeometry(sunR,32,24),new THREE.MeshBasicMaterial({map:ssSunTex()}));
   ssScene.add(sun); ssScene.userData.sun=sun;
-  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture(),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));
-  glow.scale.set(sunR*5,sunR*5,1); ssScene.add(glow);
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:starMap,color:0xffb545,opacity:0.65,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));
+  glow.scale.set(sunR*9,sunR*9,1); ssScene.add(glow);
   ssScene.userData.glow=glow;
 
   /* fascia principale degli asteroidi: 2,06–3,28 UA, con la lacuna di Kirkwood
@@ -639,7 +703,7 @@ function ssBuildScene(){
     bp[i*3]=a*Math.cos(t); bp[i*3+1]=a*Math.sin(t)*Math.sin(inc); bp[i*3+2]=a*Math.sin(t)*Math.cos(inc);
   }
   const bg=new THREE.BufferGeometry(); bg.setAttribute('position',new THREE.BufferAttribute(bp,3));
-  ssBelt=new THREE.Points(bg,new THREE.PointsMaterial({color:0xa89880,size:0.22,transparent:true,opacity:0.75}));
+  ssBelt=new THREE.Points(bg,new THREE.PointsMaterial({map:starMap,color:0xbba88b,size:0.13,transparent:true,opacity:0.55,depthWrite:false}));
   ssScene.add(ssBelt);
 
   /* ---- i corpi ---- */
@@ -650,14 +714,19 @@ function ssBuildScene(){
     const tilt=new THREE.Group();     /* inclinazione dell'asse */
     tilt.rotation.z=o.tiltRad;
     grp.add(tilt);
-    let mesh;
+    let mesh, clouds=null;
     if(B.kind==='iss') mesh=ssMakeISS();
     else if(B.kind==='jwst') mesh=ssMakeJWST();
     else if(B.kind==='base') mesh=ssMakeBase();
     else {
-      mesh=new THREE.Mesh(new THREE.SphereGeometry(o.rS,40,26),
-        new THREE.MeshLambertMaterial({map:ssTex(B.kind)}));
+      const map=ssTex(B.kind), rocky=['mercurio','luna','marte','plutone'].includes(B.kind);
+      mesh=new THREE.Mesh(new THREE.SphereGeometry(o.rS,64,40),
+        new THREE.MeshPhongMaterial({map:map,bumpMap:rocky?map:null,bumpScale:rocky?o.rS*0.025:0,
+          shininess:B.kind==='terra'?22:4,specular:B.kind==='terra'?0x294969:0x111111}));
       if(B.ring) mesh.add(ssMakeRing(o.rS,SS_RING[B.ring]));
+      const atmos={terra:0x438cff,venere:0xf4c889,marte:0xc8794c,urano:0x83dae1,nettuno:0x557dff};
+      if(atmos[B.kind]) tilt.add(ssAtmosphere(o.rS,atmos[B.kind]));
+      if(B.kind==='terra'){ clouds=ssClouds(o.rS); mesh.add(clouds); }
     }
     tilt.add(mesh);
     /* sfera invisibile più grande: facile da toccare anche da lontano */
@@ -667,7 +736,7 @@ function ssBuildScene(){
     /* materiali PROPRI del corpo, raccolti prima di agganciare i satelliti:
        così spegnere un livello chiuso non spegne anche le sue lune */
     const mats=[]; tilt.traverse(m=>{ if(m.isMesh&&m.material&&m.material.color) mats.push(m.material); });
-    ssB.push({o:o,grp:grp,tilt:tilt,mesh:mesh,orbit:null,eq:null,mats:mats});
+    ssB.push({o:o,grp:grp,tilt:tilt,mesh:mesh,clouds:clouds,orbit:null,eq:null,mats:mats});
 
     /* linea dell'orbita: l'ellisse vera, campionata sui suoi elementi */
     if(o.aS>0){
@@ -677,7 +746,7 @@ function ssBuildScene(){
         op[i*3]=v.x; op[i*3+1]=v.y; op[i*3+2]=v.z;
       }
       const og=new THREE.BufferGeometry(); og.setAttribute('position',new THREE.BufferAttribute(op,3));
-      ssB[k].orbit=new THREE.Line(og,new THREE.LineBasicMaterial({color:0x9fc4ff,transparent:true,opacity:0.20}));
+      ssB[k].orbit=new THREE.Line(og,new THREE.LineBasicMaterial({color:B.col,transparent:true,opacity:0.24}));
     }
   });
   /* gerarchia: i satelliti stanno DENTRO il gruppo del pianeta */
@@ -778,19 +847,26 @@ function ssCardHTML(k){
       '<div class="ssCardNm">'+B.nm[i]+'</div>'+
       '<div class="ssCardLv">'+(k+1)+'. '+(un?t.emoji:'🔒')+' '+t.name[i]+' '+(un?stars:'📖')+'</div>'+
     '</div></div>'+
-    '<div class="ssRows">'+rows+'</div>'+
     '<div class="ssFact">💡 '+B.fact[i]+'</div>'+
     '<div class="ssCardBtns">'+
       (VOICEON?'<button class="ssBtn" id="ssCardRead">🔊 Ascolta</button>':'')+
       '<button class="ssBtn go" id="ssCardGo">'+(un?'▶️ Gioca il livello':'📖 Leggi la storia')+'</button>'+
-    '</div>';
+    '</div><div class="ssRows">'+rows+'</div>';
 }
 function ssOpenCard(k){
+  if(!ssB[k]) return;
   ssCardLvl=k;
+  ssCamAuto=true;
   const card=$('ssCard');
+  card.style.setProperty('--planet-color',ssB[k].o.B.col);
   card.innerHTML=ssCardHTML(k);
   card.classList.add('open');
+  card.removeAttribute('inert'); card.setAttribute('aria-hidden','false');
+  card.scrollTop=0;
+  $('ss').classList.add('inspecting');
+  ssRefresh();
   $('ssCardX').onclick=ssCloseCard;
+  $('ssCardX').focus({preventScroll:true});
   const rd=$('ssCardRead');
   if(rd) rd.onclick=()=>{
     const B=ssPrep()[k].B, i=LI();
@@ -805,80 +881,65 @@ function ssOpenCard(k){
     } else if(typeof openLetturina==='function') openLetturina(k);
   };
 }
-function ssCloseCard(){ ssCardLvl=-1; stopSpeak(); $('ssCard').classList.remove('open'); }
+function ssCloseCard(){
+  const previous=ssCardLvl;
+  ssCardLvl=-1; ssCamAuto=true; stopSpeak();
+  $('ssCard').classList.remove('open');
+  $('ssCard').setAttribute('inert',''); $('ssCard').setAttribute('aria-hidden','true');
+  $('ss').classList.remove('inspecting');
+  if(ssLbls){
+    ssRefresh();
+    const btn=$('ssDock').querySelector('[data-i="'+previous+'"]');
+    if(btn) btn.focus({preventScroll:true});
+  }
+}
 
 /* ============================================================
    DOM, CSS, INPUT
    ============================================================ */
 (function(){
-  const css=document.createElement('style');
-  css.textContent=[
-  '#ss { z-index:11; padding:0; background:#03050d; }',
-  '#ssWrap { position:absolute; inset:0; }',
-  '#ssCanvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }',
-  '#ssCanvas:active { cursor:grabbing; }',
-  '#ssLabels { position:absolute; inset:0; overflow:hidden; pointer-events:none; }',
-  '.ssLbl { position:absolute; transform:translate(-50%,0); pointer-events:auto; cursor:pointer; white-space:nowrap;',
-  '  background:rgba(10,18,42,.72); border:1px solid rgba(150,180,240,.35); border-radius:11px; padding:3px 8px; text-align:center; }',
-  '.ssLbl:hover { background:rgba(24,40,84,.92); }',
-  '.ssLbl .pn { font-size:11px; color:#9fc4ff; letter-spacing:.5px; }',
-  '.ssLbl .tn { font-size:13px; font-weight:bold; color:#fff; }',
-  '.ssLbl .st { font-size:12px; color:#ffe14d; }',
-  '.ssLbl.locked { opacity:.72; } .ssLbl.locked .tn { color:#c3c8d6; }',
-  '#ssLegend { position:absolute; top:9px; left:11px; font-size:12px; color:#cfe0ff; text-align:left; line-height:1.45;',
-  '  background:rgba(6,12,30,.6); border-radius:10px; padding:6px 10px; max-width:min(430px,58vw); }',
-  '#ssLegend span { color:#8fa4cc; font-size:11px; }',
-  '#ssHint { position:absolute; bottom:9px; left:50%; transform:translateX(-50%); font-size:12px; color:#bcd0f2;',
-  '  background:rgba(6,12,30,.6); border-radius:10px; padding:5px 12px; text-align:center; max-width:92vw; }',
-  '#ssBtns { position:absolute; top:9px; right:11px; display:flex; gap:7px; pointer-events:auto; }',
-  '#ssBtns button { cursor:pointer; font-family:inherit; font-size:13px; font-weight:bold; color:#0d1836;',
-  '  background:#ffe14d; border:2px solid #b79a12; border-radius:12px; padding:7px 11px; box-shadow:0 3px 0 #b79a12; }',
-  '#ssBtns button:active { transform:translateY(3px); box-shadow:none; }',
-  '#ssBtns #ssExit { background:#9fc4ff; border-color:#4b6fb5; box-shadow:0 3px 0 #4b6fb5; }',
-  '#ssCard { position:absolute; right:0; top:0; bottom:0; width:min(390px,92vw); pointer-events:auto;',
-  '  background:linear-gradient(180deg,#101c42,#070c20); border-left:3px solid #34508f; color:#eaf1ff;',
-  '  padding:16px 16px 18px; overflow:auto; text-align:left; transform:translateX(105%); transition:transform .25s; }',
-  '#ssCard.open { transform:none; }',
-  '.ssCardX { position:absolute; top:10px; right:12px; cursor:pointer; font-family:inherit; font-size:16px;',
-  '  background:rgba(255,255,255,.12); color:#fff; border:0; border-radius:9px; width:30px; height:30px; }',
-  '.ssCardHead { display:flex; gap:11px; align-items:center; margin:2px 34px 12px 0; }',
-  '.ssCardHead .ssEm { font-size:40px; }',
-  '.ssCardNm { font-size:24px; font-weight:bold; color:#ffe14d; }',
-  '.ssCardLv { font-size:13px; color:#a9c0ea; }',
-  '.ssRow { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid rgba(140,170,230,.18); font-size:13px; }',
-  '.ssRow b { color:#9fc4ff; font-weight:normal; flex:0 0 auto; }',
-  '.ssRow span { text-align:right; }',
-  '.ssFact { margin-top:12px; background:rgba(90,130,220,.14); border-left:3px solid #6f9bea; border-radius:8px;',
-  '  padding:9px 11px; font-size:14px; line-height:1.5; }',
-  '.ssCardBtns { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }',
-  '.ssBtn { flex:1 1 auto; cursor:pointer; font-family:inherit; font-size:15px; font-weight:bold; color:#0d1836;',
-  '  background:#cfe0ff; border:2px solid #6f8fc9; border-radius:13px; padding:10px 12px; box-shadow:0 3px 0 #6f8fc9; }',
-  '.ssBtn.go { background:#7ee29a; border-color:#3f9c5e; box-shadow:0 3px 0 #3f9c5e; }',
-  '.ssBtn:active { transform:translateY(3px); box-shadow:none; }',
-  '@media(max-width:700px){ #ssCard { width:100%; border-left:0; border-top:3px solid #34508f; top:auto; height:64%; transform:translateY(105%); }',
-  '  #ssCard.open { transform:none; } #ssLegend { max-width:70vw; font-size:11px; } }'
-  ].join('\n');
+  const css=document.createElement('link');
+  css.rel='stylesheet'; css.href='css/sistema-solare.css?v=2';
   document.head.appendChild(css);
   document.body.insertAdjacentHTML('beforeend',
     '<div class="overlay" id="ss"><div id="ssWrap">'+
       '<canvas id="ssCanvas"></canvas>'+
       '<div id="ssLabels">'+
         '<div id="ssLegend"></div><div id="ssHint"></div>'+
-        '<div id="ssBtns"><button id="ssModeBtn"></button><button id="ssExit">🎮</button></div>'+
+        '<div id="ssBtns"><button id="ssModeBtn"></button><button id="ssExit" aria-label="Torna ai giochi">⌂ <span>Giochi</span></button></div>'+
+        '<div id="ssTools"><button id="ssHome" aria-label="Mostra tutto il sistema solare">◎</button><button id="ssZoomIn" aria-label="Avvicina">+</button><button id="ssZoomOut" aria-label="Allontana">−</button><button id="ssPause" aria-label="Pausa" aria-pressed="false">Ⅱ</button></div>'+
+        '<nav id="ssDock" aria-label="Esplora i corpi celesti"></nav>'+
       '</div>'+
-      '<div id="ssCard"></div>'+
+      '<section id="ssCard" aria-label="Scheda del corpo celeste" aria-hidden="true" inert></section>'+
     '</div></div>');
 })();
 
 function ssBuildDOM(){
   ssWrap=$('ssWrap'); ssCv=$('ssCanvas'); ssLbls=$('ssLabels');
   ssPrep().forEach((o,k)=>{
-    const d=document.createElement('div');
+    const d=document.createElement('button');
+    d.type='button';
     d.className='ssLbl'; d.dataset.i=k;
+    d.style.setProperty('--planet-color',o.B.col);
     d.addEventListener('click',e=>{ e.stopPropagation(); ssOpenCard(k); });
     ssLbls.appendChild(d);
+    const item=document.createElement('button');
+    item.type='button'; item.className='ssWorld'; item.dataset.i=k;
+    item.style.setProperty('--planet-color',o.B.col);
+    const thumb=document.createElement('span'); thumb.className='ssThumb '+o.B.kind;
+    if(o.B.rKm){
+      thumb.style.backgroundImage='url('+ssB[k].mesh.material.map.image.toDataURL()+')';
+    } else thumb.textContent=o.B.em;
+    const name=document.createElement('span'); name.className='ssWorldName';
+    item.append(thumb,name); item.onclick=()=>ssOpenCard(k);
+    $('ssDock').appendChild(item);
   });
   $('ssModeBtn').onclick=e=>{ e.stopPropagation(); ssSetAligned(!ssAligned); };
+  $('ssHome').onclick=ssCloseCard;
+  $('ssZoomIn').onclick=()=>{ ssCamAuto=false; ssCamR=Math.max(SS_ZOOM_MIN,ssCamR/1.25); };
+  $('ssZoomOut').onclick=()=>{ ssCamAuto=false; ssCamR=Math.min(ssZoomLimit(),ssCamR*1.25); };
+  $('ssPause').onclick=()=>{ ssPaused=!ssPaused; ssRefresh(); };
+  $('ss').addEventListener('keydown',e=>{ if(e.key==='Escape') ssCloseCard(); });
   $('ssExit').onclick=e=>{
     e.stopPropagation();
     if(window.GabriNavigation) window.GabriNavigation.showRoute({screen:'games'});
@@ -888,8 +949,8 @@ function ssBuildDOM(){
   ssWrap.addEventListener('pointerleave',e=>{ if(e.pointerType==='mouse') ssPtrIn=false; });
   ssWrap.addEventListener('pointerdown',()=>{ ssLastTouch=Date.now(); },true);
   ssWrap.addEventListener('pointermove',()=>{ ssLastTouch=Date.now(); },true);
-  ssGL=new THREE.WebGLRenderer({canvas:ssCv,antialias:true});
-  ssGL.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+  ssGL=new THREE.WebGLRenderer({canvas:ssCv,antialias:true,alpha:true});
+  ssGL.setPixelRatio(Math.min(devicePixelRatio||1,2));
   addEventListener('resize',ssResize);
   ssInput();
   ssResize();
@@ -902,10 +963,12 @@ function ssResize(){
   ssCam.aspect=w/h; ssCam.updateProjectionMatrix();
 }
 function ssSetAligned(v){
+  ssCloseCard();
   ssAligned=v; ssCamAuto=true;
   try{ localStorage.setItem('gabri_mapview',v?'fila':'orbite'); }catch(e){}
   ssRefresh();
 }
+function ssZoomLimit(){ return Math.max(SS_ZOOM_MAX,180*Math.max(1,ssLastH/Math.max(1,ssLastW))); }
 /* trascina per ruotare, pizzica/rotella per lo zoom, tocca per la scheda */
 function ssInput(){
   const ptrs=new Map();
@@ -931,7 +994,7 @@ function ssInput(){
       }
     } else if(ptrs.size===2){
       const a=[...ptrs.values()], d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);
-      if(pinchD>0){ ssCamAuto=false; ssCamR=Math.min(SS_ZOOM_MAX,Math.max(SS_ZOOM_MIN,ssCamR*pinchD/d)); }
+      if(pinchD>0&&d>0){ ssCamAuto=false; ssCamR=Math.min(ssZoomLimit(),Math.max(SS_ZOOM_MIN,ssCamR*pinchD/d)); }
       pinchD=d; dragging=true;
     }
   });
@@ -946,14 +1009,18 @@ function ssInput(){
   ssCv.addEventListener('pointercancel',e=>ptrs.delete(e.pointerId));
   ssCv.addEventListener('wheel',e=>{
     e.preventDefault(); ssCamAuto=false;
-    ssCamR=Math.min(SS_ZOOM_MAX,Math.max(SS_ZOOM_MIN,ssCamR*(e.deltaY>0?1.1:0.9)));
+    ssCamR=Math.min(ssZoomLimit(),Math.max(SS_ZOOM_MIN,ssCamR*(e.deltaY>0?1.1:0.9)));
   },{passive:false});
 }
 function ssTap(e){
   const r=ssCv.getBoundingClientRect();
   const nd=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-(((e.clientY-r.top)/r.height)*2-1));
   ssRay.setFromCamera(nd,ssCam);
-  const hits=ssRay.intersectObjects(ssHits,false);
+  const visibleHits=ssHits.filter(hit=>{
+    for(let parent=hit;parent;parent=parent.parent) if(!parent.visible) return false;
+    return true;
+  });
+  const hits=ssRay.intersectObjects(visibleHits,false);
   if(hits.length) ssOpenCard(hits[0].object.userData.lvl);
   else ssCloseCard();
 }
@@ -966,24 +1033,26 @@ function ssRefresh(){
   const i=LI();
   ssUnlockedSeen=unlockedSet.size;
   ssB.forEach((b,k)=>{
-    const un=unlockedSet.has(k);
-    b.mats.forEach(m=>m.color.setHex(un?0xffffff:0x555562));
-    if(b.orbit) b.orbit.material.opacity=un?0.26:0.10;
+    b.mats.forEach(m=>m.color.setHex(0xffffff));
+    if(b.orbit) b.orbit.material.opacity=ssCardLvl===k?0.65:0.23;
   });
   for(const d of ssLbls.querySelectorAll('.ssLbl')){
-    const k=parseInt(d.dataset.i), o=ssPrep()[k], t=THEMES[k];
-    const un=unlockedSet.has(k), st=starsMap[k]||0;
-    let stars=''; for(let j=0;j<3;j++) stars+=(j<st?'⭐':'☆');
-    d.innerHTML='<div class="pn">'+o.B.nm[i]+'</div>'+
-      '<div class="tn">'+(k+1)+'. '+(un?t.emoji:'🔒')+' '+t.name[i]+'</div>'+
-      '<div class="st">'+(un?stars:'📖 '+((i===0)?'Letturina':'Story'))+'</div>';
-    d.classList.toggle('locked',!un);
+    const k=parseInt(d.dataset.i), o=ssPrep()[k];
+    d.innerHTML='<span class="ssDot"></span><span class="pn">'+o.B.nm[i]+'</span>';
+    d.setAttribute('aria-label',(i===0?'Esplora ':'Explore ')+o.B.nm[i]);
+    d.classList.toggle('selected',ssCardLvl===k);
+  }
+  for(const d of $('ssDock').children){
+    const k=Number(d.dataset.i), B=ssPrep()[k].B;
+    d.querySelector('.ssWorldName').textContent=B.nm[i];
+    d.setAttribute('aria-label',(i===0?'Esplora ':'Explore ')+B.nm[i]);
+    d.setAttribute('aria-pressed',String(ssCardLvl===k));
   }
   $('ssLegend').innerHTML=(i===0)
-    ? '🪐 <b>Il Sistema Solare</b> — orbite ellittiche vere, Sole in un fuoco<br>'+
-      '<span>Rotazioni e inclinazioni degli assi reali · distanze e diametri compressi · 1 s ≈ '+SS_DPS+' giorni di orbita</span>'
-    : '🪐 <b>The Solar System</b> — true elliptical orbits, Sun at one focus<br>'+
-      '<span>Real spins and axial tilts · distances and sizes compressed · 1 s ≈ '+SS_DPS+' days of orbit</span>';
+    ? '<small>IL TUO OSSERVATORIO</small><b>Il Sistema Solare</b><span>Un viaggio tra pianeti, lune e stelle.</span>'+
+      '<details><summary>Come funziona la mappa</summary>Orbite ellittiche, rotazioni e assi inclinati. Distanze e diametri compressi per vedere tutti i pianeti. 1 s ≈ '+SS_DPS+' giorni di orbita.</details>'
+    : '<small>YOUR OBSERVATORY</small><b>The Solar System</b><span>A journey through planets, moons and stars.</span>'+
+      '<details><summary>About this map</summary>Elliptical orbits, real spins and tilts. Distances and sizes compressed. 1 s ≈ '+SS_DPS+' days of orbit.</details>';
   $('ssHint').textContent=ssAligned
     ? ((i===0)?'👆 Tocca un pianeta per la sua scheda · 🤏 Pizzica o rotella per lo zoom':'👆 Tap a planet for its card · 🤏 Pinch or wheel to zoom')
     : ((i===0)?'👆 Trascina per ruotare · 🐢 i pianeti rallentano quando li punti · guarda Plutone entrare nell’orbita di Nettuno'
@@ -991,6 +1060,9 @@ function ssRefresh(){
   $('ssModeBtn').textContent=ssAligned
     ? ((i===0)?'🌀 Vedi le orbite':'🌀 See the orbits')
     : ((i===0)?'📏 Pianeti in fila':'📏 Line up the planets');
+  $('ssPause').textContent=ssPaused?'▶':'Ⅱ';
+  $('ssPause').setAttribute('aria-label',ssPaused?(i===0?'Riprendi':'Resume'):(i===0?'Pausa':'Pause'));
+  $('ssPause').setAttribute('aria-pressed',String(ssPaused));
 }
 
 /* ============================================================
@@ -1009,17 +1081,17 @@ function ssFrame(ts){
   /* col puntatore sulla mappa tutto quasi si ferma: così si può scegliere */
   const slow=ssPtrIn||(Date.now()-ssLastTouch<SS_TOUCH_SLOW_MS);
   ssSpeedF+=((slow?SS_HOVER_SLOW:1)-ssSpeedF)*Math.min(1,rdt*4);
-  const dt=rdt*ssSpeedF;
+  const dt=ssPaused?0:rdt*ssSpeedF;
 
   ssB.forEach((b,k)=>{
     const o=b.o, B=o.B;
     if(o.aS>0){
-      if(ssAligned){
+      if(ssAligned&&!ssPaused){
         /* vista in fila: portiamo dolcemente ogni corpo alla longitudine 0 */
         let d=(o.alignM-o.M)%(Math.PI*2);
         if(d>Math.PI) d-=Math.PI*2; if(d<-Math.PI) d+=Math.PI*2;
         o.M+=d*Math.min(1,rdt*2.2);
-      } else {
+      } else if(!ssAligned) {
         /* un giro completo in secsPerOrbit secondi; l'anomalia MEDIA avanza
            uniforme, ma la posizione no: al perielio il corpo corre (2ª legge) */
         o.M+=2*Math.PI/o.secsPerOrbit*dt;
@@ -1031,7 +1103,8 @@ function ssFrame(ts){
          va ricalcolato ogni frame perché la Terra si muove */
       ssB[o.parent].grp.getWorldPosition(_sv);
       const len=Math.hypot(_sv.x,_sv.z)||1;
-      const ha=et*2*Math.PI/(B.days/SS_DPS);       /* lento moto di alone */
+      o.haloPhase=(o.haloPhase||0)+dt*2*Math.PI/(B.days/SS_DPS);
+      const ha=o.haloPhase;
       b.grp.position.set(_sv.x/len*SS_L2,Math.sin(ha)*0.30,_sv.z/len*SS_L2);
     }
     /* rotazione propria */
@@ -1042,29 +1115,50 @@ function ssFrame(ts){
     } else if(o.spinPerSec){
       b.mesh.rotation.y+=o.spinPerSec*dt;
     }
+    if(b.clouds) b.clouds.rotation.y+=dt*0.025;
+    if(b.orbit) b.orbit.visible=!ssAligned&&ssCardLvl<0;
   });
   ssBelt.rotation.y+=ssScene.userData.beltW*dt;
   if(ssScene.userData.sun) ssScene.userData.sun.rotation.y+=ssScene.userData.sunW*dt;
 
   /* camera: nella vista in fila si sistema da sola per inquadrare tutto */
-  ssCenterX+=((ssAligned?SS_ALIGN_CX:0)-ssCenterX)*Math.min(1,rdt*2);
+  const focus=ssCardLvl>=0?ssB[ssCardLvl]:null;
+  const narrow=ssLastW<=700, card=$('ssCard');
+  const cardW=focus&&!narrow?card.offsetWidth:0, cardH=focus&&narrow?card.offsetHeight:0;
+  if(focus) focus.grp.getWorldPosition(_sv);
+  else _sv.set(ssAligned?SS_ALIGN_CX:0,0,0);
+  const centerL=focus?Math.min(1,rdt*7):Math.min(1,rdt*3);
+  ssCenterX+=(_sv.x-ssCenterX)*centerL;
+  ssCenterY+=(_sv.y-ssCenterY)*centerL;
+  ssCenterZ+=(_sv.z-ssCenterZ)*centerL;
   if(ssCamAuto){
     const tt=ssAligned?SS_ALIGN_THETA:SS_ORBIT_THETA;
     const tp=ssAligned?SS_ALIGN_PHI:SS_ORBIT_PHI;
-    const tr=ssAligned?SS_ALIGN_R:SS_ZOOM_START;
+    const aspect=ssLastW/Math.max(ssLastH,1);
+    const overview=ssAligned?Math.max(SS_ALIGN_R,77/aspect):Math.max(132,148/aspect);
+    const extent=focus?focus.o.rS*(focus.o.B.ring?SS_RING[focus.o.B.ring].out:1):0;
+    const usable=Math.max(0.15,Math.min((ssLastW-cardW-48)/ssLastH,(ssLastH-cardH-180)/ssLastH));
+    const tr=focus?Math.max(6,extent*3.5/usable):overview;
     let dth=(tt-ssCamTheta)%(Math.PI*2);
     if(dth>Math.PI) dth-=Math.PI*2; if(dth<-Math.PI) dth+=Math.PI*2;
     const l=Math.min(1,rdt*2.5);
-    ssCamTheta+=dth*l; ssCamPhi+=(tp-ssCamPhi)*l; ssCamR+=(tr-ssCamR)*l;
+    ssCamTheta+=dth*l; ssCamPhi+=((focus?1.12:tp)-ssCamPhi)*l; ssCamR+=(tr-ssCamR)*l;
   }
   ssCam.position.set(
     ssCenterX+ssCamR*Math.sin(ssCamPhi)*Math.cos(ssCamTheta),
-    ssCamR*Math.cos(ssCamPhi),
-    ssCamR*Math.sin(ssCamPhi)*Math.sin(ssCamTheta));
-  ssCam.lookAt(ssCenterX,0,0);
+    ssCenterY+ssCamR*Math.cos(ssCamPhi),
+    ssCenterZ+ssCamR*Math.sin(ssCamPhi)*Math.sin(ssCamTheta));
+  ssCam.lookAt(ssCenterX,ssCenterY,ssCenterZ);
+  ssCam.setViewOffset(ssLastW||600,ssLastH||400,cardW/2,focus?cardH/2:24,ssLastW||600,ssLastH||400);
+  let focusRoot=ssCardLvl;
+  while(focusRoot>=0&&ssB[focusRoot].o.parent>=0) focusRoot=ssB[focusRoot].o.parent;
+  ssB.forEach((b,k)=>{ if(b.o.parent<0) b.grp.visible=!focus||k===focusRoot; });
+  ssScene.userData.sun.visible=!focus; ssScene.userData.glow.visible=!focus;
+  ssBelt.visible=!focus&&!ssAligned;
 
   /* rotte fra i livelli */
   for(const ed of ssEdges){
+    ed.line.visible=false;
     ssB[ed.a].grp.getWorldPosition(_sv); ssB[ed.b].grp.getWorldPosition(_sv2);
     const dist=_sv.distanceTo(_sv2);
     _sc.addVectors(_sv,_sv2).multiplyScalar(0.5); _sc.y+=dist*0.22;
@@ -1086,31 +1180,41 @@ function ssFrame(ts){
   if(cur>=ssB.length||!unlockedSet.has(cur)) cur=0;
   ssB[cur].grp.getWorldPosition(_sv);
   ssMarker.position.set(_sv.x,_sv.y+ssB[cur].o.rS+1.5+Math.sin(et*2.2)*0.25,_sv.z);
+  ssMarker.visible=false;
 
   /* etichette HTML proiettate sopra il canvas */
   const r=ssCv.getBoundingClientRect();
-  const halfH=r.height/2, tanF=Math.tan(ssCam.fov*Math.PI/360);
+  const halfH=r.height/2, tanF=Math.tan(ssCam.fov*Math.PI/360), placed=[];
   for(const d of ssLbls.children){
     if(!d.classList.contains('ssLbl')) continue;
     const k=parseInt(d.dataset.i);
     ssB[k].grp.getWorldPosition(_sv);
     const dist=_sv.distanceTo(ssCam.position);
     _sv2.copy(_sv).project(ssCam);
-    if(_sv2.z>1){ d.style.display='none'; continue; }
+    if(_sv2.z>1||_sv2.z< -1||Math.abs(_sv2.x)>0.97||Math.abs(_sv2.y)>0.85||
+       (ssCardLvl>=0&&k!==ssCardLvl)||(ssCardLvl<0&&ssB[k].o.parent>=0)){
+      d.style.display='none'; continue;
+    }
     d.style.display='';
     const px=(_sv2.x*0.5+0.5)*r.width, py0=(-_sv2.y*0.5+0.5)*r.height;
     const rPix=ssB[k].o.rS*halfH/(dist*tanF);
-    const s=Math.max(0.60,Math.min(1,30/dist+0.5));
+    const s=Math.max(0.85,Math.min(1,30/dist+0.5));
     const st=ssAligned?(SS_STAG[k]||1):1;   /* righe sfalsate per non coprirsi */
-    if(st>0){
-      d.style.top=(py0+rPix+4+(st-1)*30*s)+'px';
-      d.style.transform='translate(-50%,0) scale('+s+')';
-      d.style.transformOrigin='top center';
-    } else {
-      d.style.top=(py0-rPix-4-(-st-1)*30*s)+'px';
-      d.style.transform='translate(-50%,-100%) scale('+s+')';
-      d.style.transformOrigin='bottom center';
+    const labelH=(d.offsetHeight||28)*s, labelW=(d.offsetWidth||80)*s;
+    let top=st>0?py0+rPix+8+(st-1)*30*s:py0-rPix-8-(-st-1)*30*s-labelH;
+    /* I nomi vicini si distribuiscono su righe distinte; il dock resta
+       sempre disponibile anche quando un corpo esce dall'inquadratura. */
+    for(let attempt=0;attempt<12;attempt++){
+      if(!placed.some(p=>Math.abs(px-p.x)<(labelW+p.w)/2+5&&top<p.y+p.h+5&&top+labelH+5>p.y)) break;
+      top+=labelH+6;
     }
+    placed.push({x:px,y:top,w:labelW,h:labelH});
+    const above=top+labelH<py0;
+    d.classList.toggle('above',above);
+    d.style.setProperty('--stem',Math.max(0,(above?py0-rPix-top-labelH:top-py0-rPix)-3)/s+'px');
+    d.style.top=top+'px';
+    d.style.transform='translate(-50%,0) scale('+s+')';
+    d.style.transformOrigin='top center';
     d.style.left=px+'px';
     d.style.zIndex=Math.round(1000-dist*5);
   }
@@ -1138,6 +1242,8 @@ function ssExit(){
   ssOn=false; ssRunning=false; stopSpeak();
   ssCardLvl=-1;
   const c=$('ssCard'); if(c) c.classList.remove('open');
+  if(c){ c.setAttribute('inert',''); c.setAttribute('aria-hidden','true'); }
+  $('ss').classList.remove('inspecting');
   $('ss').style.display='none';
 }
 /* registrazione nel menu: registerGame vive in scelta-gioco.js, caricato

@@ -2,9 +2,8 @@
    MISSIONE SPAZIALE: ORDINI DALLA BASE 🚀
    La sala di controllo manda ORDINI SCRITTI: Gabriele li legge
    e tocca il pannello giusto della plancia. Leggere È il gioco!
-   7 fasi vere di una missione: checklist, decollo, separazione
-   del primo stadio, orbita, attracco alla ISS, esperimenti,
-   rientro con scudo termico e ammaraggio.
+   7 capitoli Apollo: checklist, decollo, stadi, viaggio, orbita lunare,
+   allunaggio/rendez-vous e rientro. Sequenza didattica con tempi compressi.
    In allenamento: tempo libero e ascolto gratuito. In sfida,
    il carburante si consuma anche con la lettura automatica 🔊;
    ordini giusti al primo colpo lo ricaricano.
@@ -223,8 +222,8 @@ const MS_EMG_MIN=2, MS_EMG_MAX=3; /* imprevisti per partita */
     '</div>'+
   '</div>'+
   '<div class="overlay" id="msStart"><div class="card">'+
-    '<div class="msStartIcon">🚀</div><p>LA TUA PRIMA AVVENTURA IN ORBITA</p>'+
-    '<h1>Comandante, si parte!</h1><p>Leggi gli ordini della base e guida la navicella.<br>Raggiungi la stazione spaziale e torna sulla Terra!</p>'+
+    '<div class="msStartIcon">🚀</div><p>LA TUA AVVENTURA CON APOLLO</p>'+
+    '<h1>Comandante, si parte!</h1><p>Leggi gli ordini della base e guida la navicella.<br>Raggiungi la Luna con Apollo e torna sulla Terra!</p>'+
     '<div id="msStartChoices"><button id="msStartCalm"><strong>🌱 Senza fretta</strong><span>Leggi con calma.<br>Niente timer per gli ordini.<br>Ascoltali gratis.</span></button>'+
     '<button id="msStartChallenge"><strong>⚡ Sfida spaziale</strong><span>Ordini a tempo.<br>Ascoltare usa carburante.</span></button></div>'+
     '<p>I messaggi buffi? Premi IGNORA!</p><button id="msStartHome">Torna ai giochi</button>'+
@@ -277,13 +276,14 @@ const MS_PANNELLI={
   motori:    {em:'🔥', lab:'MOTORI'},
   carburante:{em:'⛽', lab:'CARBURANTE'},
   paracadute:{em:'🪂', lab:'PARACADUTE'},
-  solari:    {em:'☀️', lab:'PANNELLI SOLARI'},
+  energia:   {em:'🔋', lab:'ENERGIA'},
   radio:     {em:'📻', lab:'RADIO'},
   ossigeno:  {em:'💨', lab:'OSSIGENO'},
   luci:      {em:'💡', lab:'LUCI'},
   scudo:     {em:'🛡️', lab:'SCUDO TERMICO'},
   portello:  {em:'🚪', lab:'PORTELLO'},
   gancio:    {em:'🪝', lab:'GANCIO'},
+  campioni:  {em:'🪨', lab:'ROCCE LUNARI'},
   ignora:    {em:'🚫', lab:'IGNORA'}
 };
 
@@ -291,7 +291,7 @@ const MS_PANNELLI={
 const MS_SCIOCCHI=[
  'MANDA UNA PIZZA IN ORBITA',
  'DIPINGI IL RAZZO A POIS ROSA',
- 'INVITA UN DINOSAURO SULLA STAZIONE',
+ 'INVITA UN DINOSAURO SULLA LUNA',
  'LANCIA I CALZINI SPORCHI NELLO SPAZIO',
  'FAI IL SOLLETICO AL COMPUTER DI BORDO',
  'ORDINA UN GELATO ALLA LUNA'
@@ -318,49 +318,66 @@ const MS_FASI=[
   ],
   card:{em:'🚀', tit:'Il decollo',
    txt:"Al decollo i motori spingono così forte che il corpo degli astronauti pesa tre volte tanto! Per restare nello spazio bisogna correre a 28.000 chilometri all'ora: più di cento volte più veloce di un'auto in autostrada. Per questo serve un razzo pieno pieno di carburante."}},
- {nm:'SEPARAZIONE DEL PRIMO STADIO', scene:'sep', intro:'Il primo stadio è vuoto: va staccato!',
-  pans:['motori','gancio','luci','radio','solari','ossigeno','ignora'],
+ {nm:'SEPARAZIONE DEI PRIMI DUE STADI', scene:'sep', intro:'Ogni stadio si stacca quando ha finito il carburante!',
+  pans:['motori','gancio','luci','radio','energia','ossigeno','ignora'],
   orders:[
    {t:'SPEGNI I MOTORI', ok:'motori', set:{motori:0}, fx:'✔️'},
-   {t:'SGANCIA IL PRIMO STADIO', ok:'gancio', sep:true, fx:'💥'},
-   {t:'ACCENDI I MOTORI, NON LE LUCI', ok:'motori', set:{motori:1}, fx:'🔥'}
+   {t:'SGANCIA IL PRIMO STADIO', ok:'gancio', sep:true, fx:'🧩', pause:2400},
+   {t:'ACCENDI I MOTORI DEL SECONDO STADIO, NON LE LUCI', ok:'motori', set:{motori:1}, fx:'🔥'},
+   {t:'SPEGNI I MOTORI DEL SECONDO STADIO', ok:'motori', set:{motori:0}, fx:'✔️'},
+   {t:'SGANCIA IL SECONDO STADIO', ok:'gancio', set:{secondSeparated:1,secondSepT:0}, fx:'🧩', pause:2400},
+   {t:'ACCENDI IL MOTORE DEL TERZO STADIO', ok:'motori', set:{motori:1}, fx:'🔥'}
   ],
   card:{em:'🧩', tit:'Perché i razzi hanno gli stadi?',
    txt:"I razzi sono fatti a pezzi, chiamati STADI. Quando il primo stadio finisce il suo carburante, si stacca e cade: così il razzo diventa più leggero e vola meglio, come togliersi lo zaino per correre. Alcuni stadi moderni tornano giù e atterrano in piedi, per essere usati di nuovo!"}},
- {nm:'IN ORBITA', scene:'orbit', intro:'Ci siamo: stiamo girando intorno alla Terra!',
-  pans:['solari','paracadute','motori','radio','ossigeno','luci','ignora'],
+ {nm:'DALL’ORBITA TERRESTRE ALLA LUNA', scene:'orbit', intro:'Il terzo stadio ci porta in orbita, poi ci spinge verso la Luna!',
+  pans:['energia','gancio','motori','radio','ossigeno','luci','paracadute','ignora'],
   orders:[
    {t:'SPEGNI I MOTORI: SIAMO IN ORBITA', ok:'motori', set:{motori:0}, fx:'✔️'},
-   {t:'APRI I PANNELLI SOLARI, NON IL PARACADUTE', ok:'solari', set:{solari:1}, fx:'☀️'},
+   {t:'CONTROLLA L’ENERGIA, NON IL PARACADUTE', ok:'energia', set:{energia:1}, fx:'🔋'},
    {t:'CHIAMA LA BASE CON LA RADIO', ok:'radio', fx:'📡'},
-   {t:"NON TOCCARE I MOTORI: CONTROLLA L'OSSIGENO", ok:'ossigeno', fx:'✅'}
+   {t:"NON TOCCARE I MOTORI: CONTROLLA L'OSSIGENO", ok:'ossigeno', fx:'✅'},
+   {t:'RIACCENDI IL TERZO STADIO VERSO LA LUNA', ok:'motori', set:{motori:1,tli:1}, fx:'🔥', pause:2000},
+   {t:'SPEGNI IL MOTORE DEL TERZO STADIO', ok:'motori', set:{motori:0}, fx:'✔️'},
+   {t:'SEPARA APOLLO DAL TERZO STADIO', ok:'gancio', set:{thirdSeparated:1,thirdSepT:0}, fx:'🧩', pause:2400},
+   {t:'PRIMA GIRA APOLLO, POI AGGANCIA IL LEM', seq:['motori','gancio'], set:{lemDocked:1,lemDockT:0,motori:0}, fx:'🪝', pause:2000},
+   {t:'ESTRAI IL LEM E ALLONTANATI DAL TERZO STADIO', ok:'gancio', set:{lemExtracted:1,thirdDiscarded:1,thirdDiscardT:0}, fx:'🧩', pause:3000}
   ],
   card:{em:'🌍', tit:"Che cos'è un'orbita?",
    txt:"Stare in orbita è come cadere sempre intorno alla Terra senza toccarla mai: la navicella va così veloce che, mentre cade, la Terra le 'scappa' sotto perché è rotonda. Per questo gli astronauti galleggiano: cadono insieme alla navicella! Si chiama assenza di peso."}},
- {nm:'ATTRACCO ALLA ISS', scene:'iss', intro:'Ecco la Stazione Spaziale! Piano piano…',
+ {nm:'IN ORBITA INTORNO ALLA LUNA', scene:'lunarOrbit', intro:'Il LEM viaggia con Apollo. Ecco la Luna!',
   pans:['motori','gancio','luci','radio','portello','ossigeno','ignora'],
   orders:[
-   {t:'ACCENDI LE LUCI PER FARTI VEDERE', ok:'luci', set:{luci:1}, fx:'💡'},
-   {t:'PRIMA FRENA CON I MOTORI, POI APRI IL GANCIO', seq:['motori','gancio'], fx:'🪝'},
-   {t:'PRIMA CHIAMA LA ISS CON LA RADIO, POI APRI IL PORTELLO', seq:['radio','portello'], dock:true, set:{portello:0}, fx:'🤝'}
+   {t:'CHIAMA LA TERRA CON LA RADIO', ok:'radio', fx:'📡'},
+   {t:'PRIMA FRENA CON I MOTORI, POI PREPARA IL GANCIO DEL LEM', seq:['motori','gancio'], set:{lunarOrbit:1,motori:0}, fx:'🌔'},
+   {t:'PRIMA CONTROLLA L’OSSIGENO, POI APRI IL PORTELLO DEL LEM', seq:['ossigeno','portello'], set:{portello:0,crewInLem:1}, fx:'👨‍🚀'},
+   {t:'CHIUDI IL PORTELLO DEL LEM', ok:'portello', set:{portello:1}, fx:'🚪'},
+   {t:'SGANCIA IL LEM PER SCENDERE SULLA LUNA', ok:'gancio', set:{lemDetached:1,lemDetachT:0}, fx:'🌕', pause:2400}
   ],
-  card:{em:'🛰️', tit:'La Stazione Spaziale Internazionale',
-   txt:"La ISS è grande come un campo di calcio ed è la casa degli astronauti nello spazio. Gira intorno alla Terra in 90 minuti: chi sta a bordo vede 16 albe e 16 tramonti ogni giorno! Per attraccare bisogna andare pianissimo e fare le cose nell'ordine giusto, proprio come hai fatto tu."}},
- {nm:'ESPERIMENTI A BORDO', scene:'exp', intro:'Ora si lavora: esperimenti in assenza di peso!',
-  pans:['luci','portello','radio','ossigeno','solari','motori','ignora'],
+  card:{em:'🌔', tit:'Due navicelle, due compiti',
+   txt:"Il MODULO DI COMANDO E SERVIZIO rimane in orbita intorno alla Luna con un astronauta. Altri due astronauti usano il LEM, il modulo lunare, per scendere sulla superficie. Il LEM non ha uno scudo per tornare sulla Terra: per questo deve ritrovare Apollo in orbita!"}},
+ {nm:'ALLUNAGGIO E RITORNO AL MODULO DI COMANDO', scene:'moon', intro:'Il LEM scende sulla Luna. Apollo aspetta in orbita!',
+  pans:['motori','gancio','portello','campioni','radio','ossigeno','ignora'],
   orders:[
-   {t:"NON APRIRE IL PORTELLO: ACCENDI LE LUCI DEL LABORATORIO", ok:'luci', set:{luci:1}, fx:'🔬'},
-   {t:'PRIMA SPEGNI LE LUCI, POI GUARDA LA TERRA DAL PORTELLO', seq:['luci','portello'], set:{luci:0}, fx:'🌍'},
-   {t:"DAI ARIA FRESCA ALLE PIANTINE: APRI L'OSSIGENO", ok:'ossigeno', fx:'🌱'},
-   {t:'RACCONTA TUTTO ALLA BASE CON LA RADIO', ok:'radio', fx:'📡'}
+   {t:'ACCENDI IL MOTORE DI DISCESA DEL LEM', ok:'motori', set:{lemDescent:1,lemDescentT:0,motori:1}, fx:'🔥', pause:3500},
+   {t:'ALLUNA PIANO E SPEGNI IL MOTORE', ok:'motori', set:{landed:1,motori:0}, fx:'🌕'},
+   {t:'APRI IL PORTELLO E SCENDI SULLA LUNA', ok:'portello', set:{portello:0,moonWalk:1}, fx:'👨‍🚀'},
+   {t:'RACCOGLI LE ROCCE LUNARI', ok:'campioni', set:{samples:1}, fx:'🪨'},
+   {t:'CHIUDI IL PORTELLO PER RIPARTIRE', ok:'portello', set:{portello:1,moonWalk:0}, fx:'🚪'},
+   {t:'ACCENDI IL MOTORE DI RISALITA DEL LEM', ok:'motori', set:{lemAscent:1,lemAscentT:0,motori:1}, fx:'🚀', pause:3500},
+   {t:'PRIMA FRENA CON I MOTORI, POI AGGANCIA IL LEM AD APOLLO', seq:['motori','gancio'], dock:true, set:{lemRedocked:1,lemDocked:1,lemDetached:0,motori:0}, fx:'🪝'},
+   {t:'APRI IL PORTELLO E TORNA NEL MODULO DI COMANDO', ok:'portello', set:{crewInLem:0,portello:0}, fx:'👨‍🚀'},
+   {t:'PORTA LE ROCCE NEL MODULO DI COMANDO', ok:'campioni', set:{samplesTransferred:1}, fx:'🪨'},
+   {t:'PRIMA CHIUDI IL PORTELLO, POI SGANCIA IL LEM VUOTO', seq:['portello','gancio'], set:{portello:1,lemJettisoned:1,lemJettisonT:0,lemDocked:0}, fx:'🧩', pause:2400}
   ],
-  card:{em:'🧪', tit:'Esperimenti nello spazio',
-   txt:"Nello spazio l'acqua non cade: diventa una bolla che galleggia a mezz'aria! Gli astronauti fanno esperimenti con gocce d'acqua, piantine e persino piccole fiamme (che diventano rotonde) per capire come funziona il mondo senza peso. Le scoperte servono anche a noi sulla Terra."}},
+  card:{em:'🌕', tit:'Il LEM ha due parti',
+   txt:"La parte inferiore del LEM, con le zampe, resta sulla Luna. La parte superiore riporta gli astronauti in orbita e si AGGANCIA al modulo di comando. Dopo il trasferimento degli astronauti e delle rocce, il LEM vuoto viene sganciato. Apollo riparte verso la Terra con il suo modulo di servizio ancora attaccato."}},
  {nm:'RIENTRO E AMMARAGGIO', scene:'rientro', intro:'Si torna a casa! Leggi con calma: il tempo basta.',
-  pans:['portello','motori','scudo','paracadute','radio','ossigeno','luci','ignora'],
+  pans:['portello','motori','gancio','scudo','paracadute','radio','ossigeno','luci','ignora'],
   orders:[
-   {t:'SALUTA GLI AMICI E CHIUDI BENE IL PORTELLO', ok:'portello', timer:MS_T_REENTRY, set:{portello:1}, fx:'👋'},
-   {t:'ACCENDI I MOTORI PER FRENARE E TORNARE VERSO CASA', ok:'motori', timer:MS_T_REENTRY, set:{motori:1}, fx:'🔥'},
+   {t:'CHIUDI BENE IL PORTELLO DEL MODULO DI COMANDO', ok:'portello', timer:MS_T_REENTRY, set:{portello:1}, fx:'👋'},
+   {t:'ACCENDI IL MOTORE DI SERVIZIO PER TORNARE VERSO LA TERRA', ok:'motori', timer:MS_T_REENTRY, set:{motori:1,serviceBurn:1}, fx:'🔥'},
+   {t:'PRIMA SPEGNI I MOTORI, POI SGANCIA IL MODULO DI SERVIZIO', seq:['motori','gancio'], timer:MS_T_REENTRY, set:{motori:0,serviceBurn:0,serviceSeparated:1,serviceSepT:0}, fx:'🧩', pause:2400},
    {t:'GIRA LA CAPSULA E METTI LO SCUDO TERMICO DAVANTI', ok:'scudo', timer:MS_T_REENTRY, set:{scudo:1}, fx:'🛡️'},
    {t:'ADESSO IL CIELO È BLU: APRI IL PARACADUTE', ok:'paracadute', timer:MS_T_REENTRY, set:{para:1}, splash:true, fx:'🪂'}
   ],
@@ -375,16 +392,16 @@ const MS_IMPREVISTI=[
   wrong:['APRI IL FINESTRINO PER CAMBIARE ARIA','ACCENDI UN VENTILATORE E BASTA'],
   card:{em:'🌬️', tit:"L'aria della navicella",
    txt:"Quando respiriamo buttiamo fuori anidride carbonica: in una cabina chiusa, troppa fa male. Per questo le navicelle hanno FILTRI speciali che puliscono l'aria. Nel 1970 gli astronauti dell'Apollo 13 costruirono un filtro d'emergenza con tubi, sacchetti e nastro adesivo: e funzionò!"}},
- {alarm:'ALLARME! UN PEZZETTO DI VECCHIO SATELLITE SI AVVICINA!', em:'☄️',
-  right:'ACCENDI I MOTORI E SPOSTA LA NAVICELLA',
-  wrong:['APRI IL PARACADUTE PER FRENARE','SPEGNI LE LUCI PER NASCONDERTI'],
-  card:{em:'🛰️', tit:'I detriti spaziali',
-   txt:"Intorno alla Terra girano tanti pezzetti di vecchi satelliti e razzi. La base li segue con i radar e, se uno si avvicina troppo, la stazione accende i motori e si sposta un pochino per lasciarlo passare. La ISS lo fa davvero, qualche volta ogni anno!"}},
- {alarm:'ALLARME! I PANNELLI SOLARI NON DANNO PIÙ ENERGIA!', em:'🔋',
-  right:'GIRA I PANNELLI VERSO IL SOLE',
-  wrong:['SCUOTI I PANNELLI FORTE FORTE','ATTACCA UNA PILA GIGANTE'],
-  card:{em:'☀️', tit:'I pannelli solari',
-   txt:"I pannelli solari trasformano la luce del Sole in elettricità, che fa funzionare luci, computer e filtri dell'aria. Sulla ISS i pannelli ruotano piano piano per guardare sempre il Sole, come fanno i girasoli nei campi."}},
+ {alarm:'ALLARME! UN LATO DELLA NAVICELLA È TROPPO CALDO!', em:'🌡️',
+  right:'RUOTA PIANO LA NAVICELLA',
+  wrong:['APRI IL PARACADUTE PER FARE OMBRA','APRI IL PORTELLO PER RINFRESCARE'],
+  card:{em:'☀️', tit:'Caldo e freddo nello spazio',
+   txt:"Durante il viaggio Apollo ruotava lentamente: così il Sole non scaldava sempre lo stesso lato. Il modulo di servizio aveva radiatori per disperdere il calore degli strumenti."}},
+ {alarm:'ALLARME! STIAMO USANDO TROPPA ENERGIA!', em:'🔋',
+  right:'SPEGNI GLI STRUMENTI NON NECESSARI',
+  wrong:['APRI UN PANNELLO SOLARE','ACCENDI TUTTE LE LUCI'],
+  card:{em:'🔋', tit:'L’energia di Apollo',
+   txt:"Apollo non aveva pannelli solari. Nel modulo di servizio, le CELLE A COMBUSTIBILE usavano idrogeno e ossigeno per produrre elettricità e acqua. La capsula aveva anche batterie per il rientro: risparmiare energia era molto importante."}},
  {alarm:'ALLARME! LA BASE NON CI SENTE PIÙ!', em:'📡',
   right:"PUNTA L'ANTENNA VERSO LA TERRA",
   wrong:['PARLA PIÙ FORTE DENTRO IL MICROFONO','APRI IL PORTELLO E URLA'],
@@ -399,7 +416,7 @@ let msS={on:false, raf:0, last:0, frameAt:0, paused:true, state:'idle',
   timer:0, timerMax:0, countN:0, countT:0,
   stars:[0,0,0,0,0,0,0,0], ordersDone:0, emgSolved:0,
   emgPhases:[], emgAt:-1, emgTriggered:false, emg:null, emgErr:0,
-  scene:'pad', prog:0, alt:0, sky:0, issD:1, shake:0,
+  scene:'pad', prog:0, alt:0, sky:0, shake:0,
   flags:{}, fx:[], t:0};
 let msTraining=true; /* allenamento: tempo libero e ascolto gratuito */
 let msReading=0; /* invalida le letture asincrone quando cambia schermata */
@@ -421,7 +438,7 @@ function msResize(){
 addEventListener('resize',()=>{ if($('ms').style.display!=='none') msResize(); });
 
 if(typeof ResizeObserver!=='undefined') new ResizeObserver(()=>{ if(msS.on) msResize(); }).observe($('msScene'));
-const MS_ROUTE=[['📋','Controlli'],['🚀','Decollo'],['🧩','Distacco'],['🌍','Orbita'],['🛰️','Stazione'],['🧪','Scoperte'],['🪂','A casa']];
+const MS_ROUTE=[['📋','Controlli'],['🚀','Decollo'],['🧩','Stadi'],['🌍','Verso la Luna'],['🌔','Orbita lunare'],['🌕','Sulla Luna'],['🪂','A casa']];
 $('msRoute').innerHTML=MS_ROUTE.map(([em,label])=>'<li><b>'+em+'</b>'+label+'</li>').join('');
 function msControls(){
   const active=msS.state==='order';
@@ -457,7 +474,7 @@ function msHud(){
   $('msHear').textContent=msTraining?'🔊 Ascolta':'🔊 Ascolta −'+MS_FUEL_HEAR+'⛽';
   $('msFuelValue').textContent=Math.round(msS.fuel)+'%';
   $('msFuelBar').setAttribute('aria-valuenow',Math.round(msS.fuel));
-  $('msSceneLabel').textContent=MS_ROUTE[msS.fase-1][0]+' '+MS_FASI[msS.fase-1].nm;
+  $('msSceneLabel').textContent=MS_ROUTE[msS.fase-1][0]+' '+MS_ROUTE[msS.fase-1][1].toUpperCase();
   $('msOrderCount').textContent='ORDINE '+Math.min(msS.idx+1,msS.orders.length)+' DI '+msS.orders.length+' · '+(msTraining?'SENZA FRETTA':'SFIDA SPAZIALE');
   $('msProgressFill').style.width=(msS.orders.length?msS.idx/msS.orders.length*100:0)+'%';
   [...$('msRoute').children].forEach((el,i)=>{
@@ -560,7 +577,9 @@ function msOrderDone(o,btn){
   /* effetti sulla scena */
   if(o.set) Object.assign(msS.flags,o.set);
   if(o.liftoff){ msS.flags.liftoff=1; msS.shake=1; msBig('🚀 DECOLLO!'); }
-  if(o.sep){ msS.flags.sep=1; msS.flags.sepT=0; msS.shake=0.5; }
+  if(o.sep){ msS.flags.sep=1; msS.flags.sepT=0; msS.shake=0.5;msBig('PRIMO STADIO SEPARATO'); }
+  if(o.set&&o.set.secondSeparated)msBig('SECONDO STADIO SEPARATO');
+  if(o.set&&o.set.thirdDiscarded)msBig('TERZO STADIO LASCIATO INDIETRO');
   if(o.dock){ msS.flags.dock=1; msBig('🤝 ATTRACCO RIUSCITO!'); }
   if(o.splash){ msS.flags.splash=0; } /* lo splash arriva col paracadute, in draw */
   if(o.fx) msS.fx.push({x:msW/2,y:msH*0.45,t:0,em:o.fx});
@@ -576,7 +595,7 @@ function msOrderDone(o,btn){
   $('msStep').textContent='✓ Ordine completato!';
   $('msTimerBar').style.display='none';
   clearTimeout(msAnimTid);
-  msAnimTid=setTimeout(msNextOrder,MS_ANIM_MS);
+  msAnimTid=setTimeout(msNextOrder,o.pause||MS_ANIM_MS);
 }
 function msOrderWrong(o,btn,id){
   msS.tries++; msS.phErr++;
@@ -734,7 +753,7 @@ function msPhaseStart(n){
   msS.emgTriggered=false;
   msS.emgAt=msS.emgPhases.includes(n)?(1+Math.floor(Math.random()*(msS.orders.length-1))):-1;
   msS.scene=F.scene;
-  if(F.scene==='iss') msS.issD=1;
+
   msS.state='anim';
   msBuildPlancia();
   msBig('FASE '+n+': '+F.nm);
@@ -921,10 +940,9 @@ function msUpdate(dt){
   if(msS.flags.liftoff&&msS.scene==='liftoff') msS.alt=Math.min(1,msS.alt+dt*0.16);
   /* separazione: il primo stadio cade */
   if(msS.flags.sep) msS.flags.sepT=(msS.flags.sepT||0)+dt;
-  /* avvicinamento alla ISS: segue il progresso della fase */
-  if(msS.scene==='iss'){
-    const tgt=msS.flags.dock?0:Math.max(0.12,1-msS.prog);
-    msS.issD+=(tgt-msS.issD)*Math.min(1,dt*1.2);
+  if(msS.flags.serviceSeparated) msS.flags.serviceSepT=(msS.flags.serviceSepT||0)+dt;
+  for(const [flag,timer] of [['secondSeparated','secondSepT'],['thirdSeparated','thirdSepT'],['thirdDiscarded','thirdDiscardT'],['lemDocked','lemDockT'],['lemDetached','lemDetachT'],['lemDescent','lemDescentT'],['lemAscent','lemAscentT'],['lemJettisoned','lemJettisonT']]){
+    if(msS.flags[flag])msS.flags[timer]=(msS.flags[timer]||0)+dt;
   }
   /* timer degli ordini e degli imprevisti */
   if((msS.state==='order'||msS.state==='emg')&&msS.timerMax>0&&!msReading){
@@ -1096,25 +1114,43 @@ function msDrawFlame(c,x,y,s,t){
     c.beginPath(); c.ellipse(x,dy,W2*0.17,W2*0.32,0,0,6.29); c.fill();
   }
 }
-function msDrawSolar(c,x,y,s,open){
-  if(open<=0.02) return;
-  for(const dir of [-1,1]){
-    c.save(); c.translate(x+dir*16*s,y); c.scale(dir*open,1);
-    c.fillStyle='#2f5fd0'; c.strokeStyle='#16307a'; c.lineWidth=2;
-    c.beginPath(); c.roundRect(4,-9*s,34*s,18*s,3); c.fill(); c.stroke();
-    c.strokeStyle='rgba(255,255,255,.5)'; c.lineWidth=1.2;
-    for(let k=1;k<4;k++){ c.beginPath(); c.moveTo(4+k*8.5*s,-9*s); c.lineTo(4+k*8.5*s,9*s); c.stroke(); }
-    c.beginPath(); c.moveTo(4,0); c.lineTo(4+34*s,0); c.stroke();
-    c.restore();
-  }
+function msDrawMoon(c,x,y,r){
+  c.save();c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.clip();
+  const g=c.createRadialGradient(x-r*.5,y-r*.5,r*.1,x,y,r);g.addColorStop(0,'#bbb9b0');g.addColorStop(.65,'#777874');g.addColorStop(1,'#272d34');c.fillStyle=g;c.fillRect(x-r,y-r,2*r,2*r);
+  for(let k=0;k<45;k++){
+    const px=x+Math.sin(k*13.7)*r*.9,py=y+Math.cos(k*7.3)*r*.85,cr=r*(.015+(k%5)*.008);
+    c.fillStyle='rgba(30,33,38,.22)';c.beginPath();c.ellipse(px,py,cr,cr*.65,0,0,Math.PI*2);c.fill();
+    c.strokeStyle='rgba(221,218,202,.2)';c.lineWidth=Math.max(1,r*.004);c.beginPath();c.ellipse(px,py+cr*.12,cr,cr*.65,0,0,Math.PI);c.stroke();
+  }c.restore();
+}
+function msDrawLem2D(c,x,y,s,ascentOnly){
+  c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='#b8bdc0';c.beginPath();c.moveTo(-12,-20);c.lineTo(12,-20);c.lineTo(18,-3);c.lineTo(-18,-3);c.closePath();c.fill();
+  c.fillStyle='#182530';c.fillRect(-10,-17,6,5);c.fillRect(4,-17,6,5);
+  if(!ascentOnly){c.fillStyle='#c19443';c.fillRect(-20,-3,40,15);c.strokeStyle='#c9ab69';c.lineWidth=2;for(const d of [-1,1]){c.beginPath();c.moveTo(d*16,0);c.lineTo(d*34,27);c.lineTo(d*40,27);c.stroke();}}
+  c.restore();
+}
+function msDrawService2D(c,x,y,s){
+  c.save();c.translate(x,y);c.scale(s,s);
+  const g=c.createLinearGradient(-22,0,22,0);g.addColorStop(0,'#e3e7e9');g.addColorStop(.4,'#aab6bf');g.addColorStop(1,'#53616d');
+  c.fillStyle=g;c.fillRect(-22,22,44,43);c.fillStyle='#e5e8e4';
+  for(const dx of [-18,-4,10])c.fillRect(dx,29,8,28);
+  c.fillStyle='#4a4b4d';c.beginPath();c.moveTo(-5,65);c.lineTo(-12,84);c.lineTo(12,84);c.lineTo(5,65);c.fill();c.restore();
 }
 function msDrawRocket(c,x,y,s,o,t){
   o=o||{};
   if(window.MSSaturnV&&window.MSSaturnV.draw(c,x,y,s,o,t,msS.flags)){
-    c.save();c.translate(x,y);if(o.rot)c.rotate(o.rot);
-    msDrawSolar(c,0,-28*s,s,msS.flags.solari?1:0);
+    return;
+  }
+  if(o.secondStage||o.thirdStage){
+    c.save();c.translate(x,y);c.rotate(o.rot||0);c.scale(s,s);
+    const r=o.thirdStage?4.9:7.5,h=o.thirdStage?19:33;
+    const g=c.createLinearGradient(-r,0,r,0);g.addColorStop(0,'#eff1ed');g.addColorStop(.4,'#fff');g.addColorStop(1,'#8c989e');c.fillStyle=g;c.fillRect(-r,-h/2,2*r,h);
+    c.fillStyle='#17212a';c.fillRect(-r,-h/2,2*r,2);c.beginPath();c.moveTo(-1.3,h/2);c.lineTo(-2.7,h/2+6);c.lineTo(2.7,h/2+6);c.lineTo(1.3,h/2);c.fill();
+    if(o.thirdStage&&!msS.flags.lemExtracted)msDrawLem2D(c,0,-h/2-4,.18,false);
     c.restore();return;
   }
+  if(o.lemOnly){msDrawLem2D(c,x,y,s,msS.flags.lemAscent);return;}
+  if(o.serviceOnly){msDrawService2D(c,x,y-48*s,s);return;}
   c.save(); c.translate(x,y);
   if(o.rot) c.rotate(o.rot);
   const F=msS.flags;
@@ -1128,7 +1164,12 @@ function msDrawRocket(c,x,y,s,o,t){
     c.beginPath(); c.roundRect(x0,y0,w,h,r); c.fill(); c.stroke();
   }
   if(o.capsule){
-    /* ---- capsula realistica (tipo Dragon/Orion) ---- */
+    if(!F.serviceSeparated)msDrawService2D(c,0,0,s);
+    if(F.serviceBurn&&!F.serviceSeparated)msDrawFlame(c,0,84*s,s*.6,t);
+    if(F.lemDocked&&!F.lemDetached&&!F.lemJettisoned&&(!F.thirdSeparated||F.lemExtracted)){
+      c.save();c.translate(0,-53*s);c.rotate(Math.PI);msDrawLem2D(c,0,0,s*1.2,F.lemAscent);c.restore();
+    }
+    /* ---- modulo di comando Apollo ---- */
     if(F.motori){ /* retrorazzi: due getti obliqui dai lati */
       for(const d of [-1,1]){
         c.save(); c.translate(d*16*s,14*s); c.rotate(d*0.5);
@@ -1189,9 +1230,8 @@ function msDrawRocket(c,x,y,s,o,t){
       c.fillStyle=hg;
       c.beginPath(); c.ellipse(0,21*s,26*s,8*s,0,0,Math.PI); c.fill();
     }
-    msDrawSolar(c,0,4*s,s*0.8,F.solari?1:0);
     /* paracadute: prima i cavi, poi TRE calotte come nelle missioni vere */
-    if(F.para){
+    if(F.para&&F.serviceSeparated){
       c.strokeStyle='#8a7f6a'; c.lineWidth=1.2;
       for(const k of [-1,0,1]){
         const px=k*36*s, py=-88*s+Math.abs(k)*10*s;
@@ -1267,8 +1307,6 @@ function msDrawRocket(c,x,y,s,o,t){
   c.beginPath(); c.arc(0,-40*s,5*s,0,6.29); c.stroke();
   if(!F.portello){ c.fillStyle='#101a2c'; c.beginPath(); c.arc(0,-40*s,5*s,0,6.29); c.fill(); }
   else { c.fillStyle='#39424f'; c.beginPath(); c.arc(3*s,-40*s,0.9*s,0,6.29); c.fill(); }
-  /* pannelli solari (aperti in orbita) */
-  msDrawSolar(c,0,-38*s,s,F.solari?1:0);
   /* luci di navigazione: rossa a sinistra, verde a destra, strobo in cima */
   if(F.luci){
     c.fillStyle='rgba(255,70,70,'+(0.5+0.5*Math.sin(t*5))+')';
@@ -1336,71 +1374,6 @@ function msDrawBooster(c,x,y,s,fall,t){
   c.fillStyle='rgba(230,240,255,'+(0.25+0.2*Math.sin(t*7))+')';
   c.beginPath(); c.ellipse(-16*s,-34*s,6*s,3*s,-0.4,0,6.29); c.fill();
   c.beginPath(); c.ellipse(15*s,-24*s,5*s,2.5*s,0.5,0,6.29); c.fill();
-  c.restore();
-}
-function msDrawISS(c,x,y,s,t){
-  if(window.MSSaturnV&&window.MSSaturnV.draw(c,x,y,s,{station:true},t,msS.flags))return;
-  c.save(); c.translate(x,y);
-  const OUT='#4a5570';
-  /* traliccio reticolare orizzontale */
-  c.strokeStyle='#98a2b6'; c.lineWidth=2;
-  c.beginPath(); c.moveTo(-118*s,-4*s); c.lineTo(118*s,-4*s);
-  c.moveTo(-118*s,4*s); c.lineTo(118*s,4*s); c.stroke();
-  c.lineWidth=1;
-  c.beginPath();
-  for(let k=-11;k<11;k++){
-    c.moveTo(k*10.7*s,-4*s); c.lineTo((k+1)*10.7*s,4*s);
-  }
-  c.stroke();
-  /* coppie di pannelli solari dorati alle estremità (ruotano piano verso il sole) */
-  for(const dx of [-104,-76,76,104]){
-    for(const dy of [-1,1]){
-      c.save(); c.translate(dx*s,dy*6*s);
-      c.rotate(0.05*Math.sin(t*0.3+dx*0.1));
-      const g=c.createLinearGradient(-9*s,0,9*s,0);
-      g.addColorStop(0,'#a06f22'); g.addColorStop(0.4,'#d8a13a'); g.addColorStop(1,'#8a5f12');
-      c.fillStyle=g; c.strokeStyle='#6e4a12'; c.lineWidth=1.6;
-      c.beginPath(); c.roundRect(-9*s,dy>0?4*s:-64*s,18*s,60*s,2); c.fill(); c.stroke();
-      c.strokeStyle='rgba(20,16,8,.35)';
-      const py0=dy>0?4*s:-64*s;
-      for(let k=1;k<8;k++){ c.beginPath(); c.moveTo(-9*s,py0+k*7.5*s); c.lineTo(9*s,py0+k*7.5*s); c.stroke(); }
-      c.beginPath(); c.moveTo(0,py0); c.lineTo(0,py0+60*s); c.stroke();
-      c.restore();
-    }
-  }
-  /* radiatori bianchi inclinati sotto il traliccio */
-  for(const dx of [-40,44]){
-    c.save(); c.translate(dx*s,10*s); c.rotate(0.5);
-    c.fillStyle='#dde3ec'; c.strokeStyle=OUT; c.lineWidth=1.4;
-    c.beginPath(); c.roundRect(-6*s,0,12*s,30*s,2); c.fill(); c.stroke();
-    c.strokeStyle='rgba(74,85,112,.4)';
-    for(let k=1;k<4;k++){ c.beginPath(); c.moveTo(-6*s,k*7.5*s); c.lineTo(6*s,k*7.5*s); c.stroke(); }
-    c.restore();
-  }
-  /* fila di moduli pressurizzati (cilindri bianchi con anelli) */
-  function modulo(mx,my,w,h,vert){
-    const g=vert?c.createLinearGradient(mx-w/2,0,mx+w/2,0):c.createLinearGradient(0,my-h/2,0,my+h/2);
-    g.addColorStop(0,'#f5f7fa'); g.addColorStop(0.4,'#ffffff'); g.addColorStop(1,'#aab4c2');
-    c.fillStyle=g; c.strokeStyle=OUT; c.lineWidth=1.8;
-    c.beginPath(); c.roundRect(mx-w/2,my-h/2,w,h,Math.min(w,h)*0.4); c.fill(); c.stroke();
-    c.strokeStyle='rgba(74,85,112,.4)'; c.lineWidth=1;
-    if(vert){ for(const fy of [-h*0.25,0,h*0.25]){ c.beginPath(); c.moveTo(mx-w/2,my+fy); c.lineTo(mx+w/2,my+fy); c.stroke(); } }
-    else { for(const fx of [-w*0.25,0,w*0.25]){ c.beginPath(); c.moveTo(mx+fx,my-h/2); c.lineTo(mx+fx,my+h/2); c.stroke(); } }
-  }
-  modulo(-36*s,14*s,34*s,15*s,false);
-  modulo(0,14*s,40*s,17*s,false);
-  modulo(34*s,14*s,28*s,13*s,false);
-  modulo(0,30*s,15*s,26*s,true);
-  /* cupola con i finestroni (da lì gli astronauti fotografano la Terra) */
-  c.fillStyle='#c8d4e4'; c.strokeStyle=OUT; c.lineWidth=1.6;
-  c.beginPath(); c.arc(0,44*s,7*s,0,Math.PI); c.closePath(); c.fill(); c.stroke();
-  c.fillStyle='#16243c';
-  for(const wx of [-3.4,0,3.4]){ c.beginPath(); c.arc(wx*s,46*s,1.6*s,0,6.29); c.fill(); }
-  /* portello di attracco rivolto verso la capsula, con luce verde lampeggiante */
-  c.fillStyle='#7e8898'; c.strokeStyle=OUT;
-  c.beginPath(); c.roundRect(-58*s,10*s,8*s,8*s,2*s); c.fill(); c.stroke();
-  c.fillStyle='rgba(90,255,140,'+(0.4+0.6*(Math.sin(t*4)>0?1:0.2))+')';
-  c.beginPath(); c.arc(-60*s,8*s,1.8*s,0,6.29); c.fill();
   c.restore();
 }
 function msDrawGround(c,off,t){
@@ -1613,37 +1586,55 @@ function msDraw(t){
     /* la Terra rimpicciolisce sotto: si vede la curvatura e l'atmosfera */
     const er=msLerp(msH*1.4,msH*0.55,Math.min(1,msS.prog+0.15));
     msDrawEarthBall(c,cx,msH+er*0.82,er,t);
-    if(F.sep){
-      msDrawRocket(c,cx,cy-30,sc*1.55,{upperOnly:true},t);
-      const st2=F.sepT||0;
-      msDrawBooster(c,cx+st2*44,cy-30+92*sc+st2*st2*150,sc*1.55,st2,t);
-    } else msDrawRocket(c,cx,cy-30,sc*1.55,{},t);
+    const scale=sc*(F.secondSeparated?2.3:1.55);
+    msDrawRocket(c,cx,cy-30,scale,F.sep?{upperOnly:true}:{},t);
+    if(F.secondSeparated&&(F.secondSepT||0)<4){
+      const drift=F.secondSepT||0;
+      msDrawRocket(c,cx+drift*38,cy+48*sc+drift*drift*45,sc*1.55,{secondStage:true,rot:drift*.22},t);
+    }else if(F.sep&&!F.secondSeparated){
+      const drift=F.sepT||0;
+      msDrawBooster(c,cx+drift*44,cy-30+92*sc+drift*drift*150,sc*1.55,drift,t);
+    }
   }
   else if(msS.scene==='orbit'){
-    msDrawEarthBall(c,msW*0.2,msH*0.85,msH*0.34,t);
-    msDrawRocket(c,cx+Math.sin(t*0.7)*6,cy+Math.cos(t*0.9)*5,sc*1.55,{upperOnly:true},t);
-  }
-  else if(msS.scene==='iss'||msS.scene==='exp'){
-    msDrawEarthBall(c,msW*0.14,msH*0.9,msH*0.3,t);
-    const d=(msS.scene==='exp')?0:msS.issD;
-    const ix=msLerp(cx+96*sc,msW*0.78,d), iy=msLerp(cy-30*sc,msH*0.34,d);
-    msDrawISS(c,ix,iy,sc*(0.8+0.2*(1-d)),t);
-    msDrawRocket(c,cx-40*sc,cy+20+Math.sin(t*0.8)*4,sc*0.9,{capsule:true},t);
-    if(msS.scene==='exp'||F.dock){
-      /* tunnel di attracco pressurizzato */
-      c.strokeStyle='#8d97a9'; c.lineWidth=9*sc;
-      c.beginPath(); c.moveTo(cx-40*sc+20*sc,cy+8); c.lineTo(ix-52*sc,iy+12*sc); c.stroke();
-      c.strokeStyle='#4a5570'; c.lineWidth=1.5;
-      c.beginPath(); c.moveTo(cx-40*sc+20*sc,cy+8-4.5*sc); c.lineTo(ix-52*sc,iy+12*sc-4.5*sc);
-      c.moveTo(cx-40*sc+20*sc,cy+8+4.5*sc); c.lineTo(ix-52*sc,iy+12*sc+4.5*sc); c.stroke();
+    msDrawEarthBall(c,msW*.2,msH*.88,msH*.32,t);
+    if(!F.thirdSeparated){
+      msDrawRocket(c,cx,cy,sc*2.3,{upperOnly:true},t);
+    }else{
+      // Stessa scala fisica per CSM, carico lunare e S-IVB durante l'estrazione.
+      const scale=Math.min(msW/500,msH/430),stageScale=scale*23/3;
+      const stageX=msW*.38,stageY=msH*.68;
+      const dockProgress=F.lemDocked?Math.min(1,(F.lemDockT||0)/1.8):0;
+      const extraction=F.lemExtracted?Math.min(1,(F.thirdDiscardT||0)/2.5):0;
+      const drift=F.thirdDiscarded?(F.thirdDiscardT||0):0;
+      const shipX=msLerp(msW*.73,stageX,dockProgress)+extraction*msW*.25;
+      const shipY=stageY-15.51*stageScale-26*scale-extraction*msH*.04;
+      msDrawRocket(c,stageX-drift*18,stageY+drift*25,stageScale,{thirdStage:true,rot:-drift*.09},t);
+      msDrawRocket(c,shipX,shipY,scale,{capsule:true,rot:Math.PI*Math.min(1,(F.thirdSepT||0)/1.8)},t);
     }
-    if(msS.scene==='exp'){
-      /* esperimenti che galleggiano in assenza di peso */
-      c.font=Math.round(26*sc)+'px serif'; c.textAlign='center';
-      const flo=[['💧',0.34,0.42],['🌱',0.6,0.5],['🫧',0.47,0.6],['📓',0.66,0.38]];
-      flo.forEach((f2,k)=>{
-        c.fillText(f2[0],msW*f2[1]+Math.sin(t*0.9+k*2)*10,msH*f2[2]+Math.cos(t*0.7+k)*8);
-      });
+  }
+  else if(msS.scene==='lunarOrbit'||msS.scene==='moon'){
+    const onSurface=msS.scene==='moon'&&!F.lemRedocked&&(!F.lemAscent||(F.lemAscentT||0)<3.5);
+    if(onSurface){
+      msDrawEarthBall(c,msW*.83,msH*.14,msH*.06,t);
+      const rendered=window.MSSaturnV&&window.MSSaturnV.drawMoon&&window.MSSaturnV.drawMoon(c,msW,msH,t,F);
+      if(!rendered){
+        msDrawMoon(c,cx,msH*2.3,msH*1.6);
+        const down=F.landed?1:Math.min(1,(F.lemDescentT||0)/3.5);
+        msDrawRocket(c,cx,msH*(.35+down*.28),sc*1.2,{lemOnly:true},t);
+      }
+    }else{
+      msDrawMoon(c,msW*.73,msH*1.15,msH*.68);
+      const shipX=msW*.42,shipY=msH*.5,shipScale=Math.min(msW/380,msH/300);
+      msDrawRocket(c,shipX,shipY,shipScale,{capsule:true},t);
+      if(F.lemDetached&&!F.lemRedocked&&!F.lemJettisoned){
+        const drift=Math.min(1,(F.lemDetachT||0)/2.4);
+        msDrawRocket(c,shipX+msW*(.12+.22*drift),shipY+msH*.15,shipScale*.7,{lemOnly:true},t);
+      }
+      if(F.lemJettisoned&&(F.lemJettisonT||0)<4){
+        const drift=F.lemJettisonT||0;
+        msDrawRocket(c,shipX+70*shipScale+drift*30,shipY-35*shipScale-drift*20,shipScale*.7,{lemOnly:true,rot:drift*.12},t);
+      }
     }
   }
   else if(msS.scene==='rientro'){
@@ -1679,6 +1670,10 @@ function msDraw(t){
         c.beginPath(); c.moveTo(lx,capY-20*sc);
         c.quadraticCurveTo(lx+ph,capY-90*sc,lx+ph*1.6,capY-160*sc); c.stroke();
       }
+    }
+    if(F.serviceSeparated&&(F.serviceSepT||0)<4){
+      const drift=F.serviceSepT||0;
+      msDrawRocket(c,cx+drift*45,capY+(50+drift*45)*sc,sc*1.1,{serviceOnly:true,rot:drift*.22},t);
     }
     msDrawRocket(c,cx,capY,sc*1.1,{capsule:true},t);
     if(F.splash){
@@ -1724,7 +1719,7 @@ function msReset(){
   msS.ordersDone=0; msS.emgSolved=0;
   msS.orders=[]; msS.idx=0; msS.seqIdx=0; msS.tries=0;
   msS.phErr=0; msS.phSpk=0; msS.timer=0; msS.timerMax=0;
-  msS.scene='pad'; msS.prog=0; msS.alt=0; msS.sky=0; msS.issD=1; msS.shake=0;
+  msS.scene='pad'; msS.prog=0; msS.alt=0; msS.sky=0; msS.shake=0;
   msS.flags={}; msS.fx=[]; msS.state='idle'; msS.emg=null; msS.emgTriggered=false;
   /* piano degli imprevisti: 2-3 a partita, in fasi diverse (dalla 2 in poi) */
   const n=MS_EMG_MIN+Math.floor(Math.random()*(MS_EMG_MAX-MS_EMG_MIN+1));

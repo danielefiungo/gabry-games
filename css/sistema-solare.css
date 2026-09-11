@@ -1,0 +1,97 @@
+#ss {
+  --ss-ink:#eaf2ff;
+  --ss-muted:#a4b6d0;
+  z-index:11; padding:0; color:var(--ss-ink);
+  background:radial-gradient(ellipse at 18% 42%,#14203a80,transparent 52%),
+    radial-gradient(ellipse at 85% 80%,#20193770,transparent 55%),#030711;
+}
+#ssWrap { position:absolute; inset:0; overflow:hidden; }
+#ssCanvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+#ssCanvas:active { cursor:grabbing; }
+#ssLabels { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+#ss button { font-family:inherit; cursor:pointer; }
+#ss button:focus-visible,#ss summary:focus-visible { outline:3px solid #ffe094; outline-offset:4px; }
+#ssLegend { position:absolute; top:max(26px,env(safe-area-inset-top)); left:30px; text-align:left; max-width:440px; z-index:1100; }
+#ssLegend small { display:block; color:#91adc9; font-size:10px; letter-spacing:.22em; font-weight:bold; margin-bottom:6px; }
+#ssLegend b { display:block; font-size:clamp(22px,3vw,34px); letter-spacing:-.04em; line-height:1.2; color:#f4f6ff; }
+#ssLegend span { display:block; color:var(--ss-muted); font-size:13px; margin-top:8px; }
+#ssLegend details { pointer-events:auto; color:var(--ss-muted); font-size:11px; max-width:330px; line-height:1.6; margin-top:10px; }
+#ssLegend summary { cursor:pointer; width:fit-content; }
+#ssLegend details[open] { padding:10px 14px; background:#0d1729f5; border:1px solid #ffffff1c; border-radius:12px; }
+#ssBtns { position:absolute; top:max(28px,env(safe-area-inset-top)); right:26px; display:flex; gap:8px; z-index:1200; pointer-events:auto; }
+#ssBtns button,#ssTools button { border:1px solid #aec8f12e; background:#142137db; color:var(--ss-ink); border-radius:13px; min-height:44px; font-size:13px; padding:10px 16px; box-shadow:0 4px 16px #0002; }
+#ssBtns button:hover,#ssTools button:hover { background:#263b58; border-color:#aec8f170; }
+#ssBtns #ssModeBtn { color:#ffe2a1; background:#342e23d9; border-color:#e4bf6b40; }
+#ssTools { position:absolute; right:26px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:8px; z-index:1100; pointer-events:auto; }
+#ssTools button { width:44px; padding:0; font-size:22px; }
+#ssTools button[aria-pressed=true] { color:#ffe2a1; border-color:#e4bf6b80; }
+.ssLbl { position:absolute; pointer-events:auto; white-space:nowrap; display:flex; align-items:center; gap:7px; background:#081120ba; border:1px solid #c8dcff25; border-radius:20px; padding:7px 11px; color:#eaf2ff; line-height:1; box-shadow:0 3px 15px #0003; }
+.ssLbl .pn { font-size:13px; font-weight:bold; letter-spacing:.03em; }
+.ssDot { width:5px; height:5px; border-radius:50%; background:var(--planet-color); box-shadow:0 0 8px var(--planet-color); }
+.ssLbl:hover,.ssLbl.selected { border-color:var(--planet-color); background:#17263fe6; }
+.ssLbl::before { content:''; position:absolute; width:1px; height:var(--stem,0px); bottom:100%; left:50%; background:var(--planet-color); opacity:.35; pointer-events:none; }
+.ssLbl.above::before { bottom:auto; top:100%; }
+#ssHint { position:absolute; bottom:164px; left:50%; transform:translateX(-50%); width:max-content; max-width:calc(100% - 80px); color:#a4b6d0; font-size:11px; text-align:center; line-height:1.6; }
+#ssDock { position:absolute; bottom:max(56px,calc(env(safe-area-inset-bottom) + 48px)); left:50%; transform:translateX(-50%); display:flex; align-items:stretch; gap:4px; max-width:calc(100% - 48px); padding:8px; border:1px solid #bdd5ff25; border-radius:22px; background:linear-gradient(180deg,#122039df,#080f1dee); box-shadow:0 12px 50px #0006,inset 0 1px #fff08; backdrop-filter:blur(14px); overflow-x:auto; scrollbar-width:thin; scrollbar-color:#526887 transparent; pointer-events:auto; z-index:1100; touch-action:pan-x; }
+.ssWorld { flex:0 0 75px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:8px 5px; border:1px solid transparent; border-radius:14px; background:transparent; color:var(--ss-muted); min-height:82px; }
+.ssWorld:hover,.ssWorld[aria-pressed=true] { background:#8aa9dc16; border-color:#aec8f140; color:#fff; }
+.ssWorld[aria-pressed=true] { border-color:var(--planet-color); }
+.ssWorldName { font-size:11px; white-space:nowrap; }
+.ssThumb { display:block; flex-shrink:0; position:relative; width:30px; height:30px; border-radius:50%; background-color:var(--planet-color); background-size:auto 100%; box-shadow:inset -9px -3px 9px #000c,inset 2px 1px 3px #fff5,0 0 16px #8ab6ff0d; }
+.ssThumb.saturno::after { content:''; position:absolute; top:9px; left:-10px; width:45px; height:11px; border:3px solid #d8c299a6; border-radius:50%; transform:rotate(-28deg); box-shadow:0 0 0 1px #e1cb9b40; }
+.ssThumb.iss,.ssThumb.jwst,.ssThumb.base { background:none; box-shadow:none; font-size:27px; line-height:30px; }
+#ssCard { --planet-color:#8fbcff; position:absolute; right:18px; top:94px; bottom:164px; width:min(370px,43vw); padding:26px 22px; text-align:left; color:var(--ss-ink); border:1px solid #bdd5ff30; border-top:2px solid var(--planet-color); border-radius:24px; background:linear-gradient(155deg,#1a2940f7,#080f20fa 65%); box-shadow:0 24px 80px #0007; backdrop-filter:blur(18px); overflow:auto; overscroll-behavior:contain; transform:translateX(115%); visibility:hidden; transition:transform .3s ease,visibility .3s; z-index:1300; }
+#ssCard.open { transform:none; visibility:visible; }
+.ssCardX { position:absolute; top:15px; right:14px; width:40px; height:40px; background:#ffffff0d; color:#cfdef4; border:1px solid #ffffff1f; border-radius:50%; font-size:18px; }
+.ssCardHead { display:flex; gap:12px; align-items:center; margin:6px 30px 24px 0; }
+.ssEm { display:none; }
+.ssCardNm { font-size:32px; color:#edf3ff; font-weight:bold; letter-spacing:-.03em; }
+.ssCardLv { font-size:11px; line-height:1.6; color:var(--ss-muted); margin-top:7px; }
+.ssRow { display:flex; justify-content:space-between; gap:14px; padding:12px 0; border-bottom:1px solid #c1d7ff16; font-size:12px; line-height:1.55; }
+.ssRow b { color:var(--ss-muted); font-weight:normal; flex:0 0 38%; }
+.ssRow span { text-align:right; }
+.ssFact { margin-top:20px; background:#96bfff0b; border-left:2px solid var(--planet-color); border-radius:0 12px 12px 0; padding:14px; font-size:13px; line-height:1.7; }
+.ssCardBtns { display:flex; gap:8px; flex-wrap:wrap; margin-top:20px; }
+.ssBtn { flex:1 1 auto; color:#d6e4ff; background:#263b5c; border:1px solid #a5c5ff30; padding:12px; border-radius:12px; font-size:13px; font-weight:bold; min-height:46px; }
+.ssBtn.go { color:#18271c; background:#a1e7b5; border-color:#bdeecd; }
+#ss.inspecting #ssTools { right:auto; left:24px; }
+#ss.inspecting #ssHint { display:none; }
+@media(min-width:701px) and (max-width:1000px) {
+  #ssLegend { max-width:360px; }
+  #ssLegend b { font-size:26px; }
+  #ssLegend span { font-size:12px; }
+  #ssBtns button { font-size:11px; padding:10px; }
+}
+@media(max-width:700px) {
+  #ssLegend { top:22px; left:20px; max-width:calc(100% - 40px); }
+  #ssLegend b { font-size:28px; }
+  #ssLegend span { font-size:12px; }
+  #ssLegend details { margin-top:5px; font-size:10px; }
+  #ssBtns { top:157px; left:20px; right:auto; }
+  #ssBtns button { font-size:11px; min-height:40px; padding:8px 12px; }
+  #ssTools { right:14px; gap:5px; }
+  #ssTools button { width:40px; min-height:40px; }
+  #ssHint { bottom:154px; font-size:10px; max-width:calc(100% - 36px); }
+  #ssDock { bottom:54px; max-width:calc(100% - 24px); border-radius:18px; padding:5px; }
+  .ssWorld { flex-basis:66px; min-height:76px; }
+  .ssWorldName { font-size:10px; }
+  #ssCard { top:auto; left:8px; right:8px; bottom:0; width:auto; height:49%; border-radius:22px 22px 0 0; padding:20px 20px 58px; transform:translateY(110%); }
+  #ssCard.open { transform:none; }
+  .ssCardHead { margin-bottom:10px; }
+  .ssCardNm { font-size:28px; }
+  #ss.inspecting #ssDock { visibility:hidden; }
+  #ss.inspecting #ssTools { left:auto; right:12px; top:28%; transform:none; }
+  #ss.inspecting #ssLegend span,#ss.inspecting #ssLegend details { display:none; }
+  #ss.inspecting #ssBtns { top:104px; }
+}
+@media(max-height:600px) and (min-width:701px) {
+  #ssLegend { top:14px; left:18px; }
+  #ssLegend b { font-size:24px; }
+  #ssLegend span,#ssLegend details { display:none; }
+  #ssBtns { top:16px; right:18px; }
+  #ssDock { bottom:12px; max-width:calc(100% - 280px); }
+  #ssHint { display:none; }
+  .ssWorld { min-height:64px; gap:4px; padding:3px; }
+  #ssCard { top:74px; bottom:100px; }
+}
+@media(prefers-reduced-motion:reduce) { #ssCard { transition:none; } }

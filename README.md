@@ -17,6 +17,9 @@ Gioco per imparare a leggere con più modalità, tra cui **Il Labirinto** con ma
 | `js/gioco-labirinto.js` | Logica del labirinto: domande, vite, boss, vittoria, menu | Per cambiare le regole del gioco |
 | `js/scelta-gioco.js` | La schermata di scelta del gioco (registro delle modalità) | Per aggiungere nuove modalità |
 | `js/palla-api.js` | Modalità "La Palla di Api": esploratori, palla a 46°C, difese sbloccabili con le domande | Per modificare la seconda modalità |
+| `js/saturn-v-3d.js` | Saturn V, stadi separabili e moduli Apollo in 3D | Per cambiare i veicoli e il rendering |
+| `js/apollo-launch-site.js` | Complesso di lancio, bracci e fumo | Per cambiare la rampa |
+| `js/apollo-lunar.js` | LEM a due moduli e superficie lunare | Per cambiare allunaggio e risalita |
 | `js/missione-spaziale.js` | Modalità "Missione Spaziale": ordini scritti dalla base, plancia, carburante, imprevisti, quiz dell'astronauta | Per modificare la terza modalità |
 | `js/mappa-avventura-3d.js` | Mappa FPV del labirinto: strade, cartelli, incroci e portali dei livelli | Per cambiare il percorso tra i livelli |
 | `js/mappa-spazio.js` | `EDGES` (rete dei livelli) + modalità "Il Sistema Solare": planetario 3D con orbite kepleriane vere e schede dei pianeti | Per correggere dati astronomici o l'aspetto dei pianeti |
@@ -44,6 +47,16 @@ In `js/domande.js`, ogni voce ha questo formato (`[italiano, inglese]`):
 Aggiungi la voce nella lista `easy` o `hard` del tema che preferisci, ricordando la virgola tra una voce e l'altra.
 
 ## Come provarlo in locale
+
+### Bozze tastiera: Gibi ai comandi e Apollo ai comandi
+
+Due nuove voci nel menu, contrassegnate **Bozza**, propongono sei missioni ciascuna con una tastiera fisica QWERTY. Il percorso parte da F/J, aggiunge lettere vicine, poi altre file, tutto l’alfabeto e sequenze di tre lettere. Tutte le missioni sono selezionabili per facilitare le prove; i completamenti sono salvati separatamente sul dispositivo. Gli esercizi non hanno un conto alla rovescia né penalità per gli errori; rimane il timer globale della sessione.
+
+La mappa dei tasti evidenzia subito la lettera nel primo livello e dopo quattro secondi nei successivi. **Mostra il tasto** e **Ascolta** danno aiuto; **Esc** torna alle missioni e poi ai giochi. Lettere maiuscole e minuscole sono equivalenti. Le scene sono illustrazioni semplificate: Gibi si riattiva e si muove, Apollo passa dalla rampa all’ammaraggio.
+
+File: `js/tastiera.js`, `css/tastiera.css`. Verifica: `node --test test/test-tastiera.js`.
+
+### Avvio
 
 Basta aprire `index.html` nel browser. Se qualcosa non carica, avvia un piccolo server:
 
@@ -79,7 +92,9 @@ Cosa è fedele: orbite ellittiche con l'eccentricità reale e il Sole in un fuoc
 
 Cosa non è in scala, e il gioco lo dice: distanze, diametri, orbite dei satelliti terrestri e i due orologi (orbite e rotazioni). Le costanti `SS_*` in cima al file governano solo la resa; i valori misurati in `SS_BODIES` non vanno "aggiustati".
 
-Due viste col pulsante in alto a destra: **pianeti in fila** (predefinita, comoda per scegliere) e **orbite** (tutto in movimento — si vede Plutone entrare nell'orbita di Nettuno). Con il puntatore sulla mappa le orbite rallentano.
+Due viste: **orbite** (predefinita, tutto in movimento) e **pianeti in fila**. La scelta viene ricordata. Con il puntatore sulla mappa le orbite rallentano; il pulsante pausa ferma anche rotazioni, nubi e moto di Webb.
+
+La barra inferiore permette di scegliere tutti i 13 corpi: la camera si avvicina al pianeta e la scheda mostra subito curiosità, ascolto e letturina. Il pulsante ◎ o Esc riporta alla panoramica; +/−, rotella e pizzico regolano lo zoom. Inquadratura e schede si adattano anche al telefono. Le superfici procedurali sono a 1024×512, con rilievo dei corpi rocciosi, nubi terrestri separate, bordi atmosferici e ombra del globo sugli anelli. I pianeti mantengono i loro colori anche quando il livello è bloccato. Lo stile del planetario è in `css/sistema-solare.css`.
 
 ```sh
 node test/test-sistema-solare.js     # richiede: npm install jsdom
@@ -94,3 +109,18 @@ Test del modellino linguistico:
 ```sh
 node --test test/test-macchina-parole.js
 ```
+
+## Missione Spaziale — Apollo
+
+La missione segue Apollo verso la Luna in sette capitoli e 42 ordini, oltre ai messaggi buffi e agli imprevisti. I tempi sono compressi per il gioco di lettura.
+
+1. Checklist e decollo con Saturn V.
+2. Separazione del primo e del secondo stadio durante la salita.
+3. Il terzo stadio S-IVB entra in orbita e si riaccende verso la Luna. Apollo si separa, si gira, aggancia il LEM ed estrae il modulo lunare; il terzo stadio vuoto si allontana.
+4. Il CSM (modulo di comando e servizio) resta in orbita lunare mentre il LEM scende sulla superficie.
+5. Il modulo di discesa del LEM rimane sulla Luna. Quello di risalita si riaggancia al CSM; astronauti e campioni rientrano a bordo prima dello sgancio del LEM vuoto.
+6. Il modulo di servizio resta con Apollo fino alla separazione comandata prima del rientro. Solo il modulo di comando rientra e apre i tre paracadute.
+
+Apollo usa celle a combustibile e batterie, senza pannelli solari; questa missione non visita la ISS. La torre del gioco è senza gru per scelta grafica richiesta, anche se la torre storica Apollo aveva una gru in cima.
+
+Il gioco ricostruisce i moduli corretti anche quando si ripete una fase. Test: `node --test test/test-missione-spaziale.js`.

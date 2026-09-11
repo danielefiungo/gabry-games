@@ -78,18 +78,26 @@
     cyl(second,7.5,7.5,0,33,white);cyl(second,7.55,7.55,0,3,black);
     band(second,7.54,3,10);ribs(second,7.57,0,8);lettering(second,7.57,15,28,'USA',true);
     cluster(second,0,1.45);
-    cyl(upper,4.9,7.5,33,41,white);band(upper,5,40,44);
+    cyl(second,4.9,7.5,33,41,white);
     const third=new T.Group();third.name='S-IVB';upper.add(third);
     cyl(third,4.9,4.9,41,59,white);band(third,4.94,42,48);ribs(third,4.98,42,47);
     cyl(third,4.95,4.95,58,60,black);lettering(third,4.99,49,57,'USA',true);
-    // Adattatore lunare, modulo di servizio e modulo di comando Apollo.
-    cyl(upper,3,4.9,60,67,white);cyl(upper,3,3,67,73,silver);
-    cyl(upper,.65,3,73,78,white);
-    const hatch=mesh(new T.BoxGeometry(1.5,2,.12),silver,upper,0,75,2.1);
+    // S-IVB: un solo J-2; il LEM è trasportato nell'adattatore sopra il serbatoio.
+    nozzle(third,0,0,41,2.1);
+    const cargo=window.msBuildLem(T);cargo.group.name='LEM in spacecraft adapter';cargo.group.scale.setScalar(.22);cargo.group.position.y=63.1;third.add(cargo.group);
+    const panels=[],panelMat=white.clone();panelMat.side=T.DoubleSide;
+    for(let i=0;i<4;i++){
+      const mid=(i+.5)*Math.PI/2,hinge=new T.Group();hinge.position.set(Math.sin(mid)*4.9,60,Math.cos(mid)*4.9);third.add(hinge);
+      mesh(new T.CylinderGeometry(3,4.9,7,12,1,true,i*Math.PI/2,Math.PI/2),panelMat,hinge,-hinge.position.x,3.5,-hinge.position.z);
+      panels.push({hinge,mid});
+    }
+    const stackApollo=new T.Group();stackApollo.name='Apollo CSM on Saturn V';upper.add(stackApollo);
+    cyl(stackApollo,3,3,67,73,silver);cyl(stackApollo,.65,3,73,78,white);
+    const hatch=mesh(new T.BoxGeometry(1.5,2,.12),silver,stackApollo,0,75,2.1);
     const glass=new T.MeshStandardMaterial({color:0x172c43,roughness:.16,metalness:.4});
-    mesh(new T.BoxGeometry(.7,.7,.15),glass,upper,-1.3,75.3,1.9);
-    mesh(new T.BoxGeometry(.7,.7,.15),glass,upper,1.3,75.3,1.9);
-    const tower=new T.Group();upper.add(tower);
+    mesh(new T.BoxGeometry(.7,.7,.15),glass,stackApollo,-1.3,75.3,1.9);
+    mesh(new T.BoxGeometry(.7,.7,.15),glass,stackApollo,1.3,75.3,1.9);
+    const tower=new T.Group();stackApollo.add(tower);
     for(let i=0;i<4;i++){
       const a=i*Math.PI/2+Math.PI/4;
       const strut=mesh(new T.CylinderGeometry(.12,.12,6,5),white,tower,Math.sin(a)*.65,81,Math.cos(a)*.65);
@@ -97,7 +105,7 @@
     }
     cyl(tower,.52,.52,83,89,white);cyl(tower,0,.52,89,91,white);
     const lamps=[];
-    for(const d of [-1,1]) lamps.push(mesh(new T.SphereGeometry(.45,8,6),new T.MeshBasicMaterial({color:d<0?0xff493c:0x64ffbc}),upper,d*3.05,70,0));
+    for(const d of [-1,1])lamps.push(mesh(new T.SphereGeometry(.45,8,6),new T.MeshBasicMaterial({color:d<0?0xff493c:0x64ffbc}),stackApollo,d*3.05,70,0));
     const flameMat=new T.MeshBasicMaterial({color:0xff9c35,transparent:true,opacity:.65,depthWrite:false,side:T.DoubleSide});
     const coreMat=new T.MeshBasicMaterial({color:0xfff0b5,transparent:true,opacity:.95,depthWrite:false});
     const flames=new T.Group();root.add(flames);
@@ -123,6 +131,30 @@
       const windowPane=mesh(new T.BoxGeometry(2.7,3,.25),glass,capsule,x,12,8.2);windowPane.rotation.x=.42;
     }
     for(const x of [-18,18])mesh(new T.CylinderGeometry(1,1.5,2,10),engine,capsule,x,-12,7).rotation.z=Math.PI/2;
+    // Il modulo di servizio resta con il CM fino alla separazione prima del rientro.
+    const service=new T.Group();service.name='Apollo service module';scene.add(service);
+    cyl(service,22.5,22.5,-65,-22,silver);cyl(service,23,22.5,-22,-18,white);cyl(service,23,23,-26,-22,white);
+    for(let i=0;i<6;i++){
+      const angle=i*Math.PI/3;
+      mesh(new T.CylinderGeometry(22.6,22.6,30,8,1,true,angle,.55),white,service,0,-43,0);
+    }
+    cyl(service,6,6,-69,-65,engine);
+    mesh(new T.CylinderGeometry(5,12,15,24,1,true),engine,service,0,-76.5,0);
+    const nozzleRim=mesh(new T.TorusGeometry(12,.5,6,24),silver,service,0,-84,0);nozzleRim.rotation.x=Math.PI/2;
+    for(let i=0;i<4;i++){
+      const a=i*Math.PI/2,x=Math.sin(a)*23,z=Math.cos(a)*23;
+      mesh(new T.BoxGeometry(4,5,4),white,service,x,-30,z);
+      for(const direction of [-1,1]){
+        const nozzle=mesh(new T.CylinderGeometry(.6,1.1,3,10),engine,service,x+direction*3,-30,z);nozzle.rotation.z=direction*Math.PI/2;
+      }
+    }
+    const antenna=new T.Group();antenna.position.set(26,-61,0);service.add(antenna);
+    mesh(new T.CylinderGeometry(.4,.4,12,6),silver,antenna).rotation.z=-.8;
+    for(const x of [-3,3])for(const y of [-3,3]){
+      const dish=mesh(new T.SphereGeometry(3,12,8,0,Math.PI*2,0,Math.PI/2),silver,antenna,x+5,y-6,0);dish.rotation.x=Math.PI/2;
+    }
+    const servicePlume=mesh(new T.ConeGeometry(8,28,16),new T.MeshBasicMaterial({color:0xffe0ad,transparent:true,opacity:.65,depthWrite:false}),service,0,-98,0);servicePlume.rotation.z=Math.PI;
+    service.visible=false;
     const chutes=new T.Group();capsule.add(chutes);
     const orange=new T.MeshStandardMaterial({color:0xd15a2e,roughness:1,side:T.DoubleSide});
     const silk=new T.MeshStandardMaterial({color:0xf4efdc,roughness:1,side:T.DoubleSide});
@@ -137,60 +169,53 @@
         chutes.add(new T.Line(new T.BufferGeometry().setFromPoints(points),new T.LineBasicMaterial({color:0xc5c0b4})));
       }
     }
-    // Stazione orbitale: traliccio, moduli pressurizzati, radiatori e celle solari.
-    const station=new T.Group();station.name='International Space Station';scene.add(station);
-    const trussPoints=[];
-    for(let x=-118;x<118;x+=10){
-      for(const y of [-3,3])for(const z of [-3,3])trussPoints.push(new T.Vector3(x,y,z),new T.Vector3(x+10,y,z));
-      for(const z of [-3,3])trussPoints.push(new T.Vector3(x,-3,z),new T.Vector3(x+10,3,z));
-    }
-    station.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(trussPoints),new T.LineBasicMaterial({color:0xa5aeb9})));
-    const solarCanvas=document.createElement('canvas');solarCanvas.width=128;solarCanvas.height=512;
-    const solarCtx=solarCanvas.getContext('2d');solarCtx.fillStyle='#674728';solarCtx.fillRect(0,0,128,512);
-    solarCtx.strokeStyle='#b28e50';solarCtx.lineWidth=2;
-    for(let y=0;y<=512;y+=24){solarCtx.beginPath();solarCtx.moveTo(0,y);solarCtx.lineTo(128,y);solarCtx.stroke();}
-    for(let x=0;x<=128;x+=32){solarCtx.beginPath();solarCtx.moveTo(x,0);solarCtx.lineTo(x,512);solarCtx.stroke();}
-    const solarTex=new T.CanvasTexture(solarCanvas);solarTex.encoding=T.sRGBEncoding;
-    const solarMat=new T.MeshStandardMaterial({map:solarTex,roughness:.48,metalness:.25});
-    for(const x of [-104,-76,76,104])for(const dir of [-1,1]){
-      mesh(new T.BoxGeometry(1,65,1),silver,station,x,dir*34,0);
-      const panel=mesh(new T.BoxGeometry(18,60,.35),solarMat,station,x,dir*38,0);panel.rotation.y=.2;
-    }
-    for(const x of [-40,40])for(let i=0;i<3;i++){
-      const radiator=mesh(new T.BoxGeometry(9,32,.5),white,station,x+i*10,-22,-9);radiator.rotation.x=.5;
-    }
-    for(const [x,length,r] of [[-37,30,6.5],[-3,34,8],[29,28,6]]){
-      const module=mesh(new T.CylinderGeometry(r,r,length,24),silver,station,x,-14,9);module.rotation.z=Math.PI/2;
-      for(const dir of [-1,1]){
-        const end=mesh(new T.SphereGeometry(r,20,12),white,station,x+dir*length/2,-14,9);end.scale.x=.35;
-        const ring=mesh(new T.TorusGeometry(r,.6,6,24),white,station,x+dir*(length/2-2),-14,9);ring.rotation.y=Math.PI/2;
-      }
-    }
-    mesh(new T.CylinderGeometry(6,6,27,24),white,station,0,-31,9);
-    mesh(new T.SphereGeometry(6,8,6),glass,station,0,-46,10).scale.y=.6;
-    mesh(new T.CylinderGeometry(4,4,8,18),silver,station,-58,-14,9).rotation.z=Math.PI/2;
-    station.rotation.set(.22,-.15,.025);station.visible=false;
+    const lem=window.msBuildLem(T);scene.add(lem.group);lem.group.visible=false;
+    const moonCamera=new T.PerspectiveCamera(52,1,1,8000);
     capsule.visible=false;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
     renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();if(view&&view.renderer===renderer)unavailable=true;});
-    return {renderer,scene,camera,launchCamera,root,first,upper,tower,lamps,hatch,white,black,flames,capsule,chutes,shield,capHatch,station,launchFog:new T.Fog(0xb3c7cf,700,2600),site:null,size:0};
+    return {renderer,scene,camera,launchCamera,root,first,upper,second,third,stackApollo,cargo,panels,tower,lamps,hatch,white,black,flames,capsule,chutes,shield,capHatch,service,servicePlume,lem,moonCamera,lunar:null,launchFog:new T.Fog(0xb3c7cf,700,2600),site:null,size:0};
   }
 
   function configure(v,options,t,flags){
-    const booster=!!options.booster,upperOnly=!!options.upperOnly;
-    v.root.visible=!options.capsule&&!options.station;v.capsule.visible=!!options.capsule;v.station.visible=!!options.station;
+    const booster=!!options.booster,upperOnly=!!options.upperOnly,secondOnly=!!options.secondStage,thirdOnly=!!options.thirdStage;
+    v.root.visible=!options.capsule&&!options.lemOnly&&!options.serviceOnly;v.capsule.visible=!!options.capsule;
+    if(v.lunar)v.lunar.group.visible=false;
     v.capsule.rotation.y=.3+Math.sin(t*.25)*.08;
-    v.chutes.visible=!!flags.para;v.shield.material=flags.scudo?v.black:v.white;
+    const lemAttached=!!options.capsule&&!!flags.lemDocked&&!flags.lemDetached&&!flags.lemJettisoned&&(!flags.thirdSeparated||!!flags.lemExtracted);
+    v.lem.group.visible=!!options.lemOnly||lemAttached;
+    v.lem.group.scale.setScalar(1.7);
+    v.lem.group.position.set(0,lemAttached?52.35:0,0);
+    v.lem.group.rotation.set(0,v.capsule.rotation.y,lemAttached?Math.PI:0);
+    v.lem.update(flags,t,!!flags.lemAscent||!!flags.lemRedocked);
+    v.service.visible=!!options.serviceOnly||(!!options.capsule&&!flags.serviceSeparated);
+    v.servicePlume.visible=!!flags.serviceBurn&&!flags.serviceSeparated&&!options.serviceOnly;
+    v.service.rotation.copy(v.capsule.rotation);v.service.position.set(0,options.serviceOnly?48:0,0);
+    v.shield.visible=!!flags.serviceSeparated;
+    v.chutes.visible=!!flags.para&&!!flags.serviceSeparated;v.shield.material=flags.scudo?v.black:v.white;
     v.capHatch.material=flags.portello?v.white:v.black;
-    v.first.visible=!upperOnly;v.upper.visible=!booster;
-    v.first.position.y=booster?35:0;v.upper.position.y=upperOnly?-42:0;
+    v.first.visible=booster||(!upperOnly&&!secondOnly&&!thirdOnly);v.upper.visible=!booster;
+    v.second.visible=secondOnly||(!thirdOnly&&!flags.secondSeparated);v.third.visible=!secondOnly;
+    v.stackApollo.visible=!secondOnly&&!thirdOnly&&!flags.thirdSeparated;
+    v.first.position.y=booster?35:0;
+    v.upper.position.y=secondOnly?-18:thirdOnly?-51:upperOnly?(flags.secondSeparated?-56:-42):0;
+    v.cargo.group.visible=!flags.lemExtracted;
+    v.cargo.update({},t,false);
+    const opening=flags.thirdSeparated?Math.min(1,(flags.thirdSepT||0)/1.4):0;
+    v.panels.forEach(({hinge,mid})=>{
+      hinge.visible=!flags.thirdSeparated||(flags.thirdSepT||0)<3;
+      const drift=flags.thirdSeparated?Math.max(0,(flags.thirdSepT||0)-.8)*5:0;
+      hinge.position.set(Math.sin(mid)*(4.9+drift),60-drift*.4,Math.cos(mid)*(4.9+drift));
+      hinge.quaternion.setFromAxisAngle(new window.THREE.Vector3(Math.cos(mid),0,-Math.sin(mid)),opening*1.3);
+    });
     v.tower.visible=!upperOnly;
     v.root.position.set(0,0,0);
     v.root.rotation.set(booster?.12:0,.45+Math.sin(t*.32)*.13,0);
     v.hatch.material=flags.portello?v.white:v.black;
     v.lamps.forEach(m=>{m.visible=!!flags.luci;});
-    v.flames.visible=!!flags.motori&&!booster;
-    v.flames.position.y=upperOnly?-48:-70;
+    v.flames.visible=!!flags.motori&&!booster&&!secondOnly&&!thirdOnly;
+    v.flames.children.forEach((m,i)=>{m.visible=!flags.secondSeparated||i===0;});
+    v.flames.position.y=upperOnly?(flags.secondSeparated?-21:-48):-70;
     v.flames.scale.y=(upperOnly?.65:1)*(.94+Math.sin(t*27)*.06);
     v.flames.scale.x=v.flames.scale.z=upperOnly?.8:1;
   }
@@ -223,13 +248,28 @@
         return true;
       }catch(err){window.MSSaturnV.dispose();unavailable=true;console.warn('Rampa 3D non disponibile: uso la scena di riserva.',err);return false;}
     },
+    drawMoon(c,width,height,t,flags){
+      if(unavailable)return false;
+      try{
+        if(!view)view=build();if(!view)return false;
+        const v=view;configure(v,{lemOnly:true},t,flags);v.lem.group.visible=false;
+        if(v.site)v.site.group.visible=false;
+        if(!v.lunar){v.lunar=window.msBuildMoonScene(window.THREE);v.scene.add(v.lunar.group);}
+        v.lunar.group.visible=true;v.lunar.update(flags,t);
+        v.scene.fog=null;v.renderer.shadowMap.enabled=true;
+        v.moonCamera.aspect=width/height;v.moonCamera.updateProjectionMatrix();
+        v.moonCamera.position.set(58,35,90);v.moonCamera.lookAt(0,5,0);
+        const key='moon:'+width+'x'+height;if(v.size!==key){v.renderer.setSize(width,height,false);v.size=key;}
+        v.renderer.render(v.scene,v.moonCamera);c.drawImage(v.renderer.domElement,0,0,width,height);return true;
+      }catch(err){window.MSSaturnV.dispose();unavailable=true;console.warn('Scena lunare 3D non disponibile.',err);return false;}
+    },
     draw(c,x,y,s,options,t,flags){
       if(unavailable) return false;
       try {
         if(!view) view=build();
         if(!view) return false;
         const v=view;
-        const halfW=options.station?150:80,halfH=options.station?100:120;
+        const halfW=80,halfH=120;
         Object.assign(v.camera,{left:-halfW,right:halfW,top:halfH,bottom:-halfH});v.camera.updateProjectionMatrix();
         // Un buffer condiviso evita riallocazioni GPU tra stazione e capsula a ogni frame.
         if(v.size!=='sprite'){v.renderer.setSize(384,384,false);v.size='sprite';}
