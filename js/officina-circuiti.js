@@ -120,7 +120,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
   '@media(max-width:760px){#ocBtns .bl{display:none}#ocBtns .hudBtn{min-width:42px;padding:4px}#ocGoal{top:58px;width:84vw}#ocGibiDesk{opacity:.75;left:-8px}.ocTool{min-width:57px;padding:7px 6px}#ocInfo{top:58px;right:8px;width:calc(100vw - 16px);max-height:205px}#ocPick .card{padding:16px 10px 18px}#ocPickGibi{position:relative;display:block;width:100%;height:110px;bottom:auto;left:auto;background-position:center 10%;background-size:145px auto}#ocPickGrid{grid-template-columns:repeat(2,minmax(120px,1fr))}.ocLvBtn{min-height:96px}#ocIntro .card{padding:18px 14px 20px;min-height:0}#ocIntroGibi{position:relative;left:auto;bottom:auto;width:100%;height:110px;background-position:center 7%;background-size:145px auto}#ocWin .card{padding:18px 12px}#ocWinGibi{display:none}}'
   ].join('\n');
   document.head.appendChild(css);
-  const skin=document.createElement('link'); skin.rel='stylesheet'; skin.href='css/officina.css?v=2'; document.head.appendChild(skin);
+  const skin=document.createElement('link'); skin.rel='stylesheet'; skin.href='css/officina.css?v=3'; document.head.appendChild(skin);
   skin.onload=()=>{ if(window.__OC&&window.__OC.oc.on) ocResize(); };
 
   document.body.insertAdjacentHTML('beforeend',
@@ -135,13 +135,14 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
       '<div id="ocBtns">'+
         '<button class="hudBtn" id="ocUndoBtn" title="Annulla ultima azione" disabled>↶<span class="bl">ANNULLA</span></button>'+
         '<button class="hudBtn" id="ocHintBtn" title="Aiutino">💡<span class="bl">AIUTO</span></button>'+
+        '<button class="hudBtn" id="ocExampleBtn" title="Esempio">📖<span class="bl">ESEMPIO</span></button>'+
         '<button class="hudBtn" id="ocResetBtn" title="Ricomincia">🔄<span class="bl">RIFAI</span></button>'+
         '<button class="hudBtn" id="ocPickBtn" title="Livelli">📋<span class="bl">LIVELLI</span></button>'+
         '<button class="hudBtn" id="ocMusicBtn" title="Musica">🎵</button>'+
         '<button class="hudBtn" id="ocHomeBtn" title="Menu">🏠</button>'+
       '</div>'+
     '</div>'+
-    '<div id="ocGoal"><span id="ocGoalTxt"></span> <button id="ocGoalSpk">🔊</button><div id="ocChecks" aria-live="polite"></div></div>'+
+    '<div id="ocGoal"><span id="ocGoalTxt"></span> <button id="ocGoalSpk">🔊</button><div id="ocChecks" aria-live="polite"></div><div id="ocMeter" hidden></div></div>'+
     '<button id="ocSun" class="day">☀️</button>'+
     '<div id="ocPalBar"></div>'+
     '<div id="ocCoach" aria-live="polite"></div>'+
@@ -162,7 +163,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
       '<div id="ocIntroEm">⚡</div>'+
       '<div id="ocIntroTit"></div>'+
       '<div id="ocIntroTxt"></div>'+
-      '<div id="ocIntroNew"></div>'+
+      '<div id="ocLesson" hidden><div id="ocExample"></div><fieldset id="ocPrediction"><legend></legend><div id="ocAnswers"></div><p id="ocFeedback" role="status"></p></fieldset></div><div id="ocIntroNew"></div>'+
       '<br><button id="ocIntroSpk">🔊</button><br>'+
       '<button class="bigBtn" id="ocIntroGo">VIA! ⚡</button>'+
     '</div>'+
@@ -191,7 +192,7 @@ const OC_ELEC_SP=16;      /* px tra un elettrone e l'altro */
       '<div id="ocPickSub"></div>'+
       '<div id="ocProgressText"></div><div class="ocProgressTrack"><div id="ocProgressFill"></div></div>'+
       '<button id="ocContinue"></button></div></div>'+
-      '<div id="ocPathTitle"></div>'+
+      '<div id="ocCourses" role="group" aria-label="Percorsi"><button id="ocBasicCourse"></button><button id="ocLabCourse"></button></div><div id="ocPathTitle"></div>'+
       '<div id="ocPickGrid"></div>'+
       '<button id="ocPickBack"></button>'+
     '</div>'+
@@ -446,25 +447,101 @@ const OC_LEVELS=[
 
 ];
 
+/* Un percorso indipendente: prevedi, costruisci, verifica anche i casi spenti.
+   Le plance riutilizzate sono copiate: i quindici livelli originali restano identici. */
+const OC_LABS=[
+{
+  icon:'🔔', t:['Due pulsanti, un campanello','Two buttons, one bell'],
+  g:['Costruisci due strade alternative per lo stesso campanello. Poi verifica tutte e quattro le combinazioni dei pulsanti A e B.','Build two alternative paths to the same bell. Then test all four combinations of buttons A and B.'],
+  example:[['Pensa a due ingressi della stessa casa.','Il pulsante al cancello può suonare anche se quello alla porta non è premuto.','Due interruttori in parallelo realizzano OR: basta una strada chiusa.'],['Think of two entrances to the same house.','The gate button can ring the bell even when the door button is not pressed.','Two parallel switches implement OR: one closed path is enough.']],
+  quiz:{q:['Se chiudi A e B insieme, il campanello…','If you close A and B together, the bell…'],options:[['si spegne','suona','suona solo con A aperto'],['turns off','rings','rings only with A open']],answer:1,why:['Le due strade non si annullano: con entrambi chiusi la corrente può ancora raggiungere il campanello.','The paths do not cancel each other: with both closed, current can still reach the bell.']},
+  nx:7,ny:5,
+  comps:[{t:'batt',x:1,y:3,lock:1},{t:'sw',x:3,y:1,id:'A',lock:1},{t:'sw',x:3,y:2,id:'B',lock:1},{t:'buz',x:5,y:3,id:'Z',lock:1}],
+  wires:[[0,3,'H',1],[1,3,'H',1],[2,2,'V',1],[2,1,'V',1],[4,1,'V',1],[4,2,'V',1],[6,3,'V',1],[5,4,'H',1],[4,4,'H',1],[3,4,'H',1],[2,4,'H',1],[1,4,'H',1],[0,4,'H',1],[0,3,'V',1]],
+  pal:{wire:6},sol:{wires:[[2,1,'H'],[3,1,'H'],[2,2,'H'],[3,2,'H'],[4,3,'H'],[5,3,'H']]},
+  labels:[[1,1,'A: cancello','A: gate'],[1,2,'B: porta','B: door']],
+  checks:[
+    {text:['Solo A','A only'],action:['Collega i 6 fili mancanti. Chiudi A e lascia B aperto: deve suonare.','Connect the 6 missing wires. Close A and leave B open: it must ring.'],test:a=>a.sw('A')&&!a.sw('B')&&a.P('Z')>OC_BUZ_ON},
+    {text:['Solo B','B only'],action:['Ora apri A e chiudi B: il campanello deve suonare anche da questa strada.','Now open A and close B: the bell must ring through this path too.'],test:a=>!a.sw('A')&&a.sw('B')&&a.P('Z')>OC_BUZ_ON},
+    {text:['Entrambi','Both'],action:['Chiudi entrambi i pulsanti: verifica la tua previsione.','Close both buttons: check your prediction.'],test:a=>a.sw('A')&&a.sw('B')&&a.P('Z')>OC_BUZ_ON},
+    {text:['Nessuno','Neither'],action:['Apri entrambi: senza una strada chiusa, il campanello deve fermarsi.','Open both: without a closed path, the bell must stop.'],test:a=>!a.sw('A')&&!a.sw('B')&&a.P('Z')<.01}
+  ],
+  know:['Hai verificato OR in tutti i casi: A solo, B solo, entrambi, nessuno. In serie servirebbero entrambi i pulsanti; in parallelo ne basta uno. Il modo di collegare gli stessi pezzi cambia la regola del circuito!','You tested every OR case: A only, B only, both, neither. In series both buttons would be needed; in parallel one is enough. Wiring the same parts differently changes the circuit’s rule!']
+},
+{
+  ...OC_LEVELS[12],icon:'🏠',t:['Una casa, due luci indipendenti','One house, two independent lights'],
+  g:['Completa i due rami della casa. Dimostra che ciascuna luce funziona da sola e che spegnerne una non spegne l’altra.','Complete the two branches of the house. Show that each light works alone and switching one off leaves the other on.'],
+  example:[['In cucina si legge, in camera si dorme.','La luce della cucina deve restare accesa quando spegni quella della camera.','Ogni lampadina ha un ramo e un interruttore propri, collegati alla stessa pila.'],['Someone reads in the kitchen while someone sleeps in the bedroom.','The kitchen light must stay on when the bedroom light is switched off.','Each bulb has its own branch and switch, connected to the same battery.']],
+  quiz:{q:['Apri il ramo della camera. La cucina…','You open the bedroom branch. The kitchen…'],options:[['si spegne anche lei','resta accesa','si riaccende solo riaccendendo la camera'],['turns off too','stays lit','relights only if the bedroom is switched back on']],answer:1,why:['La cucina ha ancora un percorso completo tra i poli della pila. Il ramo della camera è indipendente.','The kitchen still has a complete path between the battery terminals. The bedroom branch is independent.']},
+  comps:OC_LEVELS[12].comps.map(c=>c.t==='mot'?{...c,t:'lamp',id:'B'}:c.t==='lamp'?{...c,id:'A'}:{...c}),
+  wires:OC_LEVELS[12].wires.filter(w=>![[2,1],[4,1],[2,2],[4,2]].some(([x,y])=>w[0]===x&&w[1]===y&&w[2]==='H')).map(w=>[...w]),
+  pal:{wire:6},sol:{wires:[[2,1,'H'],[3,1,'H'],[4,1,'H'],[2,2,'H'],[3,2,'H'],[4,2,'H']]},
+  labels:[[1,1,'A: cucina','A: kitchen'],[1,2,'B: camera','B: bedroom']],
+  checks:[
+    {text:['Due luci','Two lights'],action:['Completa i collegamenti e chiudi entrambi gli interruttori: servono due luci brillanti.','Complete the wiring and close both switches: both lights must shine brightly.'],test:a=>a.P('A')>OC_LAMP_BRIGHT&&a.P('B')>OC_LAMP_BRIGHT},
+    {text:['Solo cucina','Kitchen only'],action:['Apri l’interruttore della camera (ramo B). La cucina deve restare brillante.','Open the bedroom switch (branch B). The kitchen must stay bright.'],test:a=>a.sw('SL')&&!a.sw('SM')&&a.P('A')>OC_LAMP_BRIGHT&&a.P('B')<.01},
+    {text:['Solo camera','Bedroom only'],action:['Scambia: spegni la cucina e accendi la camera. Funziona anche il secondo ramo?','Swap: turn off the kitchen and light the bedroom. Does the other branch work too?'],test:a=>!a.sw('SL')&&a.sw('SM')&&a.P('B')>OC_LAMP_BRIGHT&&a.P('A')<.01},
+    {text:['Tutto spento','All off'],action:['Apri tutti e due gli interruttori: verifica che entrambe le luci si spengano.','Open both switches: check that both lights turn off.'],test:a=>!a.sw('SL')&&!a.sw('SM')&&a.P('A')<.01&&a.P('B')<.01}
+  ],
+  know:['Hai collaudato due rami indipendenti. In serie, interrompere una strada fermerebbe entrambe le luci. In parallelo ogni lampadina riceve quasi tutta la tensione della pila e il suo interruttore controlla solo quel ramo.','You tested two independent branches. In series, breaking one path would stop both lights. In parallel each bulb receives almost the full battery voltage and its switch controls only its own branch.']
+},
+{
+  ...OC_LEVELS[14],icon:'🔋',t:['Quanto dura la riserva?','How long does the reserve last?'],
+  g:['Costruisci una riserva per il motore. Caricala, scollega la pila, osserva come si esaurisce e dimostra che può ricaricarsi.','Build a reserve for the motor. Charge it, disconnect the battery, watch it run down and show that it can recharge.'],
+  example:[['Un serbatoio pieno può dare acqua anche a rubinetto di carico chiuso.','Se continui a usare l’acqua, il livello scende fino a esaurirsi.','Il condensatore conserva energia: quando alimenta il motore, la sua tensione diminuisce.'],['A full tank can supply water even with its filling tap closed.','If you keep using water, its level falls until it runs out.','A capacitor stores energy: while powering the motor, its voltage decreases.']],
+  quiz:{q:['Con la pila scollegata, il motore può girare per sempre?','With the battery disconnected, can the motor run forever?'],options:[['Sì, il condensatore crea energia','No, la riserva si esaurisce','No, si ferma subito anche se è carico'],['Yes, the capacitor creates energy','No, the reserve runs out','No, it stops instantly even when charged']],answer:1,why:['Il condensatore restituisce solo l’energia accumulata. Non è una sorgente inesauribile: il motore rallenta e si ferma.','The capacitor only returns stored energy. It is not an endless source: the motor slows and stops.']},
+  checks:[
+    {text:['Carica','Charge'],action:['Inserisci il condensatore e chiudi l’interruttore. Aspetta che la riserva superi 4 volt.','Insert the capacitor and close the switch. Wait for the reserve to exceed 4 volts.'],hold:1,test:a=>a.sw('S')&&a.placed('cap')===1&&a.capV()>4&&a.P('M')>.8},
+    {text:['Senza pila','No battery'],action:['Apri l’interruttore: il motore deve continuare grazie alla riserva. Guarda la tensione scendere.','Open the switch: the reserve must keep the motor running. Watch the voltage drop.'],hold:.9,test:a=>!a.sw('S')&&a.P('M')>OC_MOT_ON},
+    {text:['Esaurita','Empty'],action:['Lascia la pila scollegata e aspetta: quando la riserva scende sotto 0,3 V, il motore si ferma.','Keep the battery disconnected and wait: below 0.3 V the motor stops.'],test:a=>!a.sw('S')&&a.capV()<.3&&a.P('M')<.01},
+    {text:['Ricarica','Recharge'],action:['Chiudi di nuovo l’interruttore. Riporta la riserva sopra 4 V: l’esperimento è ripetibile!','Close the switch again. Recharge above 4 V: the experiment can be repeated!'],hold:1,test:a=>a.sw('S')&&a.capV()>4&&a.P('M')>.8}
+  ],
+  know:['Il motore ha usato energia della pila, poi quella del condensatore. Hai osservato carica, scarica e ricarica. Il valore in volt misura la tensione, non direttamente l’energia. Il condensatore del gioco è volutamente grande per rendere visibile la scarica.','The motor used battery energy, then capacitor energy. You observed charging, discharging and recharging. Volts measure voltage, not energy directly. The game capacitor is deliberately large to make its discharge visible.']
+},
+{
+  ...OC_LEVELS[9],icon:'🌗',t:['Il lampione col permesso','The streetlight with permission'],
+  g:['Aggiungi sensore e resistenza al lampione. Usa l’interruttore già montato: la luce deve accendersi solo al buio E con il suo permesso.','Add the sensor and resistor to the streetlight. Use the fitted switch: the light must turn on only in darkness AND with its permission.'],
+  example:[['Il sensore di un lampione chiede luce quando è buio.','Per fare manutenzione, un interruttore deve poter fermare la luce anche di notte.','Servono due condizioni insieme: buio E interruttore chiuso. Il transistor riceve il segnale del sensore.'],['A streetlight sensor requests light when it is dark.','For maintenance, a switch must stop the light even at night.','Two conditions are needed together: darkness AND a closed switch. The transistor receives the sensor signal.']],
+  quiz:{q:['È notte, ma l’interruttore è aperto. Il LED…','It is night, but the switch is open. The LED…'],options:[['si accende perché è buio','si accende, ma più debolmente','resta spento: il percorso è interrotto'],['lights because it is dark','lights, but more dimly','stays off: the path is broken']],answer:2,why:['Il sensore può comandare il transistor, ma l’interruttore aperto interrompe comunque il ramo del LED. Servono entrambe le condizioni.','The sensor can control the transistor, but the open switch still breaks the LED branch. Both conditions are needed.']},
+  comps:OC_LEVELS[9].comps.filter(c=>!(c.t==='res'&&c.x===3)).map(c=>({...c})).concat({t:'sw',x:3,y:4,r:1,id:'S',lock:1}),
+  pal:{res:1,ldr:1},sol:{comps:[{t:'res',x:3,y:1,r:1},{t:'ldr',x:2,y:4,r:1}],tap:['S']},
+  checks:[
+    {text:['Giorno','Day'],action:['Inserisci sensore e resistenza. Chiudi l’interruttore: al sole il LED deve restare spento.','Insert the sensor and resistor. Close the switch: in daylight the LED must stay off.'],test:a=>a.placed('ldr')===1&&a.placed('res')===1&&a.sun()&&a.sw('S')&&a.I('D')<.001&&!a.burnt('D')},
+    {text:['Notte','Night'],action:['Passa alla notte con il bottone del sole: il LED deve accendersi da solo.','Use the sun button to switch to night: the LED must turn on automatically.'],test:a=>!a.sun()&&a.sw('S')&&a.I('D')>OC_LED_LIT&&!a.burnt('D')},
+    {text:['Stop manuale','Manual stop'],action:['Resta di notte e apri l’interruttore: verifica che il comando manuale spenga il LED.','Stay at night and open the switch: check that the manual control turns the LED off.'],test:a=>!a.sun()&&!a.sw('S')&&a.I('D')<.001&&!a.burnt('D')},
+    {text:['Riaccendi','Relight'],action:['Sempre di notte, richiudi l’interruttore: il LED deve riaccendersi.','Still at night, close the switch again: the LED must relight.'],test:a=>!a.sun()&&a.sw('S')&&a.I('D')>OC_LED_LIT&&!a.burnt('D')},
+    {text:['Alba','Dawn'],action:['Lascia l’interruttore chiuso e torna al giorno: il sensore deve spegnere il LED.','Leave the switch closed and return to daylight: the sensor must turn the LED off.'],test:a=>a.sun()&&a.sw('S')&&a.I('D')<.001&&!a.burnt('D')}
+  ],
+  know:['Hai combinato un comando automatico e uno manuale. Il sensore cambia resistenza con la luce, il transistor controlla il ramo del LED e l’interruttore può interromperlo. La resistenza nel ramo del LED limita la corrente: ogni pezzo ha un compito diverso.','You combined automatic and manual controls. The sensor changes resistance with light, the transistor controls the LED branch and the switch can break it. The resistor in the LED branch limits current: each part has a different job.']
+}
+].map(L=>({...L,win:a=>a.flag('checksDone')}));
+
 /* palette del banco libero */
 const OC_SANDBOX={ nx:12, ny:8, sun:1, comps:[], wires:[],
   pal:{wire:Infinity,batt:Infinity,lamp:Infinity,sw:Infinity,led:Infinity,res:Infinity,cap:Infinity,npn:Infinity,mot:Infinity,buz:Infinity,ldr:Infinity} };
 
 /* ---------- stato ---------- */
-const oc={ on:false, raf:0, frameAt:0, lvl:0, sandbox:false, board:null, pal:{}, tool:'hand',
+const oc={ course:'basic', predictionOK:false, on:false, raf:0, frameAt:0, lvl:0, sandbox:false, board:null, pal:{}, tool:'hand',
   time:0, last:0, winT:0, mish:0, hint:0, hintT:0, freeBurnLeft:0,
   flow:{}, nets:null, smoke:[], flags:{}, dayT:0, nightT:0, sun:true,
   drag:null, wireGhost:null, preview:null, placing:false, won:false, cs:64, ox:0, oy:0, infoType:null, history:[], gesture:null, wireAnchor:null };
 
-function ocSave(){ try{ localStorage.setItem('gabri_off_c', JSON.stringify(oc.prog)); }catch(e){} }
+function ocLevels(){ return oc.course==='labs'?OC_LABS:OC_LEVELS; }
+function ocProgress(){ return oc.course==='labs'?oc.labProg:oc.prog; }
+function ocSave(){
+  try{ localStorage.setItem(oc.course==='labs'?'gabri_off_c_labs':'gabri_off_c',JSON.stringify(ocProgress())); }catch(e){}
+}
 function ocLoad(){
-  let saved;
-  try{ saved=JSON.parse(localStorage.getItem('gabri_off_c')); }catch(e){}
-  const stars=Array.isArray(saved&&saved.stars)?saved.stars.slice(0,OC_LEVELS.length).map(n=>Number.isInteger(n)?Math.max(0,Math.min(3,n)):0):[];
-  // Chi ha completato il vecchio ultimo livello può subito proseguire nell'11.
-  const earned=stars.reduce((next,st,n)=>st?Math.max(next,n+1):next,0);
-  const unlocked=Number.isInteger(saved&&saved.unl)?saved.unl:0;
-  oc.prog={stars,unl:Math.min(OC_LEVELS.length-1,Math.max(0,unlocked,earned))};
+  function read(key,count){
+    let saved;
+    try{ saved=JSON.parse(localStorage.getItem(key)); }catch(e){}
+    const stars=Array.isArray(saved&&saved.stars)?saved.stars.slice(0,count).map(n=>Number.isInteger(n)?Math.max(0,Math.min(3,n)):0):[];
+    const earned=stars.reduce((next,st,n)=>st?Math.max(next,n+1):next,0);
+    const unlocked=Number.isInteger(saved&&saved.unl)?saved.unl:0;
+    return {stars,unl:Math.min(count-1,Math.max(0,unlocked,earned))};
+  }
+  oc.prog=read('gabri_off_c',OC_LEVELS.length);
+  oc.labProg=read('gabri_off_c_labs',OC_LABS.length);
 }
 ocLoad();
 
@@ -645,6 +722,7 @@ const ocApi={
   burnt:id=>{ const c=ocComp(id); return !!(c&&c.state.burnt); },
   sw:id=>{ const c=ocComp(id); return !!(c&&c.state.closed); },
   sun:()=>oc.sun,
+  capV:()=>Math.max(0,...[...oc.board.comps.values()].filter(c=>c.t==='cap').map(c=>Math.abs(c.state.vc||0))),
   powered:(t,p)=>[...oc.board.comps.values()].some(c=>c.t===t&&c.res.P>p),
   placed:t=>{ let n=0; oc.board.comps.forEach(c=>{ if(c.t===t&&!c.lock) n++; }); return n; },
   flag:k=>!!oc.flags[k]
@@ -677,15 +755,16 @@ function ocStep(dt){
     if(d&&oc.sun&&d.res.I<0.001){ oc.dayT+=dt; if(oc.dayT>0.6) oc.flags.dayOK=true; } else oc.dayT=0;
     if(d&&!oc.sun&&d.res.I>OC_LED_LIT){ oc.nightT+=dt; if(oc.nightT>0.6) oc.flags.nightOK=true; } else oc.nightT=0;
   }
-  if(L&&L.checks&&!oc.flags.checksDone){
+  if(L&&L.checks&&!oc.flags.checksDone&&(!L.quiz||oc.predictionOK)){
     const check=L.checks[oc.checkIndex];
     oc.checkT=check.test(ocApi)?oc.checkT+dt:0;
     if(oc.checkT>=(check.hold||0.5)){
       oc.checkIndex++; oc.checkT=0;
       if(oc.checkIndex===L.checks.length) oc.flags.checksDone=true;
-      ocChecksDraw();
+      ocChecksDraw(); ocResize();
     }
   }
+  if(L&&L.quiz&&oc.lvl===2) $('ocMeter').textContent=(LI()===0?'Tensione della riserva: ':'Reserve voltage: ')+ocApi.capV().toFixed(1)+' V';
   /* vittoria */
   if(!oc.sandbox&&!oc.won&&L&&L.win){
     if(L.win(ocApi)) oc.winT+=dt; else oc.winT=0;
@@ -745,7 +824,7 @@ function ocDraw(){
     });
   }
   /* prese tratteggiate: dove va il pezzo da piazzare */
-  if(!oc.sandbox&&oc.L&&oc.L.sol&&oc.L.sol.comps){
+  if(!oc.sandbox&&oc.course!=='labs'&&oc.L&&oc.L.sol&&oc.L.sol.comps){
     oc.L.sol.comps.forEach(c=>{
       if(oc.board.comps.has(ocNK(c.x,c.y))) return;
       const [px,py]=ocXY(c.x,c.y);
@@ -1052,7 +1131,7 @@ function ocUndo(){
   const prev=oc.history.pop(); if(!prev) return;
   oc.board.comps=new Map(prev.comps); oc.board.wires=new Map(prev.wires); oc.pal=prev.pal; oc.sun=prev.sun;
   oc.drag=null; oc.wireAnchor=null; oc.wireGhost=null; oc.preview=null; oc.placing=false; oc.gesture=null;
-  oc.winT=0; oc.dayT=0; oc.nightT=0; oc.flags={}; oc.checkIndex=0; oc.checkT=0; ocChecksDraw(); oc.flow={}; oc.smoke=[];
+  oc.winT=0; oc.dayT=0; oc.nightT=0; oc.flags={}; oc.checkIndex=0; oc.checkT=0; ocChecksDraw(); ocResize(); oc.flow={}; oc.smoke=[];
   ocSolve(0.02); ocSunDraw(); ocPalDraw(); $('ocUndoBtn').disabled=!oc.history.length;
   ocToast(LI()===0?'Ultima azione annullata. Riprova!':'Last action undone. Try again!');
 }
@@ -1232,11 +1311,12 @@ function ocToast(t){
 function ocGoto(n){
   oc.sandbox=(n<0);
   oc.lvl=Math.max(0,n);
-  const L=oc.sandbox?OC_SANDBOX:OC_LEVELS[oc.lvl];
+  const L=oc.sandbox?OC_SANDBOX:ocLevels()[oc.lvl];
   oc.L=oc.sandbox?null:L;
   oc.board=ocBuildBoard(L);
   oc.pal=Object.assign({},L.pal);
   oc.tool=(L.pal&&L.pal.wire)?'wire':(Object.keys(L.pal||{})[0]||'hand');
+  oc.predictionOK=false;
   oc.mish=0; oc.hint=0; oc.hintT=0; oc.winT=0; oc.won=false;
   oc.flags={}; oc.checkIndex=0; oc.checkT=0; oc.dayT=0; oc.nightT=0; oc.sun=true; oc.smoke=[];
   oc.freeBurnLeft=(L.freeBurn||0);
@@ -1244,10 +1324,13 @@ function ocGoto(n){
   clearTimeout(ocMsgTimer); $('ocMsg').style.display='none';
   oc.infoType=null; oc.preview=null; oc.placing=false; oc.drag=null; oc.wireGhost=null; $('ocInfo').style.display='none';
   const i=LI();
-  $('ocLvl').textContent=oc.sandbox?(i===0?'🧪 BANCO 12×8 · PEZZI ∞':'🧪 BENCH 12×8 · PARTS ∞'):'⚡ '+(oc.lvl+1)+'/'+OC_LEVELS.length;
+  $('ocLvl').textContent=oc.sandbox?(i===0?'🧪 BANCO 12×8 · PEZZI ∞':'🧪 BENCH 12×8 · PARTS ∞'):(oc.course==='labs'?'🧠 ':'⚡ ')+(oc.lvl+1)+'/'+ocLevels().length;
   ocStarHud();
   $('ocSun').style.display=L.sun?'block':'none'; ocSunDraw();
   $('ocHintBtn').style.display=oc.sandbox?'none':'';
+  $('ocExampleBtn').style.display=L.quiz?'':'none';
+  $('ocMeter').hidden=!(L.quiz&&oc.lvl===2);
+  $('ocMeter').textContent='';
   $('ocGoal').style.display=oc.sandbox?'none':'block';
   if(!oc.sandbox) $('ocGoalTxt').textContent=L.g[i];
   ocChecksDraw(); ocResize(); ocPalDraw();
@@ -1257,9 +1340,10 @@ function ocGoto(n){
   if(!oc.sandbox){
     $('ocIntroTit').textContent='⚡ '+(oc.lvl+1)+'. '+L.t[i];
     $('ocIntroTxt').textContent=L.g[i];
+    ocLessonDraw();
     const newComp=Object.keys(L.pal||{}).filter(t=>t!=='wire')[0];
     const nv=$('ocIntroNew');
-    if(newComp){
+    if(newComp&&!L.quiz){
       nv.style.display='flex';
       nv.innerHTML=ocToolIconMarkup(newComp,'ocIntroSymbol')+'<span></span>';
       nv.querySelector('span:last-child').textContent=((i===0)?'Nuovo pezzo: ':'New piece: ')+OC_T.names[newComp][i];
@@ -1270,11 +1354,53 @@ function ocGoto(n){
     $('ocGibiDesk').style.display='none';
   }
 }
+function ocLessonDraw(){
+  const L=oc.L,i=LI(),box=$('ocLesson');
+  $('ocIntro').classList.toggle('labIntro',!!L.quiz);
+  box.hidden=!L.quiz;
+  $('ocIntroGo').disabled=!!L.quiz&&!oc.predictionOK;
+  $('ocIntroGo').textContent=i===0?'VIA! ⚡':'GO! ⚡';
+  $('ocIntroSpk').setAttribute('aria-label',i===0?'Ascolta esempio e domanda':'Listen to the example and question');
+  if(!L.quiz) return;
+  const example=$('ocExample'); example.replaceChildren();
+  const title=document.createElement('strong');
+  title.textContent=i===0?'📖 UN ESEMPIO PER CAPIRE':'📖 A WORKED EXAMPLE'; example.appendChild(title);
+  L.example[i].forEach((text,n)=>{
+    const p=document.createElement('p'); p.textContent=(n+1)+'. '+text; example.appendChild(p);
+  });
+  $('ocPrediction').querySelector('legend').textContent=(i===0?'PREVEDI · ':'PREDICT · ')+L.quiz.q[i];
+  const answers=$('ocAnswers'); answers.replaceChildren();
+  $('ocFeedback').textContent=oc.predictionOK?L.quiz.why[i]:(i===0?'Scegli una risposta, poi passa al banco. Puoi riprovare senza perdere stelle.':'Choose an answer, then move to the bench. You can retry without losing stars.');
+  L.quiz.options[i].forEach((text,n)=>{
+    const button=document.createElement('button'); button.textContent=text;
+    button.disabled=oc.predictionOK;
+    if(oc.predictionOK&&n===L.quiz.answer) button.className='correct';
+    button.onclick=()=>{
+      if(n===L.quiz.answer){ oc.predictionOK=true; ocLessonDraw(); }
+      else {
+        button.className='retry';
+        $('ocFeedback').textContent=(i===0?'Ragioniamoci: ':'Think it through: ')+L.quiz.why[i]+(i===0?' Riprova.':' Try again.');
+      }
+    };
+    answers.appendChild(button);
+  });
+}
+function ocSelectCourse(course){
+  if(!['basic','labs'].includes(course)) return;
+  oc.course=course; ocPickShow();
+}
+$('ocBasicCourse').onclick=()=>ocSelectCourse('basic');
+$('ocLabCourse').onclick=()=>ocSelectCourse('labs');
+$('ocExampleBtn').onclick=()=>{
+  if(!oc.L||!oc.L.quiz) return;
+  ocLessonDraw(); $('ocIntro').style.display='flex'; stopSpeak();
+};
 function ocChecksDraw(){
   const box=$('ocChecks'); box.innerHTML='';
   const checks=oc.L&&oc.L.checks;
   box.hidden=!checks;
   if(!checks) return;
+  if(oc.L.quiz) $('ocGoalTxt').textContent=checks[oc.checkIndex]?.action[LI()]||(LI()===0?'Tutte le prove verificate! Puoi continuare a sperimentare.':'All tests verified! You can keep experimenting.');
   checks.forEach((check,n)=>{
     const chip=document.createElement('span');
     chip.className=n<oc.checkIndex?'done':n===oc.checkIndex?'current':'';
@@ -1292,9 +1418,10 @@ function ocWinShow(){
   const i=LI();
   const st=Math.max(1,3-Math.min(2,oc.mish+(oc.hint?1:0)));
   oc.wonStars=st;
-  const best=oc.prog.stars[oc.lvl]||0;
-  if(st>best) oc.prog.stars[oc.lvl]=st;
-  if(oc.lvl+1>oc.prog.unl) oc.prog.unl=Math.min(OC_LEVELS.length-1,oc.lvl+1);
+  const prog=ocProgress();
+  const best=prog.stars[oc.lvl]||0;
+  if(st>best) prog.stars[oc.lvl]=st;
+  if(oc.lvl+1>prog.unl) prog.unl=Math.min(ocLevels().length-1,oc.lvl+1);
   ocSave();
   $('ocWinBarTxt').textContent='🏆 '+OC_T.win[i]+' '+'⭐'.repeat(st);
   $('ocWinBarGo').textContent=OC_T.next[i];
@@ -1330,17 +1457,22 @@ function ocFactDraw(text){
   });
 }
 function ocPickShow(){
-  const i=LI();
-  $('ocPickTit').textContent=i===0?'Diamo energia a Gibi!':'Let’s power up Gibi!';
-  $('ocPickSub').textContent=OC_T.story[i];
+  const i=LI(),levels=ocLevels(),prog=ocProgress(),labs=oc.course==='labs';
+  $('ocIntro').style.display='none'; $('ocWin').style.display='none'; $('ocInfo').style.display='none'; stopSpeak();
+  $('ocBasicCourse').textContent=i===0?'⚡ Primi passi · 15 livelli':'⚡ First steps · 15 levels';
+  $('ocLabCourse').textContent=i===0?'🧠 Piccoli ingegneri · 4 esperimenti':'🧠 Little engineers · 4 experiments';
+  $('ocBasicCourse').setAttribute('aria-pressed',String(!labs));
+  $('ocLabCourse').setAttribute('aria-pressed',String(labs));
+  $('ocPickTit').textContent=labs?(i===0?'Piccoli ingegneri, grandi scoperte.':'Little engineers, big discoveries.'):(i===0?'Diamo energia a Gibi!':'Let’s power up Gibi!');
+  $('ocPickSub').textContent=labs?(i===0?'Osserva un esempio, fai una previsione e metti alla prova il circuito. Quattro esperimenti con più passaggi, anche quando la luce deve spegnersi.':'Study an example, make a prediction and test the circuit. Four experiments with several steps, including when the light must turn off.'):OC_T.story[i];
   const grid=$('ocPickGrid'); grid.innerHTML='';
-  OC_LEVELS.forEach((L,n)=>{
+  levels.forEach((L,n)=>{
     const btn=document.createElement('button');
-    const locked=n>oc.prog.unl;
+    const locked=!labs&&n>prog.unl;
     btn.disabled=locked;
-    btn.className='ocLvBtn'+(locked?' lock':'')+(!locked&&n===oc.prog.unl?' next':'');
-    const st=oc.prog.stars[n]||0;
-    btn.innerHTML='<span class="ln">'+(locked?'🔒':OC_LEVEL_ICONS[n])+'</span><span class="lt">'+(n+1)+'. '+L.t[i]+'</span><span class="ls">'+(st?'⭐'.repeat(st):(locked?(i===0?'DA SBLOCCARE':'LOCKED'):(i===0?'GIOCA':'PLAY')))+'</span>';
+    btn.className='ocLvBtn'+(locked?' lock':'')+(!locked&&n===prog.unl?' next':'');
+    const st=prog.stars[n]||0;
+    btn.innerHTML='<span class="ln">'+(locked?'🔒':(L.icon||OC_LEVEL_ICONS[n]))+'</span><span class="lt">'+(n+1)+'. '+L.t[i]+'</span><span class="ls">'+(st?'⭐'.repeat(st):(locked?(i===0?'DA SBLOCCARE':'LOCKED'):(i===0?'GIOCA':'PLAY')))+'</span>';
     if(!locked) btn.onclick=()=>{ ocGoto(n); };
     grid.appendChild(btn);
   });
@@ -1357,16 +1489,16 @@ function ocPickShow(){
     grid.appendChild(logic);
   }
   $('ocPickBack').textContent=OC_T.back[i];
-  const repaired=oc.prog.stars.filter(Boolean).length;
+  const repaired=prog.stars.filter(Boolean).length;
   $('ocWorkshopName').textContent=i===0?'L’OFFICINA DI GABRI':'GABRI’S WORKSHOP';
-  $('ocTotalStars').textContent='★ '+oc.prog.stars.reduce((a,b)=>a+(b||0),0)+' / '+OC_LEVELS.length*3;
+  $('ocTotalStars').textContent='★ '+prog.stars.reduce((a,b)=>a+(b||0),0)+' / '+levels.length*3;
   $('ocEyebrow').textContent=i===0?'BANCO 01 / IL CUORE':'BENCH 01 / THE HEART';
-  $('ocProgressText').textContent=i===0?repaired+' di '+OC_LEVELS.length+' missioni completate':repaired+' of '+OC_LEVELS.length+' missions completed';
-  $('ocProgressFill').style.width=(repaired/OC_LEVELS.length*100)+'%';
-  const next=Math.min(oc.prog.unl,OC_LEVELS.length-1);
+  $('ocProgressText').textContent=i===0?repaired+' di '+levels.length+' missioni completate':repaired+' of '+levels.length+' missions completed';
+  $('ocProgressFill').style.width=(repaired/levels.length*100)+'%';
+  const next=Math.min(prog.unl,levels.length-1);
   $('ocContinue').textContent=(i===0?(repaired?'CONTINUA':'INIZIAMO'):(repaired?'CONTINUE':'LET’S START'))+' →';
   $('ocContinue').onclick=()=>ocGoto(next);
-  $('ocPathTitle').textContent=i===0?'LE TUE MISSIONI':'YOUR MISSIONS';
+  $('ocPathTitle').textContent=labs?(i===0?'SCEGLI UN ESPERIMENTO · TUTTI GIÀ APERTI':'CHOOSE AN EXPERIMENT · ALL AVAILABLE'):(i===0?'LE TUE MISSIONI':'YOUR MISSIONS');
   oc.wireAnchor=null; oc.drag=null; oc.wireGhost=null;
 
   $('ocPickGibi').style.filter='drop-shadow(0 10px 12px rgba(55,35,105,.22)) '+(repaired?'saturate(1)':'grayscale(.72) brightness(.72)');
@@ -1384,15 +1516,15 @@ $('ocSun').onclick=()=>{ const before=ocSnapshot(); oc.sun=!oc.sun; ocSunDraw();
 $('ocUndoBtn').onclick=ocUndo;
 $('ocInfoClose').onclick=()=>{ $('ocInfo').style.display='none'; oc.infoType=null; stopSpeak(); };
 $('ocInfoSpeak').onclick=()=>{ if(oc.infoType&&OC_INFO[oc.infoType]){ const i=LI(),d=OC_INFO[oc.infoType]; speak(OC_T.names[oc.infoType][i]+'. '+d.metaphor[i]+' '+d.real[i]); } };
-$('ocIntroGo').onclick=()=>{ $('ocIntro').style.display='none'; $('ocGibiDesk').style.display='block'; stopSpeak(); };
-$('ocIntroSpk').onclick=()=>{ if(oc.L) speak(oc.L.g[LI()]); };
-$('ocGoalSpk').onclick=()=>{ if(oc.L) speak(oc.L.g[LI()]); };
+$('ocIntroGo').onclick=()=>{ if(oc.L&&oc.L.quiz&&!oc.predictionOK) return; $('ocIntro').style.display='none'; $('ocGibiDesk').style.display='block'; stopSpeak(); };
+$('ocIntroSpk').onclick=()=>{ if(oc.L){ const i=LI(); speak(oc.L.g[i]+(oc.L.quiz?' '+oc.L.example[i].join(' ')+' '+oc.L.quiz.q[i]+' '+oc.L.quiz.options[i].join('. '):'')); } };
+$('ocGoalSpk').onclick=()=>{ if(oc.L) speak($('ocGoalTxt').textContent); };
 $('ocKnowSpk').onclick=()=>{ speak($('ocKnowTxt').textContent); };
 $('ocWinNext').onclick=()=>{
   $('ocWin').style.display='none'; $('ocGibiDesk').style.display='block'; stopSpeak();
-  if(oc.lvl+1<OC_LEVELS.length) ocGoto(oc.lvl+1); else ocPickShow();
+  if(oc.lvl+1<ocLevels().length) ocGoto(oc.lvl+1); else ocPickShow();
 };
-$('ocResetBtn').onclick=()=>{ ocGoto(oc.sandbox?-1:oc.lvl); if(!oc.sandbox) $('ocIntro').style.display='none'; };
+$('ocResetBtn').onclick=()=>{ ocGoto(oc.sandbox?-1:oc.lvl); if(!oc.sandbox&&!oc.L.quiz) $('ocIntro').style.display='none'; };
 $('ocPickBtn').onclick=()=>{ ocPickShow(); };
 $('ocHintBtn').onclick=()=>{
   if(oc.sandbox||!oc.L) return;
@@ -1427,8 +1559,11 @@ function ocEnter(){
   $('ocHintBtn').innerHTML='💡<span class="bl">'+(bi===0?'AIUTO':'HELP')+'</span>';
   $('ocResetBtn').innerHTML='🔄<span class="bl">'+(bi===0?'RIFAI':'RESET')+'</span>';
   $('ocPickBtn').innerHTML='📋<span class="bl">'+(bi===0?'LIVELLI':'LEVELS')+'</span>';
+  $('ocExampleBtn').innerHTML='📖<span class="bl">'+(bi===0?'ESEMPIO':'EXAMPLE')+'</span>';
+  $('ocExampleBtn').title=bi===0?'Rileggi l’esempio':'Read the example again';
+  $('ocCourses').setAttribute('aria-label',bi===0?'Percorsi':'Courses');
   oc.on=true; oc.last=0; oc.frameAt=0;
-  ocGoto(Math.min(oc.prog.unl,OC_LEVELS.length-1));
+  ocGoto(Math.min(ocProgress().unl,ocLevels().length-1));
   ocPickShow();
   $('ocIntro').style.display='none';
   if(typeof MUSICON!=='undefined'&&MUSICON){ mCtx(); playMusic(TRK_FUNK); }
@@ -1456,6 +1591,6 @@ registerGame({
 });
 
 /* ---------- aggancio per i test ---------- */
-window.__OC={ oc, levels:OC_LEVELS, goto:ocGoto, step:ocStep, solve:ocSolve,
+window.__OC={ oc, levels:OC_LEVELS, labs:OC_LABS, course:ocSelectCourse, goto:ocGoto, step:ocStep, solve:ocSolve,
   place:ocPlace, wire:ocAddWire, comp:ocComp, api:ocApi, preview:ocPreviewAt,
   pointerUp:ocPointerUp, connect:ocConnect, undo:ocUndo, snapshot:ocSnapshot, commit:ocCommit, load:ocLoad, resize:ocResize, enter:ocEnter, exit:ocExit };

@@ -90,3 +90,32 @@ vale solo dopo aver mantenuto il risultato per il tempo richiesto. RIFAI e ANNUL
 azzerano la sequenza di verifica. Tutti i livelli hanno consegne e spiegazioni in
 italiano e inglese e una soluzione fantasma per l’aiuto. Il totale è 45 stelle;
 i vecchi salvataggi che hanno completato il livello 10 sbloccano subito l’11.
+
+## Piccoli ingegneri — percorso separato (settembre 2026)
+
+Il selettore del Banco 1 distingue **Primi passi** (i 15 livelli esistenti) e
+**Piccoli ingegneri** (4 esperimenti, tutti accessibili da subito). I salvataggi
+restano separati: `gabri_off_c` per i primi passi, `gabri_off_c_labs` per i nuovi
+esperimenti, con un massimo di 12 stelle nel secondo percorso.
+
+Ogni esperimento inizia con un esempio spiegato in tre passaggi e una previsione
+a scelta multipla. Una risposta errata dà una spiegazione e permette di riprovare
+senza perdere stelle. Dopo la previsione corretta si passa al circuito: ciascuna
+prova deve mantenere la condizione richiesta, in ordine. La consegna indica il
+passaggio corrente. Il pulsante **Esempio** riapre la spiegazione senza azzerare
+il lavoro. I testi e la lettura ad alta voce sono disponibili in italiano e inglese.
+
+1. **Due pulsanti, un campanello**: costruire due vie alternative e verificare OR
+   nei quattro casi (solo A, solo B, entrambi, nessuno).
+2. **Una casa, due luci indipendenti**: completare i rami in parallelo e collaudare
+   entrambe le luci, cucina sola, camera sola e spegnimento totale.
+3. **Quanto dura la riserva?**: osservare tensione, carica, alimentazione senza
+   pila, esaurimento e ricarica del condensatore; nessuna vittoria lasciando
+   semplicemente la pila collegata.
+4. **Il lampione col permesso**: combinare sensore, transistor, resistenza e
+   interruttore; verificare giorno, notte, stop manuale, riaccensione e alba.
+
+I nuovi esperimenti non mostrano automaticamente le sagome dei pezzi da inserire:
+la soluzione fantasma resta disponibile tramite **Aiuto**, con la normale regola
+delle stelle. RIFAI ripropone la previsione; ANNULLA azzera le verifiche del circuito
+conservando la previsione già compresa. Test: `node test/test-officina-esperimenti.js`.

@@ -48,6 +48,18 @@ Aggiungi la voce nella lista `easy` o `hard` del tema che preferisci, ricordando
 
 ## Come provarlo in locale
 
+### Confronto Paola / Supertonic 3
+
+Apri `http://localhost:8000/confronto-voci.html` dopo aver avviato il server locale.
+La pagina genera lo stesso testo con Piper Paola medium e Supertonic 3 in italiano,
+con lettori separati, dieci timbri Supertonic, download WAV e tempi di preparazione
+e generazione. La velocità di ascolto è comune (inizialmente 0,85×, come nel gioco).
+Il confronto non cambia la voce dei giochi. Le voci si caricano solo alla prima
+richiesta; serve Internet per scaricare modelli e librerie. La sintesi avviene in
+worker locali, senza inviare il testo a servizi esterni. Usa localhost o HTTPS,
+non `file://`. I modelli possono occupare alcune centinaia di MB nella cache del
+browser. Supertonic usa WebAssembly per funzionare anche senza WebGPU.
+
 ### Bozze tastiera: Gibi ai comandi e Apollo ai comandi
 
 Due nuove voci nel menu, contrassegnate **Bozza**, propongono sei missioni ciascuna con una tastiera fisica QWERTY. Il percorso parte da F/J, aggiunge lettere vicine, poi altre file, tutto l’alfabeto e sequenze di tre lettere. Tutte le missioni sono selezionabili per facilitare le prove; i completamenti sono salvati separatamente sul dispositivo. Gli esercizi non hanno un conto alla rovescia né penalità per gli errori; rimane il timer globale della sessione.

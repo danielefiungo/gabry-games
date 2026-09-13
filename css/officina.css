@@ -102,3 +102,35 @@ body #ol { background:radial-gradient(ellipse at 30% 20%,#234b53,#102d38 65%,#0b
 #ocChecks span { border:1px solid #d9cead; border-radius:20px; padding:3px 10px; font-size:12px; color:#716b58; background:#fff9e7; }
 #ocChecks .current { border-color:#a78028; background:#ffe29c; color:#514016; font-weight:700; }
 #ocChecks .done { border-color:#98bda6; background:#dcefdc; color:#2c6349; }
+
+/* Due percorsi, con progressi distinti e lezioni rileggibili. */
+#ocCourses { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 20px; }
+#ocCourses button { flex:1 1 220px; padding:14px 18px; border:1px solid #a9bcb2; border-radius:13px; background:#edf0e7; color:#315452; font:inherit; font-size:15px; font-weight:700; cursor:pointer; }
+#ocCourses button[aria-pressed="true"] { background:#1c5358; color:#fff7db; border-color:#1c5358; box-shadow:0 3px 0 #0d3238; }
+#ocCourses button[aria-pressed="false"]:hover { background:#e3eadc; }
+#ocIntro.labIntro .card { padding:24px; width:min(850px,94vw); max-width:850px; max-height:calc(100dvh - 32px); min-height:0; box-sizing:border-box; }
+#ocIntro.labIntro #ocIntroGibi { display:none; }
+#ocIntro.labIntro #ocIntroTxt { font-size:18px; line-height:1.45; letter-spacing:0; word-spacing:normal; }
+#ocIntro.labIntro #ocIntroTit { color:#1e5756; font-size:28px; }
+#ocLesson { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:12px 0; text-align:left; }
+#ocLesson[hidden] { display:none; }
+#ocExample { background:#e9f1e9; border:1px solid #c5d9ca; border-radius:14px; padding:16px; color:#31524b; font-size:16px; line-height:1.5; }
+#ocExample strong { font-size:12px; letter-spacing:.04em; }
+#ocExample p { margin:12px 0 0; }
+#ocPrediction { margin:0; min-width:0; border:1px solid #ddc58d; background:#fff4d8; border-radius:14px; padding:14px; color:#514322; }
+#ocPrediction legend { font-size:16px; font-weight:700; padding:0 5px; }
+#ocAnswers { display:grid; gap:8px; }
+#ocAnswers button { min-height:44px; border:1px solid #cbb883; border-radius:10px; background:#fffdf5; color:#4b412a; padding:10px 12px; font:inherit; font-size:15px; cursor:pointer; text-align:left; }
+#ocAnswers .correct { background:#d9efda; border-color:#689876; }
+#ocAnswers .retry { border-color:#ac7425; background:#ffe6ac; }
+#ocAnswers button:disabled { cursor:default; opacity:1; }
+#ocFeedback { font-size:14px; line-height:1.4; margin:12px 0 0; }
+#ocIntroGo:disabled { opacity:.45; cursor:default; }
+#ocMeter { font:700 14px ui-monospace,monospace; color:#215957; margin-top:8px; }
+@media(max-width:760px){
+  #ocIntro.labIntro .card { padding:18px 14px; }
+  #ocIntro.labIntro #ocIntroTit { font-size:23px; }
+  #ocLesson { grid-template-columns:1fr; }
+  #ocExample { padding:12px; font-size:15px; }
+  #ocCourses button { flex-basis:100%; }
+}

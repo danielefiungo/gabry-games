@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paola e Supertonic · Laboratorio delle voci</title>
+  <link rel="stylesheet" href="css/confronto-voci.css">
+</head>
+<body>
+  <main>
+    <nav><a href="index.html">← Torna ai giochi</a><span>GABRIGAME / LABORATORIO</span></nav>
+    <header><span class="eyebrow">DUE VOCI, LE STESSE PAROLE</span><h1>Come suona<br>questa storia<span>?</span></h1>
+      <p>Ascolta Paola e Supertonic 3. Quale voce ci accompagna meglio nella lettura?</p></header>
+    <section class="editor" aria-labelledby="text-title">
+      <div class="section-top"><h2 id="text-title">Le parole da ascoltare</h2><span id="count">0 / 600</span></div>
+      <label for="example">Scegli una prova</label>
+      <select id="example"><option value="saluto">Un saluto a Gabriele</option><option value="parole">Parole singole</option><option value="suoni">Suoni dell’italiano</option><option value="missione">Una missione spaziale</option><option value="storia">Una piccola storia</option></select>
+      <label for="text">Oppure scrivi il tuo testo</label>
+      <textarea id="text" maxlength="600" rows="4">Ciao Gabriele! Il razzo è pronto. Leggi con calma e scegli la risposta giusta.</textarea>
+      <div class="toolbar"><button id="compare" class="primary">Genera entrambe le voci <span>↗</span></button><button id="stop" disabled>Interrompi</button>
+        <div class="speed"><label for="speed">Velocità di ascolto</label><select id="speed"><option value="0.75">0,75× · molto calma</option><option value="0.85" selected>0,85× · come nel gioco</option><option value="1">1× · naturale</option></select></div></div>
+      <p class="note">Il primo utilizzo scarica i modelli (anche alcune centinaia di MB). La voce viene generata sul dispositivo; il testo resta nel browser.</p>
+      <p id="global-status" role="status" aria-live="polite">Pronto per il confronto. Genera, poi premi Play su ciascun lettore.</p>
+      <noscript>Attiva JavaScript per provare le voci.</noscript>
+    </section>
+    <div class="voices">
+      <section class="voice paola" aria-labelledby="paola-title">
+        <div class="voice-heading"><span class="voice-icon" aria-hidden="true">P</span><div><span class="eyebrow">LA VOCE DEL GIOCO</span><h2 id="paola-title">Paola</h2></div><span class="tag">Piper</span></div>
+        <p>Una voce italiana, familiare e pacata.</p>
+        <div class="voice-options"><span>Voce fissa: Paola · qualità medium</span></div>
+        <button id="generate-paola">Genera con Paola</button>
+        <p id="status-paola" class="status" role="status" aria-live="polite">Da preparare</p>
+        <progress id="progress-paola" aria-label="Preparazione Paola" hidden></progress>
+        <div id="result-paola" hidden><audio id="audio-paola" aria-label="Ascolta Paola" controls preload="metadata"></audio><p id="metrics-paola" class="metrics"></p><blockquote id="quote-paola"></blockquote><a id="download-paola" download="paola.wav">Scarica audio WAV</a></div>
+      </section>
+      <section class="voice supertonic" aria-labelledby="supertonic-title">
+        <div class="voice-heading"><span class="voice-icon" aria-hidden="true">S</span><div><span class="eyebrow">LA VOCE DA SCOPRIRE</span><h2 id="supertonic-title">Supertonic 3</h2></div><span class="tag">Italiano</span></div>
+        <p>Prova timbri diversi sulla stessa frase.</p>
+        <div class="voice-options"><label for="voice">Timbro</label><select id="voice"><option>F1</option><option>F2</option><option>F3</option><option>F4</option><option>F5</option><option>M1</option><option>M2</option><option>M3</option><option>M4</option><option>M5</option></select></div>
+        <button id="generate-supertonic">Genera con Supertonic</button>
+        <p id="status-supertonic" class="status" role="status" aria-live="polite">Da preparare</p>
+        <progress id="progress-supertonic" aria-label="Preparazione Supertonic" hidden></progress>
+        <div id="result-supertonic" hidden><audio id="audio-supertonic" aria-label="Ascolta Supertonic" controls preload="metadata"></audio><p id="metrics-supertonic" class="metrics"></p><blockquote id="quote-supertonic"></blockquote><a id="download-supertonic" download="supertonic-3.wav">Scarica audio WAV</a></div>
+      </section>
+    </div>
+    <footer><strong>Ascoltiamo bene.</strong> Confronta accenti, doppie e pause. Prova anche una sola parola: una bella voce deve essere chiara nelle letture più piccole.<br><span>I tempi separano la preparazione del modello dalla generazione. Le due voci usano la stessa velocità di riproduzione.</span></footer>
+  </main>
+  <script type="module" src="js/confronto-voci.mjs"></script>
+</body>
+</html>
