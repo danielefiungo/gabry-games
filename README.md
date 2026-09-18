@@ -48,25 +48,29 @@ Aggiungi la voce nella lista `easy` o `hard` del tema che preferisci, ricordando
 
 ## Come provarlo in locale
 
-### Confronto Paola / Supertonic 3
-
-Apri `http://localhost:8000/confronto-voci.html` dopo aver avviato il server locale.
-La pagina genera lo stesso testo con Piper Paola medium e Supertonic 3 in italiano,
-con lettori separati, dieci timbri Supertonic, download WAV e tempi di preparazione
-e generazione. La velocità di ascolto è comune (inizialmente 0,85×, come nel gioco).
-Il confronto non cambia la voce dei giochi. Le voci si caricano solo alla prima
-richiesta; serve Internet per scaricare modelli e librerie. La sintesi avviene in
-worker locali, senza inviare il testo a servizi esterni. Usa localhost o HTTPS,
-non `file://`. I modelli possono occupare alcune centinaia di MB nella cache del
-browser. Supertonic usa WebAssembly per funzionare anche senza WebGPU.
-
 ### Bozze tastiera: Gibi ai comandi e Apollo ai comandi
 
-Due nuove voci nel menu, contrassegnate **Bozza**, propongono sei missioni ciascuna con una tastiera fisica QWERTY. Il percorso parte da F/J, aggiunge lettere vicine, poi altre file, tutto l’alfabeto e sequenze di tre lettere. Tutte le missioni sono selezionabili per facilitare le prove; i completamenti sono salvati separatamente sul dispositivo. Gli esercizi non hanno un conto alla rovescia né penalità per gli errori; rimane il timer globale della sessione.
+**Gibi ai comandi** propone sei missioni con una tastiera fisica QWERTY. In **Apollo ai comandi**, le sei missioni originali restano nella sezione espandibile **Allenamenti della tastiera**, con i progressi conservati. Il percorso parte da F/J, aggiunge lettere vicine, poi altre file, tutto l’alfabeto e sequenze di tre lettere. Tutte le missioni sono selezionabili per facilitare le prove; i completamenti sono salvati separatamente sul dispositivo. Gli esercizi non hanno un conto alla rovescia né penalità per gli errori; rimane il timer globale della sessione.
 
 La mappa dei tasti evidenzia subito la lettera nel primo livello e dopo quattro secondi nei successivi. **Mostra il tasto** e **Ascolta** danno aiuto; **Esc** torna alle missioni e poi ai giochi. Lettere maiuscole e minuscole sono equivalenti. Le scene sono illustrazioni semplificate: Gibi si riattiva e si muove, Apollo passa dalla rampa all’ammaraggio.
 
 File: `js/tastiera.js`, `css/tastiera.css`. Verifica: `node --test test/test-tastiera.js`.
+
+### Avventura lunare: Un razzo per tornare a casa
+
+Apri **Apollo ai comandi → Parti per l’avventura**. Una missione di fantasia in tre parti: esplora crateri, rocce e passerelle, recupera antenna/batteria/portello, montali sul razzo e attraversa quattro varchi fra i detriti per tornare sulla Terra. La visuale è **3D in prima persona (FPV)**: casco e guanti sulla Luna, agganci ravvicinati per le riparazioni, cabina durante decollo e volo. Il tasto corretto muove automaticamente la visuale; non servono mouse o comandi di direzione. Le **26 azioni** usano soltanto **F, J, D, K**, una lettera alla volta. Durata indicativa 3–4 minuti per chi cerca i tasti; nessun limite alla missione.
+
+La lettera è sull’ostacolo, sul riparo o accanto al punto di montaggio. La fila centrale evidenzia sempre il tasto. **Spazio** mette in pausa e riprende, **Invio** ascolta la consegna mettendo al sicuro il gioco, **Esc** torna al menu. Si può giocare senza mouse. Il primo meteorite concede 36 secondi, i successivi 27 e 22; i varchi in volo 18. Dopo l’avvicinamento iniziale i pericoli rallentano molto. Una collisione attiva la bolla protettiva e ripropone lo stesso ostacolo con più tempo, senza perdere pezzi. Le animazioni riuscite sono protette da collisioni e pressioni aggiuntive.
+
+Pausa automatica quando la finestra perde il focus, la scheda viene nascosta o compare l’avviso del timer globale; si riparte esplicitamente con Spazio. Il timer di sessione continua a funzionare normalmente. Uscendo e rientrando **nella stessa pagina**, “Riprendi l’avventura” conserva l’ultimo passo e i pezzi. Ricaricare la pagina ricomincia la missione; il completamento finale viene salvato separatamente dagli allenamenti. Alla vittoria si può rigiocare.
+
+Il paesaggio mantiene coordinate continue durante la traversata: crateri scavati nella superficie, impronte, segnaletica e habitat con pannelli solari. Guanti articolati, componenti con agganci e cavi, avvitatore e connettore hanno animazioni distinte; le spie indicano i collegamenti completati. Il razzo resta nello stesso punto durante tutte le riparazioni.
+
+File: `js/avventura-lunare-world.js` (terreno e coordinate), `js/avventura-lunare-art.js` (modelli, texture e materiali condivisi), `js/avventura-lunare-model.js` (stato e collisioni), `js/avventura-lunare.js` (controlli), `js/avventura-lunare-fpv.js` (scena 3D, camera e rilascio delle risorse), `css/avventura-lunare.css`. Usa Three.js già caricato dal progetto; richiede WebGL. Terreno, oggetti e texture sono generati localmente, senza nuovi asset esterni. La preferenza di sistema per movimento ridotto elimina oscillazioni e inclinazioni decorative. Verifica:
+
+```sh
+node --test test/test-avventura-lunare.js test/test-tastiera.js test/test-timer-globale.js test/test-missione-spaziale.js
+```
 
 ### Avvio
 

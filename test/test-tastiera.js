@@ -4,10 +4,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { JSDOM } = require('jsdom');
-const source = fs.readFileSync(path.join(__dirname, '../js/tastiera.js'), 'utf8');
+const source = ['avventura-lunare-model.js', 'avventura-lunare.js', 'tastiera.js']
+  .map(file => fs.readFileSync(path.join(__dirname, '../js', file), 'utf8')).join('\n');
 
 function setup(saved) {
-  const dom = new JSDOM('<div id="modeSel"></div>', { url: 'https://gabri.test', runScripts: 'outside-only' });
+  const dom = new JSDOM('<div id="modeSel"></div>', { url: 'https://gabri.test', runScripts: 'outside-only', pretendToBeVisual: true });
   const w = dom.window, games = [], timers = new Map(); let serial = 0;
   w.registerGame = game => games.push(game);
   w.stopSpeak = () => {}; w.speak = () => {};

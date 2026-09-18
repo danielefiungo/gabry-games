@@ -66,10 +66,16 @@
     document.getElementById('modeSel').style.display = 'none';
     shell(); root.hidden = false; menu();
   }
-  function exit() { active = playing = false; clearTimers(); stopVoice(); if (root) root.hidden = true; }
+  function exit() { window.LunarAdventure?.stop(); active = playing = false; clearTimers(); stopVoice(); if (root) root.hidden = true; }
   function menu() {
+    window.LunarAdventure?.stop();
     playing = false; clearTimers(); stopVoice();
     el('tkMain').innerHTML = `<div class="tk-intro"><div><p class="tk-eyebrow">LA TUA PRIMA AVVENTURA CON LA TASTIERA</p><h1>${world.title}</h1><p>${world.intro}</p><div class="tk-tags"><span>⌨ Lettere, senza parole</span><span>∞ Nessuna fretta</span><span>✦ 6 missioni</span></div></div><div class="tk-mascot">${world === WORLDS.gibi ? '<img src="assets/characters/gibi.png" alt="Gibi, il robot dell’Officina">' : rocket()}</div></div><div class="tk-map">${world.missions.map((m, i) => `<button class="tk-mission" data-level="${i}"><span class="tk-mission-icon">${m[4]}</span><span class="tk-eyebrow">MISSIONE ${i + 1} ${saved[worldKey()].includes(i) ? '• ✓ COMPLETATA' : ''}</span><strong>${m[0]}</strong><small>${i === 0 ? 'F · J' : i === 1 ? 'D · F · J · K' : i === 2 ? 'La fila centrale' : i === 3 ? 'Anche la fila superiore' : i === 4 ? 'Tutto l’alfabeto' : 'Sequenze di 3 lettere'}</small><span class="tk-mission-arrow">→</span></button>`).join('')}</div><p class="tk-footnote">Puoi provare ogni missione. I completamenti si salvano su questo dispositivo.</p>`;
+    if (world === WORLDS.apollo && window.LunarAdventure) {
+      const training = el('tkMain').innerHTML;
+      el('tkMain').innerHTML = `<section class="la-hero"><p class="tk-eyebrow">AVVENTURA 3D IN PRIMA PERSONA ${LunarAdventure.completed ? '· ✓ COMPLETATA' : ''}</p><h1>Un razzo per tornare a casa</h1><p>Indossa il casco, Gabriele! Salta i crateri della Luna, recupera i pezzi e ripara il razzo con le tue mani. Poi entra in cabina e vola fra gli asteroidi fino a casa.</p><button id="tkAdventure" class="tk-button tk-primary">${LunarAdventure.resumable ? 'Riprendi l’avventura →' : 'Parti per l’avventura →'}</button><small>F · J · D · K &nbsp; / &nbsp; Circa 3–4 minuti, al tuo ritmo &nbsp; / &nbsp; Bolla protettiva inclusa</small></section><details class="la-training"><summary>Allenamenti della tastiera <small>Le 6 missioni originali · progressi conservati</small></summary>${training}</details>`;
+      el('tkAdventure').onclick = () => { playing = false; clearTimers(); stopVoice(); LunarAdventure.start(el('tkMain'), menu); };
+    }
     root.querySelectorAll('[data-level]').forEach(b => b.onclick = () => start(Number(b.dataset.level)));
     el('tkHome').focus({ preventScroll: true });
   }
@@ -142,6 +148,7 @@
     el('tkNext').focus({ preventScroll: true });
   }
   function onKey(event) {
+    if (window.LunarAdventure?.active) return;
     if (!active || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
     if (event.target.closest?.('input,textarea,select,[contenteditable="true"]')) return;
     if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); if (playing) menu(); else { exit(); showModeSel(); } return; }
@@ -167,7 +174,7 @@
   window.addEventListener('keydown', onKey, true);
   for (const [id, config] of Object.entries(WORLDS)) registerGame({
     id: config.id, emoji: config.icon, nm: [config.title, config.title],
-    sub: ['⌨ Tastiera · 6 missioni · Bozza', '⌨ Keyboard · 6 missions · Draft'],
+    sub: id === 'apollo' ? ['⌨ Avventura lunare · Bozza', '⌨ Lunar adventure · Draft'] : ['⌨ Tastiera · 6 missioni · Bozza', '⌨ Keyboard · 6 missions · Draft'],
     colore: config.color, enter: () => enter(id), exit
   });
 })();
